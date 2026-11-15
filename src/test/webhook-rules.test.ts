@@ -4,7 +4,7 @@ import { SYMBOLS } from "@/lib/config";
 import { formatBreakevenMessage } from "@/lib/telegram-format";
 
 const base = {
-  event: "entry_confirmed", event_id: "e1", trade_id: "t1", symbol: "NEARUSDT.P", direction: "LONG",
+  event: "entry_confirmed", event_id: "evt-1", trade_id: "trade-1", symbol: "NEARUSDT.P", direction: "LONG",
   indicator: "PRO LONG SCALPER", timeframe: "1", entry_price: 5.25, stop_loss: 5.1, take_profit: 5.475,
   fee_rate_percent: 0.04, timestamp: "2026-11-15T12:00:00Z",
 };
