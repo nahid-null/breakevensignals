@@ -20,9 +20,8 @@ export function calculate(state: EngineState, c: Candle): Analysis {
     state.rsi = relativeStrength(rma(state.gain, Math.max(change, 0), P.rsiLength), rma(state.loss, Math.max(-change, 0), P.rsiLength));
   }
   const prior = state.candles.slice(-P.structureLength);
-  const structureReady = state.count >= P.structureLength - 1;
-  const resistance = structureReady && prior.length ? Math.max(...prior.map((x) => x.high)) : null;
-  const support = structureReady && prior.length ? Math.min(...prior.map((x) => x.low)) : null;
+  const resistance = prior.length ? Math.max(...prior.map((x) => x.high)) : null;
+  const support = prior.length ? Math.min(...prior.map((x) => x.low)) : null;
   state.candles.push(c);
   state.candles = state.candles.slice(-Math.max(P.swingLookback, P.volumeLength));
   state.swingLow = confirmedPivot(state.candles, "low") ?? state.swingLow;
@@ -44,8 +43,8 @@ export function calculate(state: EngineState, c: Candle): Analysis {
     + (previous && lt(c.close, c.open) && lt(c.close, previous.low) ? 15 : 0)
     + (support !== null && lt(c.close, support) ? 15 : 0);
   const swingWindow = state.candles.slice(-P.swingLookback);
-  const fallbackLow = swingWindow.length >= P.swingLookback ? Math.min(...swingWindow.map((x) => x.low)) : null;
-  const fallbackHigh = swingWindow.length >= P.swingLookback ? Math.max(...swingWindow.map((x) => x.high)) : null;
+  const fallbackLow = Math.min(...swingWindow.map((x) => x.low));
+  const fallbackHigh = Math.max(...swingWindow.map((x) => x.high));
   const low = state.swingLow !== null && lt(state.swingLow, c.close) ? state.swingLow : fallbackLow;
   const high = state.swingHigh !== null && gt(state.swingHigh, c.close) ? state.swingHigh : fallbackHigh;
   const longStop = atr === null || low === null ? null : Math.min(c.close - atr * P.atrStopMult, low - atr * P.swingBuffer);

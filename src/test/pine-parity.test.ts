@@ -34,6 +34,15 @@ describe('Pine comparison safeguards', () => {
     expect(output.plots.MACD.data[1].value).toBeCloseTo(5 / 3, 12);
     expect(output.plots.Histogram.data[1].value).toBeCloseTo(5 / 9, 12);
   });
+  it('corrects partial extrema, prior-bar offsets and nine-decimal comparison independently', async () => {
+    const bars = [10, 20, 30].map((close, i) => ({ openTime: i * 60000, closeTime: (i + 1) * 60000,
+      open: close, high: close + 1, low: close - 1, close, volume: 100 }));
+    const output = await runCorrectedPine(new PineTS(bars), '//@version=6\nindicator("startup semantics")\nplot(ta.lowest(low,3),"LOW")\nplot(ta.highest(high[1],3),"PRIOR")\nplot(52.0000000001 > 52.0 ? 1 : 0,"CMP")');
+    expect(output.plots.LOW.data.map((point: { value: number }) => point.value)).toEqual([9, 9, 9]);
+    expect(Number.isNaN(output.plots.PRIOR.data[0].value)).toBe(true);
+    expect(output.plots.PRIOR.data[1].value).toBe(11);
+    expect(output.plots.CMP.data[0].value).toBe(0);
+  });
   it('rejects missing bars and startup values without discarding warmup', () => {
     const result = comparePineRows([{ time: 0, values: { ema: 10 } }, { time: 60000, values: { ema: 12 } }], [{ time: 0, values: { ema: null } }]);
     expect(result.differences.map((d) => d.field)).toEqual(['ema', 'missing_bar']);
