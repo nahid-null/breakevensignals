@@ -38,4 +38,6 @@ use the editor.
 - Test transaction behavior against migrations in isolated PostgreSQL, never production test trades, because persistent history must remain genuine.
 - Persist service runtime identity and release only the owning lease on shutdown so temporary checks cannot be mistaken for production or block restarts.
 - Derive displayed trade trigger levels from original risk and signal timestamps from entry/breakeven/exit times so replay processing time cannot masquerade as detection time.
-- Keep Pine-language candidate verification in the standalone `engine-worker/verify-pine.ts` tool, using unmodified original sources and saved identical candles; experimental interpreter discrepancies must remain blocked, not drive changes to production trading rules.
+- Keep Pine-language verification in `engine-worker/verify-pine.ts` using intact sources and identical candles; isolate documented interpreter corrections in `pine-runtime.ts`, and never treat local agreement as independently exported TradingView certification.
+- Apply Pine's documented nine-fractional-digit operand comparison through `src/lib/engine/pine-numbers.ts`, without quantizing stored indicator values, because raw JavaScript noise can invent momentum on unchanged closes.
+- Verify real worker restart/reconnect against disk-isolated PostgreSQL through `engine-worker/verify-worker.ts`; never direct fixture signals to the hosted database or real Telegram chat.
