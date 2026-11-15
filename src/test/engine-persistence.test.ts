@@ -16,7 +16,7 @@ beforeAll(async () => {
   db = new PGlite();
   await db.exec('CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role;');
   // Test copy only: the isolated database has no realtime service or publication.
-  for (const name of ['0000_migration.sql','0002_independent_signal_engine.sql','0003_engine_event_provenance_and_statistics.sql','0004_fix_engine_checkpoint_time_comparison.sql']) {
+  for (const name of ['0000_migration.sql','0002_independent_signal_engine.sql','0003_engine_event_provenance_and_statistics.sql','0004_fix_engine_checkpoint_time_comparison.sql','0005_engine_runtime_identity_and_graceful_stop.sql']) {
     const sql = (await readFile(new URL(`../../drizzle/migrations/${name}`, import.meta.url), 'utf8')).replace(/^ALTER PUBLICATION.*$/gm, '');
     await db.exec(sql);
   }
@@ -74,5 +74,11 @@ describe('atomic persistence (isolated PostgreSQL, no production rows)', () => {
     expect((await process(p('entry_confirmed','long-enabled')))?.telegram_log_id).toBeTruthy();
     const short = { ...p('entry_confirmed','short-disabled'), direction: 'SHORT', indicator: 'PRO SHORT SCALPER', stop_loss: 101, take_profit: 98.5 };
     expect((await process(short))?.telegram_log_id).toBeNull();
+  });
+  it('rejects another instance shutdown and releases the real owner without deleting checkpoints', async () => {
+    expect((await db.query<{ stopped: boolean }>('select stop_engine($1) stopped', ['22222222-2222-4222-8222-222222222222'])).rows[0]?.stopped).toBe(false);
+    expect((await db.query<{ stopped: boolean }>('select stop_engine($1) stopped', [instance])).rows[0]?.stopped).toBe(true);
+    expect((await db.query<{ status: string; websocket_connected: boolean }>('select status,websocket_connected from engine_health')).rows[0]).toMatchObject({ status: 'STOPPED', websocket_connected: false });
+    expect((await db.query<{ n: number }>('select count(*)::int n from engine_checkpoints')).rows[0]?.n).toBe(2);
   });
 });

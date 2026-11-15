@@ -9,5 +9,6 @@
 - [x] Redesign dashboard, histories, positions/statistics, settings and service health without TradingView configuration.
 - [x] Test source-derived rules and isolated persistence; real observation of 20 listed symbols plus unavailable WILD; real Telegram test. Production end-to-end validation remains below.
 - [ ] Compare against original Pine outputs on identical candles — requires matching reference calculation exports.
-- [ ] Deploy and verify real live monitoring continues with the browser closed — requires user-created Render service, shared engine credential and publishing.
+- [ ] Deploy and verify permanent live monitoring continues with the browser closed — shared key is saved; requires user-created Render service with matching key and publishing. Temporary real saved-candle/restart checks passed but do not fulfill permanent hosting.
 - [x] Update chat.md and document verified results and remaining blockers.
+- [x] Finish uploaded-requirements verification after key setup: 20 real saved candle streams, restart recovery, four genuine recovered trades read back, stopped temporary-test status, 40 passing tests and browser checks.

@@ -12,10 +12,10 @@ export const Route = createFileRoute('/setup')({ head: () => ({ meta: [
 function Setup() {
   const { health } = useStatuses();
   return <div className="max-w-4xl space-y-6"><h1 className="text-2xl font-semibold">Engine deployment</h1>
-    <div className="border-l-2 border-waiting bg-waiting/5 p-4 text-sm text-waiting">{health?.heartbeatFresh ? 'Engine heartbeat received. See System Health for processing status.' : 'Production activation pending. Publishing the website alone does not start continuous monitoring.'}</div>
+    <div className="border-l-2 border-waiting bg-waiting/5 p-4 text-sm text-waiting">{health?.heartbeatFresh && health.engine?.runtime_mode === 'production' && health.engine.status !== 'STOPPED' ? 'Engine heartbeat received. See System Health for processing status.' : 'Production activation pending. Publishing the website alone does not start continuous monitoring.'}</div>
     <section className="border-y border-border py-5"><h2 className="mb-4 font-mono text-sm">ACTIVATION CHECKLIST</h2>
       <div className="flex items-center justify-between border-b border-border py-3 text-sm">Private engine credential<StatusBadge value={health?.engineConfigured ? 'CONNECTED' : 'NOT CONFIGURED'} /></div>
-      <div className="flex items-center justify-between border-b border-border py-3 text-sm">Always-on service<StatusBadge value={health?.heartbeatFresh ? 'CONNECTED' : 'WAITING'} /></div>
+      <div className="flex items-center justify-between border-b border-border py-3 text-sm">Always-on service<StatusBadge value={health?.heartbeatFresh && health.engine?.runtime_mode === 'production' && health.engine.status === 'RUNNING' ? 'CONNECTED' : 'WAITING'} /></div>
       <div className="flex items-center justify-between py-3 text-sm">Pine calculation comparison<StatusBadge value="MANUAL VERIFICATION REQUIRED" /></div>
     </section>
     <section className="space-y-3"><h2 className="font-mono text-sm">RENDER BACKGROUND WORKER</h2>

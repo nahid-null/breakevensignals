@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { Button } from '@/components/ui/button';
 import { winRate } from '@/lib/engine/stats';
+import { lastSignalTime } from '@/lib/engine/position-values';
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -74,8 +75,9 @@ function Dashboard() {
     if (filter === "ACTIVE") r = r.filter((x) => has(x.long, (p) => ['ACTIVE','BREAKEVEN'].includes(p.status)) || has(x.short, (p) => ['ACTIVE','BREAKEVEN'].includes(p.status)));
     if (filter === "BREAKEVEN") r = r.filter((x) => has(x.long, (p) => p.status === "BREAKEVEN") || has(x.short, (p) => p.status === "BREAKEVEN"));
     if (filter === "COMPLETED") r = r.filter((x) => has(x.long, (p) => COMPLETED.includes(p.status)) || has(x.short, (p) => COMPLETED.includes(p.status)));
-    const ts = (x: (typeof r)[number]) => Math.max(new Date(x.long?.updated_at ?? 0).getTime(), new Date(x.short?.updated_at ?? 0).getTime());
+    const ts = (x: (typeof r)[number]) => Math.max(x.long ? Date.parse(lastSignalTime(x.long)) : 0, x.short ? Date.parse(lastSignalTime(x.short)) : 0);
     if (sort === "latest") r = [...r].sort((a, b) => ts(b) - ts(a));
+    else r = [...r].sort((a, b) => a.symbol.localeCompare(b.symbol));
     return r;
   }, [latest, q, filter, sort]);
 
@@ -85,7 +87,9 @@ function Dashboard() {
         <div><div className="mb-2 flex items-center gap-2 font-mono text-[10px] text-primary"><Activity className="size-3" /> BINANCE USD-M FUTURES · 1 MINUTE</div><h1 className="text-2xl font-semibold">Market terminal</h1></div>
         <div className="text-right font-mono text-xs text-muted-foreground">21 PAIRS · 42 INDEPENDENT SYSTEMS<br /><span className={system === 'ONLINE' ? 'text-long' : 'text-waiting'}>{health?.engine?.status ?? 'AWAITING ENGINE DEPLOYMENT'}</span></div>
       </div>
-      {system !== 'ONLINE' && <div className="border-l-2 border-waiting bg-waiting/5 px-4 py-3 text-sm text-waiting">{health?.engine?.error ?? (health?.engine ? 'Signal monitoring is not confirmed online. Check System Health.' : 'Always-on engine not deployed. Live monitoring has not started.')}</div>}
+      {(system !== 'ONLINE' || health?.engine?.runtime_mode === 'temporary') && <div className="border-l-2 border-waiting bg-waiting/5 px-4 py-3 text-sm text-waiting">{health?.engine?.runtime_mode === 'temporary'
+        ? system === 'ONLINE' ? 'Temporary real-market verification is running. Permanent monitoring is not deployed.' : 'Temporary verification stopped. Prices are last saved values; permanent monitoring is not deployed.'
+        : health?.engine?.error ?? (health?.engine ? 'Signal monitoring is not confirmed online. Check System Health.' : 'Always-on engine not deployed. Live monitoring has not started.')}</div>}
       <section className="grid grid-cols-2 gap-y-4 border-y border-border py-4 sm:grid-cols-3 lg:grid-cols-6">
         <Stat label="Available / configured" value={`${health?.engine?.available_symbols ?? '—'} / 21`} />
         <Stat label="Active LONG" value={stats?.activeLong ?? '—'} tone="text-long" />
@@ -156,13 +160,14 @@ function Dashboard() {
                 <tr><td colSpan={14} className="px-3 py-10 text-center text-muted-foreground">No coins match this filter.</td></tr>
               )}
               {!positions.isLoading && rows.map((r) => {
-                const upd = [r.long?.updated_at, r.short?.updated_at].filter(Boolean).sort().pop();
+                const upd = [r.long ? lastSignalTime(r.long) : null, r.short ? lastSignalTime(r.short) : null]
+                  .filter((time): time is string => time !== null).sort((a, b) => Date.parse(a) - Date.parse(b)).pop();
                 const m = marketMap.get(r.symbol);
                 return (
                   <tr key={r.symbol} className="border-b border-border/60 transition-colors hover:bg-accent/40">
                     <td className="px-3 py-2.5 font-mono font-semibold">{r.symbol}</td>
                     <td className="px-3 py-2.5 font-mono tabular-nums">{fmtPrice(m?.price)}</td>
-                    <td className="px-3 py-2.5"><div className="flex flex-col items-start gap-1"><StatusBadge value={m?.trend ?? 'WAITING'} /><span title={m?.error ?? ''} className="font-mono text-[9px] text-muted-foreground">{!health?.heartbeatFresh && m ? 'STALE' : m?.status ?? 'NO FEED'}</span></div></td>
+                    <td className="px-3 py-2.5"><div className="flex flex-col items-start gap-1"><StatusBadge value={m?.trend ?? 'WAITING'} /><span title={m?.error ?? ''} className="font-mono text-[9px] text-muted-foreground">{m?.status === 'UNAVAILABLE' ? 'UNAVAILABLE' : (!health?.heartbeatFresh || health.engine?.status === 'STOPPED') && m ? 'STALE' : m?.status ?? 'NO FEED'}</span></div></td>
                     {view !== 'SHORT' && <Cells p={r.long} />}
                     {view !== 'LONG' && <Cells p={r.short} />}
                     <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{fmtTime(upd, tz)}</td>
