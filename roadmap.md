@@ -21,5 +21,5 @@
 - [x] Add Windows boot task, crash supervisor, duplicate-process protection, private local health, persistent logs and setup/troubleshooting scripts.
 - [x] Add truthful PC/engine status, uptime, last successful scan and directional active counts to dashboard and health.
 - [x] Document outbound-only secure communication and optional Cloudflare Tunnel configuration without provisioning external resources.
-- [ ] Test changed rules and isolated restart/reconnect; deliver clean Windows source/setup bundle and actual results.
+- [x] Test changed rules and isolated restart/reconnect; deliver clean Windows source/setup bundle and actual results (61 tests, actual isolated Binance recovery and supervisor crash restart; Files package inspected).
 - [ ] Verify Windows reboot, crash and tunnel on the user's PC — requires installation and Windows access; sandbox checks cannot satisfy this gate.
