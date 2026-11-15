@@ -28,3 +28,7 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+
+- TradingView alerts POST to `/api/public/tradingview-webhook?token=WEBHOOK_SECRET`; all state changes go through the SQL function `process_signal_event` so dedupe and Telegram-only-on-breakeven are enforced atomically in the database.
+- Public dashboard has no login: tables are anon-readable, all writes go through server code with the admin client; raw payloads live only in service-only `webhook_receipts`.
+- Telegram goes through the connector gateway (`src/lib/telegram.server.ts`); chat target comes from the `TELEGRAM_CHAT_ID` secret.
