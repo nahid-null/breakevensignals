@@ -12,4 +12,5 @@
 - [ ] Deploy and verify permanent live monitoring continues with the browser closed — shared key is saved; requires user-created Render service with matching key and publishing. Temporary real saved-candle/restart checks passed but do not fulfill permanent hosting.
 - [x] Update chat.md and document verified results and remaining blockers.
 - [x] Finish uploaded-requirements verification after key setup: 20 real saved candle streams, restart recovery, four genuine recovered trades read back, stopped temporary-test status, 40 passing tests and browser checks.
-- [ ] Resolve reported offline monitoring and confirm unattended notifications — permanent hosting has not been activated; needs published website and user-created Render service. Verify Telegram delivery separately without generating test trades.
+- [x] Diagnose offline report and verify Telegram separately — engine STOPPED since 14:29 UTC, website never published, labelled TEST delivered and read back SENT; no matching src/main.tsx / React.queryClient error found.
+- [ ] Activate unattended monitoring and signal notifications — requires permission to publish and user-created paid Render service with matching shared key; no temporary process can fulfill this requirement.
