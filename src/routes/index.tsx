@@ -19,7 +19,7 @@ export const Route = createFileRoute("/")({
   component: Dashboard,
 });
 
-function Stat({ label, value, tone }: { label: string; value: number | string; tone?: string }) {
+function Stat({ label, value, tone }: { label: string; value: number | string; tone?: string | undefined }) {
   return (
     <div className="glass p-4">
       <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</div>

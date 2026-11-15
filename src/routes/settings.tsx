@@ -30,7 +30,8 @@ function SettingsPage() {
   const st = useStatuses();
   const qc = useQueryClient();
   const [testing, setTesting] = useState(false);
-  const save = async (patch: Parameters<typeof updateSettings>[0]["data"]) => {
+  type Patch = Partial<{ telegram_enabled: boolean; long_breakeven_enabled: boolean; short_breakeven_enabled: boolean; display_timezone: string; default_fee_rate_percent: number }>;
+  const save = async (patch: Patch) => {
     try {
       await updateSettings({ data: patch });
       await qc.invalidateQueries({ queryKey: ["app_settings"] });
