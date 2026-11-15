@@ -11,3 +11,4 @@
 - [ ] Compare against original Pine outputs on identical candles — requires matching reference calculation exports.
 - [ ] Deploy and verify real live monitoring continues with the browser closed — requires user-created Render service, shared engine credential and publishing.
 - [x] Update chat.md and document verified results and remaining blockers.
+- [ ] Finish uploaded-requirements verification after key setup: real saved candle flow, restart recovery, and accurate temporary-test status.
