@@ -34,3 +34,5 @@ use the editor.
 - Tag warmup adoption and recovery separately, suppress their notifications, and keep replayed closed trades out of live history so historical events cannot masquerade as live execution.
 - Keep public dashboard tables anon-readable and checkpoints service-only; all writes go through server code, and retained legacy receipts must never receive new signal traffic.
 - Telegram goes through the connector gateway (`src/lib/telegram.server.ts`); chat target comes from the `TELEGRAM_CHAT_ID` secret.
+- Use a publishable, no-session server client for public health reads; reserve the admin client for privileged writes so public read paths remain covered by database access policies.
+- Test transaction behavior against migrations in isolated PostgreSQL, never production test trades, because persistent history must remain genuine.
