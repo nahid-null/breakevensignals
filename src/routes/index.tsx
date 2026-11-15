@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { Button } from '@/components/ui/button';
 import { winRate } from '@/lib/engine/stats';
+import { lastSignalTime } from '@/lib/engine/position-values';
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -74,8 +75,9 @@ function Dashboard() {
     if (filter === "ACTIVE") r = r.filter((x) => has(x.long, (p) => ['ACTIVE','BREAKEVEN'].includes(p.status)) || has(x.short, (p) => ['ACTIVE','BREAKEVEN'].includes(p.status)));
     if (filter === "BREAKEVEN") r = r.filter((x) => has(x.long, (p) => p.status === "BREAKEVEN") || has(x.short, (p) => p.status === "BREAKEVEN"));
     if (filter === "COMPLETED") r = r.filter((x) => has(x.long, (p) => COMPLETED.includes(p.status)) || has(x.short, (p) => COMPLETED.includes(p.status)));
-    const ts = (x: (typeof r)[number]) => Math.max(new Date(x.long?.updated_at ?? 0).getTime(), new Date(x.short?.updated_at ?? 0).getTime());
+    const ts = (x: (typeof r)[number]) => Math.max(x.long ? Date.parse(lastSignalTime(x.long)) : 0, x.short ? Date.parse(lastSignalTime(x.short)) : 0);
     if (sort === "latest") r = [...r].sort((a, b) => ts(b) - ts(a));
+    else r = [...r].sort((a, b) => a.symbol.localeCompare(b.symbol));
     return r;
   }, [latest, q, filter, sort]);
 
@@ -158,7 +160,8 @@ function Dashboard() {
                 <tr><td colSpan={14} className="px-3 py-10 text-center text-muted-foreground">No coins match this filter.</td></tr>
               )}
               {!positions.isLoading && rows.map((r) => {
-                const upd = [r.long?.updated_at, r.short?.updated_at].filter(Boolean).sort().pop();
+                const upd = [r.long ? lastSignalTime(r.long) : null, r.short ? lastSignalTime(r.short) : null]
+                  .filter((time): time is string => time !== null).sort((a, b) => Date.parse(a) - Date.parse(b)).pop();
                 const m = marketMap.get(r.symbol);
                 return (
                   <tr key={r.symbol} className="border-b border-border/60 transition-colors hover:bg-accent/40">

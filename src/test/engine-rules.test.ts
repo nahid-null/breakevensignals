@@ -5,6 +5,7 @@ import { initialState, MINUTE, PARAMETERS as P, type Candle, type Trade } from '
 import { manageTrade, processCandle, cooldownFinished } from '@/lib/engine/scalper';
 import { commitSchema, eventSource, signalSchema } from '@/lib/engine/protocol';
 import { winRate } from '@/lib/engine/stats';
+import { breakevenTriggerPrice, lastSignalTime } from '@/lib/engine/position-values';
 
 const candle = (index: number, close = 100): Candle => ({ time: index * MINUTE, open: close, high: close + 0.5, low: close - 0.5, close, volume: 100 });
 const trade = (direction: 'LONG' | 'SHORT'): Trade => ({ id: 'native-NEARUSDT-test', direction, entry: 100,
@@ -109,5 +110,12 @@ describe('original Pine calculation rules', () => {
   });
   it('calculates win rate from every positive/negative net result and leaves an empty ledger undefined', () => {
     expect(winRate({ wins: 3, losses: 1 })).toBe(75); expect(winRate({ wins: 0, losses: 0 })).toBeNull();
+  });
+  it('shows the original 1R breakeven trigger separately from the moved stop', () => {
+    expect(breakevenTriggerPrice({ direction: 'LONG', entry_price: 100, original_stop_loss: 99 })).toBe(101);
+    expect(breakevenTriggerPrice({ direction: 'SHORT', entry_price: 100, original_stop_loss: 101 })).toBe(99);
+  });
+  it('uses actual signal time rather than historical record processing time', () => {
+    expect(lastSignalTime({ entry_timestamp: '2026-11-15T12:00:00Z', breakeven_timestamp: '2026-11-15T12:03:00Z', exit_timestamp: '2026-11-15T12:04:00Z' })).toBe('2026-11-15T12:04:00Z');
   });
 });
