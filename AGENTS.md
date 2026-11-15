@@ -38,3 +38,4 @@ use the editor.
 - Test transaction behavior against migrations in isolated PostgreSQL, never production test trades, because persistent history must remain genuine.
 - Persist service runtime identity and release only the owning lease on shutdown so temporary checks cannot be mistaken for production or block restarts.
 - Derive displayed trade trigger levels from original risk and signal timestamps from entry/breakeven/exit times so replay processing time cannot masquerade as detection time.
+- Keep Pine-language candidate verification in the standalone `engine-worker/verify-pine.ts` tool, using unmodified original sources and saved identical candles; experimental interpreter discrepancies must remain blocked, not drive changes to production trading rules.
