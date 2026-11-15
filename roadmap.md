@@ -14,3 +14,4 @@
 - [x] Finish uploaded-requirements verification after key setup: 20 real saved candle streams, restart recovery, four genuine recovered trades read back, stopped temporary-test status, 40 passing tests and browser checks.
 - [x] Diagnose offline report and verify Telegram separately — engine STOPPED since 14:29 UTC, website never published, labelled TEST delivered and read back SENT; no matching src/main.tsx / React.queryClient error found.
 - [ ] Activate unattended monitoring and signal notifications — requires permission to publish and user-created paid Render service with matching shared key; no temporary process can fulfill this requirement.
+- [ ] Follow final architecture confirmation: verify original-script/native parity on identical historical candles before deployment; prepare paid hosting only, never activate without separate final confirmation.
