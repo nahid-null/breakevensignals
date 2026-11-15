@@ -9,11 +9,12 @@
 - [x] Redesign dashboard, histories, positions/statistics, settings and service health without TradingView configuration.
 - [x] Test source-derived rules and isolated persistence; real observation of 20 listed symbols plus unavailable WILD; real Telegram test. Production end-to-end validation remains below.
 - [x] Add candidate Pine-language comparison using exact original uploads and 1500 identical real NEARUSDT candles; 44 tests pass, no production trading-rule changes.
-- [ ] Pass trustworthy original-Pine parity before deployment — candidate interpreter has incorrect EMA seeding; require validated oracle or identical-candle reference outputs. Current command deliberately exits blocked.
+- [x] Correct comparison interpreter EMA/MACD startup, storage precision, extrema startup and float-comparison semantics; both intact originals match native results across 4500 real NEAR/LINK/WIF candles.
+- [ ] Certify exact TradingView outputs before deployment — local interpreter agreement passes, but independent TradingView exports on identical candles/start/inputs are still unavailable.
 - [ ] Deploy and verify permanent live monitoring and Telegram with the browser closed — only after parity, separate final paid-service approval, user-created Render service with matching key, and permission to publish. Temporary runs do not fulfill this task.
 - [x] Update chat.md and document verified results and remaining blockers.
 - [x] Finish uploaded-requirements verification after key setup: 20 real saved candle streams, restart recovery, four genuine recovered trades read back, stopped temporary-test status, 40 passing tests and browser checks.
 - [x] Diagnose offline report and verify Telegram separately — engine STOPPED since 14:29 UTC, website never published, labelled TEST delivered and read back SENT; no matching src/main.tsx / React.queryClient error found.
 - [x] Record final independent architecture and paid-service/predeployment verification restrictions; Render configuration remains prepared, not activated.
-- [ ] Correct comparison-only EMA/MACD startup semantics, rerun both intact original scripts on identical historical candles and produce detailed parity results.
-- [ ] Reverify independent worker reconnection, restart/persistence and Telegram; distinguish sandbox evidence from deployed 24/7 testing. Paid activation remains prohibited without final confirmation.
+- [x] Produce detailed per-field parity report with zero local mismatches and explicit independent-certification boundary.
+- [x] Reverify real Binance reconnection/candle advance on 20 feeds, disk database reopening and 20-checkpoint worker restart; standalone real Telegram TEST delivered. No production fixture signals or paid activation.

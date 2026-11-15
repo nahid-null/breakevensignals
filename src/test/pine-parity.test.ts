@@ -4,6 +4,10 @@ import { PineTS } from 'pinets';
 import { ema } from '@/lib/engine/calculations';
 import { comparePineRows } from '@/lib/engine/parity';
 import { runCorrectedPine } from '../../engine-worker/pine-runtime';
+import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 describe('Pine comparison safeguards', () => {
   it('does not mistake the experimental SMA-seeded interpreter for Pine first-value EMA', async () => {
@@ -52,4 +56,19 @@ describe('Pine comparison safeguards', () => {
     expect(comparePineRows(native, [{ time: 0, values: { rsi: 52 + 1e-8, entry: false, stop: null } }]).matches).toBe(true);
     expect(comparePineRows(native, [{ time: 0, values: { rsi: 52 + 1e-5, entry: false, stop: null } }]).matches).toBe(false);
   });
+  for (const symbol of ['near', 'link', 'wif']) {
+    it(`${symbol}: both intact original scripts match native EMA, entries, SL/TP and breakeven on all 1500 real candles`, () => {
+      const path = join(tmpdir(), `pine-regression-${symbol}.json`);
+      execFileSync('bun', ['engine-worker/verify-pine.ts', `--fixture=src/test/fixtures/binance-${symbol}-1m.json`, path], { cwd: process.cwd(), stdio: 'pipe' });
+      const report = JSON.parse(readFileSync(path, 'utf8'));
+      expect(report.bars).toBe(1500);
+      expect(report.comparisons).toHaveLength(2);
+      for (const side of report.comparisons) {
+        expect(side.matches).toBe(true);
+        expect(side.byField).toEqual({});
+        expect(side.fields.find((field: { field: string }) => field.field === 'ema200').maxAbsoluteError).toBe(0);
+        expect(side.fields.find((field: { field: string }) => field.field === 'breakevenEvent').eventCount).toBeGreaterThan(0);
+      }
+    }, 30000);
+  }
 });
