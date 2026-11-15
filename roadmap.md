@@ -11,7 +11,7 @@
 - [x] Add candidate Pine-language comparison using exact original uploads and 1500 identical real NEARUSDT candles; 44 tests pass, no production trading-rule changes.
 - [x] Correct comparison interpreter EMA/MACD startup, storage precision, extrema startup and float-comparison semantics; both intact originals match native results across 4500 real NEAR/LINK/WIF candles.
 - [ ] Certify exact TradingView outputs before deployment — local interpreter agreement passes, but independent TradingView exports on identical candles/start/inputs are still unavailable.
-- [ ] Install and verify permanent Windows-PC monitoring with the browser closed — blocked on independent parity evidence, matching private key setup and access to the user's PC. Public website publication verified at 16:52:27 UTC on 2026-11-15. No paid VPS is wanted; retained Render files are optional legacy preparation only.
+- [ ] Install and verify permanent Windows-PC monitoring with the browser closed — blocked on independent parity evidence, republication of the replaced engine key, matching PC configuration and access to the user's PC. Public website publication verified at 16:52:27 UTC on 2026-11-15; new key securely saved afterward and publishing settings now show unpublished changes. No paid VPS is wanted; retained Render files are optional legacy preparation only.
 - [x] Update chat.md and document verified results and remaining blockers.
 - [x] Finish uploaded-requirements verification after key setup: 20 real saved candle streams, restart recovery, four genuine recovered trades read back, stopped temporary-test status, 40 passing tests and browser checks.
 - [x] Diagnose offline report and verify Telegram separately — engine STOPPED since 14:29 UTC, website never published, labelled TEST delivered and read back SENT; no matching src/main.tsx / React.queryClient error found.
@@ -23,4 +23,4 @@
 - [x] Document outbound-only secure communication and optional Cloudflare Tunnel configuration without provisioning external resources.
 - [x] Test changed rules and isolated restart/reconnect; deliver clean Windows source/setup bundle and actual results (61 tests, actual isolated Binance recovery and supervisor crash restart; Files package inspected).
 - [ ] Verify Windows reboot, crash and tunnel on the user's PC — requires installation and Windows access; sandbox checks cannot satisfy this gate.
-- [x] Diagnose PC-key request: existing engine key is saved but not retrievable; provide secure replacement/copy form rather than expose secrets. Reported NotFound file/error is not present; no application changes needed.
+- [x] Diagnose PC-key request: secure replacement/copy form confirmed a new engine key saved; never expose it in chat. Reported NotFound file/error is not present; no application changes needed. chat.md updated.
