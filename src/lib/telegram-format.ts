@@ -34,3 +34,15 @@ export function formatBreakevenMessage(e: BreakevenInfo): string {
     `🕒 TIME: ${ts}`,
   ].join("\n");
 }
+
+export function formatSignalMessage(e: BreakevenInfo & { event: string; exit_price?: number; net_result_r?: number }): string {
+  if (e.event === "breakeven_activated") return formatBreakevenMessage(e);
+  const title = e.event === "entry_confirmed" ? `${e.direction} ENTRY CONFIRMED`
+    : e.event === "stop_loss_hit" ? `${e.direction} STOP LOSS HIT` : `${e.direction} TAKE PROFIT HIT`;
+  return [title, "━━━━━━━━━━━━━━━━", `COIN: ${e.symbol}`, `POSITION: ${e.direction}`,
+    `TIMEFRAME: ${tf(e.timeframe)}`, `ENTRY PRICE: ${e.entry_price}`, `STOP LOSS: ${e.stop_loss}`,
+    `TAKE PROFIT: ${e.take_profit}`, ...(e.exit_price === undefined ? [] : [`EXIT PRICE: ${e.exit_price}`]),
+    ...(e.net_result_r === undefined ? [] : [`NET RESULT: ${e.net_result_r.toFixed(4)}R (estimated fees/slippage)`]),
+    `ENTRY FEE RATE: ${e.fee_rate_percent ?? "N/A"}%`, `SIGNAL SOURCE: ${e.indicator}`,
+    `TIME: ${new Date(e.timestamp).toISOString()}`].join("\n");
+}
