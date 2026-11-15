@@ -89,12 +89,14 @@ export class SignalService {
     if (!this.observeOnly) {
       const saved = await this.app<{ checkpoints: { symbol: Symbol; revision: number; state: EngineState }[] }>('state', {});
       const storedMarkets = await this.app<{ markets: Market[] }>('market-state', {});
-      for (const m of storedMarkets.markets) if (this.available.has(m.symbol)) this.markets.set(m.symbol, m);
+      for (const m of storedMarkets.markets) if (this.available.has(m.symbol)) this.markets.set(m.symbol, {
+        ...m, last_candle_at: m.last_candle_at ? new Date(m.last_candle_at).toISOString() : null,
+      });
       for (const row of saved.checkpoints) {
         if (row.state.version !== ENGINE_VERSION) throw new Error('Unsupported checkpoint version; migration required');
         this.checkpoints.set(row.symbol, row);
       }
-      for (const m of this.markets.values()) await this.app('market', { instance_id: this.instance, market: m });
+      for (const m of this.markets.values()) if (m.status === 'UNAVAILABLE') await this.app('market', { instance_id: this.instance, market: m });
     }
     this.timers.push(setInterval(() => { void this.heartbeat().catch((e) => this.fail(e)); }, 20_000));
     this.connect(); // Buffer incoming closed candles before REST warm-up.

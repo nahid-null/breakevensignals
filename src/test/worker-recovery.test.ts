@@ -2,6 +2,9 @@
 import { describe, expect, it, vi, afterEach } from 'vitest';
 import { MINUTE } from '@/lib/engine/model';
 import { SignalService } from '../../engine-worker/service';
+import { initialState } from '@/lib/engine/model';
+import { processCandle } from '@/lib/engine/scalper';
+import { marketSchema } from '@/lib/engine/protocol';
 
 const sockets = vi.hoisted(() => [] as { emit: (event: string, data?: unknown) => void; terminate: () => void }[]);
 vi.mock('ws', () => ({ default: class {
@@ -25,6 +28,25 @@ vi.mock('../../engine-worker/binance', async (importOriginal) => {
 
 afterEach(() => { vi.useRealTimers(); sockets.length = 0; vi.unstubAllGlobals(); });
 describe('persistent worker orchestration (simulated transport)', () => {
+  it('restores database timezone timestamps and releases its own lease on stop', async () => {
+    vi.useFakeTimers(); vi.setSystemTime(1_800_000_000_000);
+    const state = initialState('NEARUSDT', 0.001);
+    for (let i = 300; i > 0; i--) processCandle(state, { time: Date.now() - i * MINUTE, open: 100, high: 100.5, low: 99.5, close: 100, volume: 10 });
+    const transport = vi.fn(async (_url: string, options: RequestInit) => {
+      const input = JSON.parse(String(options.body));
+      if (input.action === 'state') return Response.json({ checkpoints: [{ symbol: 'NEARUSDT', revision: 1, state }] });
+      if (input.action === 'market-state') return Response.json({ markets: [{ symbol: 'NEARUSDT', price: 100, trend: 'SIDEWAYS', status: 'LIVE', last_candle_at: '2027-01-15T07:59:00+00:00', long_score: 0, short_score: 0, error: null }] });
+      if (input.action === 'market') expect(marketSchema.safeParse(input.data.market).success).toBe(true);
+      return Response.json({ acquired: true, stopped: true });
+    });
+    vi.stubGlobal('fetch', transport);
+    const service = new SignalService('http://localhost:8080', 'fixture-key', false, 'temporary');
+    await service.start();
+    const saved = service.snapshot().markets.find((m) => m.symbol === 'NEARUSDT');
+    expect(saved?.last_candle_at).toBe('2027-01-15T07:59:00.000Z');
+    await service.stop();
+    expect(transport.mock.calls.some(([, init]) => JSON.parse(String(init.body)).action === 'stop')).toBe(true);
+  });
   it('reconnects after disconnect, recovers a missed minute and ignores duplicate close messages without writes', async () => {
     vi.useFakeTimers(); vi.setSystemTime(1_800_000_000_000);
     const fetchSpy = vi.fn(() => { throw new Error('Observation must never write'); }); vi.stubGlobal('fetch', fetchSpy);
