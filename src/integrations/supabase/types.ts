@@ -187,6 +187,7 @@ export type Database = {
           id: number
           instance_id: string
           last_heartbeat_at: string
+          runtime_mode: string
           status: string
           websocket_connected: boolean
         }
@@ -197,6 +198,7 @@ export type Database = {
           id: number
           instance_id: string
           last_heartbeat_at?: string
+          runtime_mode?: string
           status: string
           websocket_connected?: boolean
         }
@@ -207,6 +209,7 @@ export type Database = {
           id?: number
           instance_id?: string
           last_heartbeat_at?: string
+          runtime_mode?: string
           status?: string
           websocket_connected?: boolean
         }
@@ -437,6 +440,7 @@ export type Database = {
         Args: { p: Json; tg_message: string }
         Returns: Json
       }
+      stop_engine: { Args: { p_instance: string }; Returns: boolean }
       terminal_statistics: { Args: never; Returns: Json }
     }
     Enums: {
