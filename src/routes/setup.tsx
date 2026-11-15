@@ -67,7 +67,7 @@ function Setup() {
       </section>
 
       <section className="glass p-4">
-        <h2 className="mb-3 text-xs uppercase tracking-widest text-muted-foreground">Alert checklist (saved on this device only)</h2>
+        <h2 className="mb-3 text-xs uppercase tracking-widest text-muted-foreground">Alert checklist (for your reference — not saved)</h2>
         <div className="grid grid-cols-1 gap-1 sm:grid-cols-2 lg:grid-cols-3">
           {SYMBOLS.map((s) => (
             <div key={s} className="flex items-center gap-3 rounded px-2 py-1.5 hover:bg-accent/40">
