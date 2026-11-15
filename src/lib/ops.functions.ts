@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { engineHealth } from './engine/health';
 
 export const getSystemHealth = createServerFn({ method: "GET" }).handler(async () => {
   const { publicClient } = await import('./public-client.server');
@@ -10,10 +11,11 @@ export const getSystemHealth = createServerFn({ method: "GET" }).handler(async (
     db.from("signal_events").select("timestamp").order("timestamp", { ascending: false }).limit(1).maybeSingle(),
     db.from("active_positions").select("id", { count: 'exact', head: true }).in('status', ['ACTIVE', 'BREAKEVEN']),
   ]);
+  const databaseOk = !engine.error && !candle.error && !lastSignal.error && !positions.error;
   return {
-    databaseOk: !engine.error && !candle.error && !lastSignal.error && !positions.error,
+    databaseOk,
     engine: engine.data,
-    heartbeatFresh: !!engine.data && Date.now() - Date.parse(engine.data.last_heartbeat_at) < 90_000,
+    ...engineHealth(engine.data, databaseOk),
     lastCandleAt: candle.data?.last_candle_at ?? null,
     lastSignalAt: lastSignal.data?.timestamp ?? null,
     activePositions: positions.count ?? 0,

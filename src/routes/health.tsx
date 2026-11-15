@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { fmtTime, useSettings, useStatuses, useTelegramLogs, useMarkets } from "@/lib/data";
+import { fmtTime, useSettings, useStatuses, useTelegramLogs, useMarkets, useStats } from "@/lib/data";
+import { formatUptime } from '@/lib/engine/health';
 import { SYMBOLS } from '@/lib/config';
 import { StatusBadge } from "@/components/terminal/StatusBadge";
 
@@ -32,6 +33,7 @@ function Health() {
   const tz = useSettings().data?.display_timezone ?? "UTC";
   const h = s.health;
   const markets = useMarkets();
+  const stats = useStats().data;
   const lastSent = logs.data?.find((l) => l.delivery_status === "SENT");
   const lastFailed = logs.data?.find((l) => l.delivery_status === "FAILED");
   return (
@@ -40,15 +42,22 @@ function Health() {
       <div className="grid gap-4 lg:grid-cols-2">
         <section className="py-4 lg:pr-8">
           <h2 className="mb-2 text-xs uppercase tracking-widest text-muted-foreground">Signal pipeline</h2>
+          <Row label="Local PC Server"><StatusBadge value={s.pc} /></Row>
           <Row label="Binance REST"><StatusBadge value={s.binance} /></Row>
           <Row label="Binance WebSocket"><StatusBadge value={s.websocket} /></Row>
-          <Row label="Signal engine"><StatusBadge value={h?.heartbeatFresh ? h.engine?.status ?? 'WAITING' : h?.engine ? 'OFFLINE' : 'NOT CONFIGURED'} /></Row>
-          <Row label="Service hosting">{h?.engine?.runtime_mode === 'temporary' ? 'TEMPORARY VERIFICATION' : h?.engine ? 'PRODUCTION' : 'NOT DEPLOYED'}</Row>
+          <Row label="Scanner Engine"><StatusBadge value={s.scanner} /></Row>
+          <Row label="Service hosting">{h?.engine?.runtime_mode === 'temporary' ? 'TEMPORARY VERIFICATION' : h?.engine?.host_kind === 'windows_pc' ? 'WINDOWS PC' : h?.engine?.host_kind === 'hosted' ? 'HOSTED' : 'NOT CONFIRMED'}</Row>
+          <Row label="Engine uptime · last reported">{formatUptime(h?.uptimeSeconds)}</Row>
+          <Row label="Last successful scan">{fmtTime(h?.lastScanAt, tz)}</Row>
+          <Row label="Total coins scanned">{h?.scannedSymbols ?? '—'} / {SYMBOLS.length}</Row>
           <Row label="Last heartbeat">{fmtTime(h?.engine?.last_heartbeat_at, tz)}</Row>
           <Row label="Last confirmed candle">{fmtTime(h?.lastCandleAt, tz)}</Row>
           <Row label="Last generated signal">{fmtTime(h?.lastSignalAt, tz)}</Row>
           <Row label="Available / configured coins">{h?.engine?.available_symbols ?? '—'} / {SYMBOLS.length}</Row>
           <Row label="Active positions">{h?.activePositions ?? '—'}</Row>
+          <Row label="Active LONG signals">{stats?.activeLong ?? '—'}</Row>
+          <Row label="Active SHORT signals">{stats?.activeShort ?? '—'}</Row>
+          <Row label="Last error">{s.healthQuery.isError ? 'Health unavailable' : h?.engine?.error ?? '—'}</Row>
           <Row label="Database"><StatusBadge value={s.healthQuery.isError ? "ERROR" : h ? (h.databaseOk ? "CONNECTED" : "ERROR") : "WAITING"} /></Row>
         </section>
         <section className="py-4">

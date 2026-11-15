@@ -40,6 +40,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] text-muted-foreground">
             <span className="flex items-center gap-1.5">SYSTEM <StatusBadge value={s.system} /></span>
+            <span className="flex items-center gap-1.5">LOCAL PC <StatusBadge value={s.pc} /></span>
             <span className="flex items-center gap-1.5">BINANCE <StatusBadge value={s.binance} /></span>
             <span className="flex items-center gap-1.5">WEBSOCKET <StatusBadge value={s.websocket} /></span>
             <span className="flex items-center gap-1.5">TELEGRAM <StatusBadge value={s.telegram} /></span>
