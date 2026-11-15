@@ -10,33 +10,116 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as HealthRouteImport } from './routes/health'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as SetupRouteImport } from './routes/setup'
+import { Route as SignalsRouteImport } from './routes/signals'
+import { Route as TelegramRouteImport } from './routes/telegram'
+import { Route as ApiPublicTradingviewWebhookRouteImport } from './routes/api/public/tradingview-webhook'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HealthRoute = HealthRouteImport.update({
+  id: '/health',
+  path: '/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SetupRoute = SetupRouteImport.update({
+  id: '/setup',
+  path: '/setup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignalsRoute = SignalsRouteImport.update({
+  id: '/signals',
+  path: '/signals',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TelegramRoute = TelegramRouteImport.update({
+  id: '/telegram',
+  path: '/telegram',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicTradingviewWebhookRoute =
+  ApiPublicTradingviewWebhookRouteImport.update({
+    id: '/api/public/tradingview-webhook',
+    path: '/api/public/tradingview-webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/health': typeof HealthRoute
+  '/settings': typeof SettingsRoute
+  '/setup': typeof SetupRoute
+  '/signals': typeof SignalsRoute
+  '/telegram': typeof TelegramRoute
+  '/api/public/tradingview-webhook': typeof ApiPublicTradingviewWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/health': typeof HealthRoute
+  '/settings': typeof SettingsRoute
+  '/setup': typeof SetupRoute
+  '/signals': typeof SignalsRoute
+  '/telegram': typeof TelegramRoute
+  '/api/public/tradingview-webhook': typeof ApiPublicTradingviewWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/health': typeof HealthRoute
+  '/settings': typeof SettingsRoute
+  '/setup': typeof SetupRoute
+  '/signals': typeof SignalsRoute
+  '/telegram': typeof TelegramRoute
+  '/api/public/tradingview-webhook': typeof ApiPublicTradingviewWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/health'
+    | '/settings'
+    | '/setup'
+    | '/signals'
+    | '/telegram'
+    | '/api/public/tradingview-webhook'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/health'
+    | '/settings'
+    | '/setup'
+    | '/signals'
+    | '/telegram'
+    | '/api/public/tradingview-webhook'
+  id:
+    | '__root__'
+    | '/'
+    | '/health'
+    | '/settings'
+    | '/setup'
+    | '/signals'
+    | '/telegram'
+    | '/api/public/tradingview-webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  HealthRoute: typeof HealthRoute
+  SettingsRoute: typeof SettingsRoute
+  SetupRoute: typeof SetupRoute
+  SignalsRoute: typeof SignalsRoute
+  TelegramRoute: typeof TelegramRoute
+  ApiPublicTradingviewWebhookRoute: typeof ApiPublicTradingviewWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +131,59 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/health': {
+      id: '/health'
+      path: '/health'
+      fullPath: '/health'
+      preLoaderRoute: typeof HealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/setup': {
+      id: '/setup'
+      path: '/setup'
+      fullPath: '/setup'
+      preLoaderRoute: typeof SetupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signals': {
+      id: '/signals'
+      path: '/signals'
+      fullPath: '/signals'
+      preLoaderRoute: typeof SignalsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/telegram': {
+      id: '/telegram'
+      path: '/telegram'
+      fullPath: '/telegram'
+      preLoaderRoute: typeof TelegramRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/tradingview-webhook': {
+      id: '/api/public/tradingview-webhook'
+      path: '/api/public/tradingview-webhook'
+      fullPath: '/api/public/tradingview-webhook'
+      preLoaderRoute: typeof ApiPublicTradingviewWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  HealthRoute: HealthRoute,
+  SettingsRoute: SettingsRoute,
+  SetupRoute: SetupRoute,
+  SignalsRoute: SignalsRoute,
+  TelegramRoute: TelegramRoute,
+  ApiPublicTradingviewWebhookRoute: ApiPublicTradingviewWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

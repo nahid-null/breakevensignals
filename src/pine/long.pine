@@ -1,0 +1,604 @@
+//@version=6
+indicator("PRO LONG SCALPER | Binance Futures 1M", shorttitle="PRO LONG SCALPER", overlay=true, max_lines_count=500, max_labels_count=500, max_boxes_count=50)
+
+//======================================================================
+// 1. INPUT SETTINGS
+//======================================================================
+
+string G_SIGNAL = "01. Signal Engine"
+string G_RISK   = "02. Risk Management"
+string G_TRADE  = "03. Trade Management"
+string G_FILTER = "04. Market Filters"
+string G_VISUAL = "05. Visual Settings"
+string G_STATS  = "06. Simulation & Costs"
+string G_ALERT  = "07. Alerts"
+
+int scoreThreshold = input.int(70, "Minimum Confirmation Score", minval=40, maxval=100, group=G_SIGNAL)
+int rsiLength = input.int(14, "RSI Length", minval=2, group=G_SIGNAL)
+int macdFast = input.int(12, "MACD Fast", minval=1, group=G_SIGNAL)
+int macdSlow = input.int(26, "MACD Slow", minval=2, group=G_SIGNAL)
+int macdSignal = input.int(9, "MACD Signal", minval=1, group=G_SIGNAL)
+
+string rrOption = input.string("1:1.5", "Risk / Reward", options=["1:1", "1:1.5", "1:2", "1:3"], group=G_RISK)
+int atrLength = input.int(14, "ATR Length", minval=2, group=G_RISK)
+float atrStopMult = input.float(1.5, "ATR Stop Multiplier", minval=0.2, step=0.1, group=G_RISK)
+float swingBuffer = input.float(0.15, "Swing Low ATR Buffer", minval=0.0, step=0.05, group=G_RISK)
+int swingLookback = input.int(20, "Swing Low Lookback", minval=3, group=G_RISK)
+float minStopATR = input.float(0.4, "Minimum Stop Distance (ATR)", minval=0.1, step=0.1, group=G_RISK)
+float maxStopATR = input.float(3.0, "Maximum Stop Distance (ATR)", minval=0.5, step=0.1, group=G_RISK)
+
+bool enableBreakeven = input.bool(true, "Enable Breakeven", group=G_TRADE)
+float breakevenTrigger = input.float(1.0, "Breakeven Activation (R)", minval=0.2, step=0.1, group=G_TRADE)
+int cooldownBars = input.int(5, "Cooldown After Trade", minval=0, maxval=100, group=G_TRADE)
+int historyLimit = input.int(5, "Completed Setup History", minval=1, maxval=20, group=G_TRADE)
+
+int volumeLength = input.int(20, "Volume SMA Length", minval=2, group=G_FILTER)
+float volumeMultiplier = input.float(1.0, "Volume Confirmation Multiplier", minval=0.1, step=0.1, group=G_FILTER)
+int structureLength = input.int(10, "Structure Breakout Lookback", minval=2, group=G_FILTER)
+int pivotLeft = input.int(3, "Swing Pivot Left", minval=1, group=G_FILTER)
+int pivotRight = input.int(3, "Swing Pivot Right", minval=1, group=G_FILTER)
+float minAtrPercent = input.float(0.02, "Minimum ATR %", minval=0.0, step=0.01, group=G_FILTER)
+float maxAtrPercent = input.float(1.20, "Maximum ATR %", minval=0.1, step=0.05, group=G_FILTER)
+
+bool showEMAs = input.bool(true, "Show EMAs", group=G_VISUAL)
+bool showDashboard = input.bool(true, "Show Dashboard", group=G_VISUAL)
+bool showSetupTable = input.bool(true, "Show Trade Setup Box", group=G_VISUAL)
+bool showSignalLabels = input.bool(true, "Show Signal Labels", group=G_VISUAL)
+
+float feePercent = input.float(0.04, "Trading Fee Per Side (%)", minval=0.0, step=0.01, group=G_STATS)
+int slippageTicks = input.int(1, "Slippage Per Side (Ticks)", minval=0, group=G_STATS)
+
+bool enableDynamicAlerts = input.bool(true, "Enable Dynamic Alerts", group=G_ALERT)
+
+//======================================================================
+// 2. INDICATORS
+//======================================================================
+
+float ema9 = ta.ema(close, 9)
+float ema21 = ta.ema(close, 21)
+float ema200 = ta.ema(close, 200)
+
+float rsi = ta.rsi(close, rsiLength)
+
+[macdLine, macdSignalLine, macdHistogram] = ta.macd(close, macdFast, macdSlow, macdSignal)
+
+float atr = ta.atr(atrLength)
+float atrPercent = close != 0 ? atr / close * 100 : 0
+
+float volumeSMA = ta.sma(volume, volumeLength)
+
+float recentResistance = ta.highest(high[1], structureLength)
+
+float pivotLow = ta.pivotlow(low, pivotLeft, pivotRight)
+
+var float lastSwingLow = na
+
+if not na(pivotLow)
+    lastSwingLow := pivotLow
+
+//======================================================================
+// 3. CONFIRMATION ENGINE
+//======================================================================
+
+// Trend conditions
+bool bullishTrend = close > ema200 and ema9 > ema21
+bool emaAlignment = close > ema21 and ema9 > ema21
+
+// Momentum conditions
+bool rsiBullish = rsi > 52 and rsi > rsi[1]
+bool rsiEssential = rsi > 50
+
+bool macdBullish = macdLine > macdSignalLine and macdHistogram > 0
+bool macdEssential = macdHistogram > 0
+
+// Volume
+bool volumeBullish = volume > volumeSMA * volumeMultiplier
+
+// Price action
+bool bullishCandle = close > open
+bool bullishBreakout = close > high[1]
+bool strongPriceAction = bullishCandle and bullishBreakout
+
+// Market structure
+bool structureBreakout = close > recentResistance
+
+// Volatility
+bool volatilityValid = atrPercent >= minAtrPercent and atrPercent <= maxAtrPercent
+
+// Weighted confirmation score: maximum 100
+
+int confirmationScore = 0
+
+confirmationScore += bullishTrend ? 20 : 0
+confirmationScore += emaAlignment ? 10 : 0
+confirmationScore += rsiBullish ? 15 : 0
+confirmationScore += macdBullish ? 15 : 0
+confirmationScore += volumeBullish ? 10 : 0
+confirmationScore += strongPriceAction ? 15 : 0
+confirmationScore += structureBreakout ? 15 : 0
+
+// Essential conditions
+bool essentialBullish = bullishTrend and rsiEssential and macdEssential and volatilityValid
+
+//======================================================================
+// 4. RISK / REWARD CALCULATION
+//======================================================================
+
+float rrMultiplier = switch rrOption
+    "1:1"   => 1.0
+    "1:1.5" => 1.5
+    "1:2"   => 2.0
+    "1:3"   => 3.0
+    => 1.5
+
+// Use the most protective distance required by ATR and swing structure.
+float fallbackSwing = ta.lowest(low, swingLookback)
+
+float swingReference = not na(lastSwingLow) and lastSwingLow < close ? lastSwingLow : fallbackSwing
+
+float calculatedSL = math.min(close - atr * atrStopMult, swingReference - atr * swingBuffer)
+
+float calculatedRisk = close - calculatedSL
+
+float calculatedTP = close + calculatedRisk * rrMultiplier
+
+// Reject excessively wide or unreasonably tight stops.
+bool validStop = calculatedRisk >= atr * minStopATR and calculatedRisk <= atr * maxStopATR and calculatedRisk > syminfo.mintick
+
+//======================================================================
+// 5. TRADE STATE
+//======================================================================
+
+var bool activeTrade = false
+var bool breakevenActive = false
+
+var float tradeEntry = na
+var float tradeSL = na
+var float originalSL = na
+var float tradeTP = na
+var float tradeRisk = na
+var float tradeReward = na
+
+var int tradeEntryBar = na
+var int tradeEntryTime = na // added: stable trade identity for webhooks
+var int lastExitBar = na
+
+// Active drawing objects
+var line entryLine = na
+var line stopLine = na
+var line targetLine = na
+
+var label entryLabel = na
+var label stopLabel = na
+var label targetLabel = na
+
+// Historical drawing arrays
+var array<line> historyLines = array.new_line()
+var array<label> historyLabels = array.new_label()
+
+//======================================================================
+// 6. SIMULATED PERFORMANCE ENGINE
+//======================================================================
+
+var int totalTrades = 0
+var int winningTrades = 0
+var int losingTrades = 0
+
+var float grossProfitR = 0.0
+var float grossLossR = 0.0
+
+var float positiveNetR = 0.0
+var float negativeNetR = 0.0
+
+var float netResultR = 0.0
+var float equityPeak = 0.0
+var float maxDrawdownR = 0.0
+
+//======================================================================
+// 7. EVENT FLAGS
+//======================================================================
+
+bool longSignal = false
+bool stopLossEvent = false
+bool takeProfitEvent = false
+bool breakevenEvent = false
+
+//======================================================================
+// 8. TRADE MANAGEMENT
+//======================================================================
+
+if barstate.isconfirmed and activeTrade
+
+    // Always evaluate the existing stop before breakeven activation.
+    bool stopTouched = low <= tradeSL
+    bool targetTouched = high >= tradeTP
+
+    // Conservative execution:
+    // If both levels are touched, SL wins.
+    if stopTouched or targetTouched
+
+        float exitPrice = stopTouched ? tradeSL : tradeTP
+
+        float grossR = (exitPrice - tradeEntry) / tradeRisk
+
+        // Estimated round-trip fees and slippage.
+        float feeCost = (tradeEntry + exitPrice) * feePercent / 100.0
+
+        float slippageCost = 2.0 * slippageTicks * syminfo.mintick
+
+        float totalCostR = (feeCost + slippageCost) / tradeRisk
+
+        float netR = grossR - totalCostR
+
+        // Update statistics.
+        totalTrades += 1
+
+        if netR > 0
+            winningTrades += 1
+            positiveNetR += netR
+        else
+            losingTrades += 1
+            negativeNetR += math.abs(netR)
+
+        if grossR > 0
+            grossProfitR += grossR
+        else
+            grossLossR += math.abs(grossR)
+
+        netResultR += netR
+
+        equityPeak := math.max(equityPeak, netResultR)
+
+        float currentDrawdown = equityPeak - netResultR
+
+        maxDrawdownR := math.max(maxDrawdownR, currentDrawdown)
+
+        // Set exit event.
+        if stopTouched
+            stopLossEvent := true
+        else
+            takeProfitEvent := true
+
+        // Freeze completed setup lines.
+        line.set_extend(entryLine, extend.none)
+        line.set_extend(stopLine, extend.none)
+        line.set_extend(targetLine, extend.none)
+
+        line.set_x2(entryLine, bar_index)
+        line.set_x2(stopLine, bar_index)
+        line.set_x2(targetLine, bar_index)
+
+        // Preserve historical labels.
+        label.set_x(entryLabel, bar_index + 1)
+        label.set_x(stopLabel, bar_index + 1)
+        label.set_x(targetLabel, bar_index + 1)
+
+        label.set_text(stopLabel, breakevenActive ? "BREAKEVEN | " + str.tostring(tradeSL, format.mintick) : "STOP LOSS | " + str.tostring(tradeSL, format.mintick))
+
+        string exitText = stopTouched ? (breakevenActive ? "BREAKEVEN EXIT" : "STOP LOSS HIT") : "TAKE PROFIT HIT"
+
+        color exitColor = stopTouched ? color.red : color.green
+
+        label exitLabel = label.new(bar_index, exitPrice, exitText + "\n" + str.tostring(exitPrice, format.mintick) + "\nNet: " + str.tostring(netR, "#.##") + "R", style=label.style_label_down, color=exitColor, textcolor=color.white, size=size.small)
+
+        // Save completed drawings.
+        array.push(historyLines, entryLine)
+        array.push(historyLines, stopLine)
+        array.push(historyLines, targetLine)
+
+        array.push(historyLabels, entryLabel)
+        array.push(historyLabels, stopLabel)
+        array.push(historyLabels, targetLabel)
+        array.push(historyLabels, exitLabel)
+
+        // Remove oldest completed drawings.
+        while array.size(historyLines) > historyLimit * 3
+            line.delete(array.shift(historyLines))
+
+        while array.size(historyLabels) > historyLimit * 4
+            label.delete(array.shift(historyLabels))
+
+        // Reset trade state.
+        activeTrade := false
+        breakevenActive := false
+        lastExitBar := bar_index
+
+    else
+
+        // Breakeven activation.
+        // The new stop becomes effective from the next bar.
+        float breakevenPrice = tradeEntry + tradeRisk * breakevenTrigger
+
+        if enableBreakeven and not breakevenActive and high >= breakevenPrice
+
+            breakevenActive := true
+
+            // Never move the stop farther away.
+            tradeSL := math.max(tradeSL, tradeEntry)
+
+            line.set_y1(stopLine, tradeSL)
+            line.set_y2(stopLine, tradeSL)
+
+            line.set_color(stopLine, color.orange)
+
+            label.set_text(stopLabel, "BREAKEVEN | " + str.tostring(tradeSL, format.mintick))
+            label.set_color(stopLabel, color.orange)
+
+            breakevenEvent := true
+
+//======================================================================
+// 9. LONG ENTRY CONDITIONS
+//======================================================================
+
+bool cooldownFinished = na(lastExitBar) or bar_index - lastExitBar > cooldownBars
+
+bool noActiveTrade = not activeTrade
+
+bool enoughHistory = not na(ema200) and not na(atr) and not na(volumeSMA) and not na(macdHistogram) and not na(recentResistance)
+
+bool longSetup = essentialBullish and confirmationScore >= scoreThreshold and validStop and enoughHistory
+
+// Only generate signals after candle confirmation.
+if barstate.isconfirmed and noActiveTrade and cooldownFinished and longSetup
+
+    longSignal := true
+
+    // Initialize trade.
+    activeTrade := true
+    breakevenActive := false
+
+    tradeEntry := close
+    tradeSL := calculatedSL
+    originalSL := calculatedSL
+    tradeTP := calculatedTP
+
+    tradeRisk := calculatedRisk
+    tradeReward := calculatedTP - calculatedRisk - calculatedSL + calculatedRisk
+
+    // The actual reward is the entry-to-target distance.
+    tradeReward := tradeTP - tradeEntry
+
+    tradeEntryBar := bar_index
+    tradeEntryTime := time // added
+
+    //==============================================================
+    // CREATE TRADE LEVELS
+    //==============================================================
+
+    entryLine := line.new(bar_index, tradeEntry, bar_index + 1, tradeEntry, extend=extend.right, color=color.blue, width=2, style=line.style_solid)
+
+    stopLine := line.new(bar_index, tradeSL, bar_index + 1, tradeSL, extend=extend.right, color=color.red, width=2, style=line.style_solid)
+
+    targetLine := line.new(bar_index, tradeTP, bar_index + 1, tradeTP, extend=extend.right, color=color.lime, width=2, style=line.style_solid)
+
+    //==============================================================
+    // CREATE PRICE LABELS
+    //==============================================================
+
+    entryLabel := label.new(bar_index + 1, tradeEntry, "ENTRY | " + str.tostring(tradeEntry, format.mintick), style=label.style_label_left, color=color.blue, textcolor=color.white, size=size.small)
+
+    stopLabel := label.new(bar_index + 1, tradeSL, "STOP LOSS | " + str.tostring(tradeSL, format.mintick), style=label.style_label_left, color=color.red, textcolor=color.white, size=size.small)
+
+    targetLabel := label.new(bar_index + 1, tradeTP, "TAKE PROFIT | " + str.tostring(tradeTP, format.mintick), style=label.style_label_left, color=color.green, textcolor=color.white, size=size.small)
+
+//======================================================================
+// 10. UPDATE ACTIVE PRICE LABELS
+//======================================================================
+
+if activeTrade
+
+    label.set_x(entryLabel, bar_index + 1)
+    label.set_x(stopLabel, bar_index + 1)
+    label.set_x(targetLabel, bar_index + 1)
+
+    label.set_y(entryLabel, tradeEntry)
+    label.set_y(stopLabel, tradeSL)
+    label.set_y(targetLabel, tradeTP)
+
+    label.set_text(entryLabel, "ENTRY | " + str.tostring(tradeEntry, format.mintick))
+
+    label.set_text(stopLabel, (breakevenActive ? "BREAKEVEN | " : "STOP LOSS | ") + str.tostring(tradeSL, format.mintick))
+
+    label.set_text(targetLabel, "TAKE PROFIT | " + str.tostring(tradeTP, format.mintick))
+
+//======================================================================
+// 11. CHART VISUALS
+//======================================================================
+
+plot(showEMAs ? ema9 : na, "EMA 9", color=color.aqua, linewidth=1)
+plot(showEMAs ? ema21 : na, "EMA 21", color=color.orange, linewidth=1)
+plot(showEMAs ? ema200 : na, "EMA 200", color=color.white, linewidth=2)
+
+plotshape(showSignalLabels and longSignal, title="Confirmed LONG", style=shape.labelup, location=location.belowbar, color=color.new(color.lime, 0), text="LONG", textcolor=color.black, size=size.small)
+
+plotshape(stopLossEvent, title="Stop Loss Exit", style=shape.xcross, location=location.abovebar, color=color.red, size=size.small)
+
+plotshape(takeProfitEvent, title="Take Profit Exit", style=shape.diamond, location=location.abovebar, color=color.lime, size=size.small)
+
+//======================================================================
+// 12. DASHBOARD HELPERS
+//======================================================================
+
+f_price(float value) =>
+    na(value) ? "N/A" : str.tostring(value, format.mintick)
+
+f_number(float value) =>
+    str.tostring(value, "#.##")
+
+f_percent(float value) =>
+    str.tostring(value, "#.##") + "%"
+
+//======================================================================
+// 13. PERFORMANCE CALCULATIONS
+//======================================================================
+
+float winRate = totalTrades > 0 ? winningTrades * 100.0 / totalTrades : 0.0
+
+float profitFactor = negativeNetR > 0 ? positiveNetR / negativeNetR : positiveNetR > 0 ? 999.0 : 0.0
+
+float averageNetR = totalTrades > 0 ? netResultR / totalTrades : 0.0
+
+float grossNetR = grossProfitR - grossLossR
+
+string tradeStatus = activeTrade ? (breakevenActive ? "ACTIVE | BREAKEVEN" : "ACTIVE | RUNNING") : "NO ACTIVE TRADE"
+
+string trendStatus = bullishTrend ? "BULLISH" : close < ema200 ? "BEARISH" : "NEUTRAL"
+
+color trendColor = bullishTrend ? color.lime : close < ema200 ? color.red : color.orange
+
+string signalStatus = activeTrade ? "TRADE ACTIVE" : longSetup ? "LONG SETUP READY" : "WAITING"
+
+color signalColor = activeTrade ? color.orange : longSetup ? color.lime : color.gray
+
+//======================================================================
+// 14. PROFESSIONAL DASHBOARD
+//======================================================================
+
+var table dashboard = table.new(position.top_right, 2, 16, border_width=1, frame_width=1, frame_color=color.gray, border_color=color.new(color.gray, 65))
+
+if barstate.islast and showDashboard
+
+    table.cell(dashboard, 0, 0, "PRO LONG SCALPER", bgcolor=color.rgb(20, 35, 55), text_color=color.white, text_size=size.small)
+
+    table.cell(dashboard, 1, 0, timeframe.period + " | " + syminfo.ticker, bgcolor=color.rgb(20, 35, 55), text_color=color.aqua, text_size=size.small)
+
+    table.cell(dashboard, 0, 1, "MARKET TREND", text_color=color.white, bgcolor=color.new(color.gray, 80), text_size=size.small)
+
+    table.cell(dashboard, 1, 1, trendStatus, text_color=trendColor, bgcolor=color.new(color.gray, 80), text_size=size.small)
+
+    table.cell(dashboard, 0, 2, "SIGNAL STATUS", text_color=color.white, text_size=size.small)
+
+    table.cell(dashboard, 1, 2, signalStatus, text_color=signalColor, text_size=size.small)
+
+    table.cell(dashboard, 0, 3, "CONFIRMATION", text_color=color.white, text_size=size.small)
+
+    table.cell(dashboard, 1, 3, str.tostring(confirmationScore) + " / 100", text_color=confirmationScore >= scoreThreshold ? color.lime : color.orange, text_size=size.small)
+
+    table.cell(dashboard, 0, 4, "ENTRY PRICE", text_color=color.white, text_size=size.small)
+
+    table.cell(dashboard, 1, 4, f_price(tradeEntry), text_color=color.aqua, text_size=size.small)
+
+    table.cell(dashboard, 0, 5, "STOP LOSS", text_color=color.white, text_size=size.small)
+
+    table.cell(dashboard, 1, 5, f_price(tradeSL), text_color=breakevenActive ? color.orange : color.red, text_size=size.small)
+
+    table.cell(dashboard, 0, 6, "TAKE PROFIT", text_color=color.white, text_size=size.small)
+
+    table.cell(dashboard, 1, 6, f_price(tradeTP), text_color=color.lime, text_size=size.small)
+
+    table.cell(dashboard, 0, 7, "RISK / REWARD", text_color=color.white, text_size=size.small)
+
+    table.cell(dashboard, 1, 7, activeTrade or not na(tradeEntry) ? "1:" + f_number(rrMultiplier) : rrOption, text_color=color.aqua, text_size=size.small)
+
+    table.cell(dashboard, 0, 8, "ATR", text_color=color.white, text_size=size.small)
+
+    table.cell(dashboard, 1, 8, f_price(atr) + " (" + f_percent(atrPercent) + ")", text_color=color.orange, text_size=size.small)
+
+    table.cell(dashboard, 0, 9, "TRADE STATUS", text_color=color.white, text_size=size.small)
+
+    table.cell(dashboard, 1, 9, tradeStatus, text_color=activeTrade ? color.lime : color.gray, text_size=size.small)
+
+    table.cell(dashboard, 0, 10, "TOTAL TRADES", text_color=color.white, text_size=size.small)
+
+    table.cell(dashboard, 1, 10, str.tostring(totalTrades), text_color=color.white, text_size=size.small)
+
+    table.cell(dashboard, 0, 11, "WIN RATE", text_color=color.white, text_size=size.small)
+
+    table.cell(dashboard, 1, 11, f_percent(winRate), text_color=winRate >= 50 ? color.lime : color.orange, text_size=size.small)
+
+    table.cell(dashboard, 0, 12, "PROFIT FACTOR", text_color=color.white, text_size=size.small)
+
+    table.cell(dashboard, 1, 12, totalTrades > 0 ? (profitFactor >= 999 ? "999+" : f_number(profitFactor)) : "N/A", text_color=profitFactor >= 1 ? color.lime : color.orange, text_size=size.small)
+
+    table.cell(dashboard, 0, 13, "NET RESULT (R)", text_color=color.white, text_size=size.small)
+
+    table.cell(dashboard, 1, 13, f_number(netResultR) + " R", text_color=netResultR >= 0 ? color.lime : color.red, text_size=size.small)
+
+    table.cell(dashboard, 0, 14, "MAX DRAWDOWN", text_color=color.white, text_size=size.small)
+
+    table.cell(dashboard, 1, 14, f_number(maxDrawdownR) + " R", text_color=color.red, text_size=size.small)
+
+    table.cell(dashboard, 0, 15, "SIMULATED ONLY", text_color=color.yellow, bgcolor=color.new(color.gray, 80), text_size=size.tiny)
+
+    table.cell(dashboard, 1, 15, "NOT STRATEGY TESTER", text_color=color.yellow, bgcolor=color.new(color.gray, 80), text_size=size.tiny)
+
+//======================================================================
+// 15. TRADE SETUP BOX
+//======================================================================
+
+var table setupTable = table.new(position.bottom_right, 2, 8, border_width=1, frame_width=1, frame_color=color.gray, border_color=color.new(color.gray, 65))
+
+if barstate.islast and showSetupTable
+
+    table.cell(setupTable, 0, 0, "LONG TRADE SETUP", bgcolor=color.rgb(20, 35, 55), text_color=color.white, text_size=size.small)
+
+    table.cell(setupTable, 1, 0, activeTrade ? "ACTIVE" : "WAITING", bgcolor=color.rgb(20, 35, 55), text_color=activeTrade ? color.lime : color.gray, text_size=size.small)
+
+    table.cell(setupTable, 0, 1, "ENTRY", text_color=color.white, text_size=size.small)
+
+    table.cell(setupTable, 1, 1, f_price(tradeEntry), text_color=color.aqua, text_size=size.small)
+
+    table.cell(setupTable, 0, 2, "STOP LOSS", text_color=color.white, text_size=size.small)
+
+    table.cell(setupTable, 1, 2, f_price(tradeSL), text_color=breakevenActive ? color.orange : color.red, text_size=size.small)
+
+    table.cell(setupTable, 0, 3, "TAKE PROFIT", text_color=color.white, text_size=size.small)
+
+    table.cell(setupTable, 1, 3, f_price(tradeTP), text_color=color.lime, text_size=size.small)
+
+    table.cell(setupTable, 0, 4, "RISK DISTANCE", text_color=color.white, text_size=size.small)
+
+    table.cell(setupTable, 1, 4, activeTrade ? f_price(tradeRisk) : "N/A", text_color=color.red, text_size=size.small)
+
+    table.cell(setupTable, 0, 5, "REWARD DISTANCE", text_color=color.white, text_size=size.small)
+
+    table.cell(setupTable, 1, 5, activeTrade ? f_price(tradeReward) : "N/A", text_color=color.lime, text_size=size.small)
+
+    table.cell(setupTable, 0, 6, "RISK / REWARD", text_color=color.white, text_size=size.small)
+
+    table.cell(setupTable, 1, 6, rrOption, text_color=color.aqua, text_size=size.small)
+
+    table.cell(setupTable, 0, 7, "DIRECTION", text_color=color.white, text_size=size.small)
+
+    table.cell(setupTable, 1, 7, "LONG ONLY", text_color=color.lime, text_size=size.small)
+
+//======================================================================
+// 16. ALERT CONDITIONS
+//======================================================================
+
+// Static alert conditions for TradingView alert creation.
+alertcondition(longSignal, title="Confirmed LONG Entry", message="Confirmed LONG entry. Check the chart for ENTRY, STOP LOSS and TAKE PROFIT levels.")
+
+alertcondition(stopLossEvent, title="Stop Loss Hit", message="LONG trade STOP LOSS or BREAKEVEN level hit.")
+
+alertcondition(takeProfitEvent, title="Take Profit Hit", message="LONG trade TAKE PROFIT hit.")
+
+alertcondition(breakevenEvent, title="Breakeven Activated", message="LONG trade BREAKEVEN activated.")
+
+//======================================================================
+// 17. DYNAMIC ALERT MESSAGES
+//======================================================================
+
+if enableDynamicAlerts and barstate.isconfirmed
+
+    // Webhook JSON alerts (added). Trading logic above is unchanged.
+    string _sym = syminfo.ticker
+    string _tradeId = _sym + "-L-" + str.tostring(tradeEntryTime)
+    string _ts = str.format_time(time_close, "yyyy-MM-dd'T'HH:mm:ss'Z'", "UTC")
+    string _base = '"symbol":"' + _sym + '","direction":"LONG","indicator":"PRO LONG SCALPER","timeframe":"' + timeframe.period + '","trade_id":"' + _tradeId + '","timestamp":"' + _ts + '","fee_rate_percent":' + str.tostring(feePercent) + ',"entry_price":' + str.tostring(tradeEntry) + ',"stop_loss":' + str.tostring(tradeSL) + ',"take_profit":' + str.tostring(tradeTP)
+
+    if longSignal
+        alert('{"event":"entry_confirmed","event_id":"' + _tradeId + '-entry",' + _base + '}', alert.freq_once_per_bar_close)
+
+    if breakevenEvent
+        alert('{"event":"breakeven_activated","event_id":"' + _tradeId + '-be",' + _base + '}', alert.freq_once_per_bar_close)
+
+    if stopLossEvent
+        alert('{"event":"stop_loss_hit","event_id":"' + _tradeId + '-sl",' + _base + ',"exit_price":' + str.tostring(tradeSL) + '}', alert.freq_once_per_bar_close)
+
+    if takeProfitEvent
+        alert('{"event":"take_profit_hit","event_id":"' + _tradeId + '-tp",' + _base + ',"exit_price":' + str.tostring(tradeTP) + '}', alert.freq_once_per_bar_close)
+
+//======================================================================
+// END OF PRO LONG SCALPER
+//======================================================================
