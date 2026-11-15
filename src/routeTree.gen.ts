@@ -10,11 +10,23 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SignalsRouteImport } from './routes/signals'
+import { Route as TelegramRouteImport } from './routes/telegram'
 import { Route as ApiPublicTradingviewWebhookRouteImport } from './routes/api/public/tradingview-webhook'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignalsRoute = SignalsRouteImport.update({
+  id: '/signals',
+  path: '/signals',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TelegramRoute = TelegramRouteImport.update({
+  id: '/telegram',
+  path: '/telegram',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicTradingviewWebhookRoute =
@@ -26,27 +38,40 @@ const ApiPublicTradingviewWebhookRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/signals': typeof SignalsRoute
+  '/telegram': typeof TelegramRoute
   '/api/public/tradingview-webhook': typeof ApiPublicTradingviewWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/signals': typeof SignalsRoute
+  '/telegram': typeof TelegramRoute
   '/api/public/tradingview-webhook': typeof ApiPublicTradingviewWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/signals': typeof SignalsRoute
+  '/telegram': typeof TelegramRoute
   '/api/public/tradingview-webhook': typeof ApiPublicTradingviewWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/public/tradingview-webhook'
+  fullPaths: '/' | '/signals' | '/telegram' | '/api/public/tradingview-webhook'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/public/tradingview-webhook'
-  id: '__root__' | '/' | '/api/public/tradingview-webhook'
+  to: '/' | '/signals' | '/telegram' | '/api/public/tradingview-webhook'
+  id:
+    | '__root__'
+    | '/'
+    | '/signals'
+    | '/telegram'
+    | '/api/public/tradingview-webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  SignalsRoute: typeof SignalsRoute
+  TelegramRoute: typeof TelegramRoute
   ApiPublicTradingviewWebhookRoute: typeof ApiPublicTradingviewWebhookRoute
 }
 
@@ -57,6 +82,20 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signals': {
+      id: '/signals'
+      path: '/signals'
+      fullPath: '/signals'
+      preLoaderRoute: typeof SignalsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/telegram': {
+      id: '/telegram'
+      path: '/telegram'
+      fullPath: '/telegram'
+      preLoaderRoute: typeof TelegramRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/tradingview-webhook': {
@@ -71,6 +110,8 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  SignalsRoute: SignalsRoute,
+  TelegramRoute: TelegramRoute,
   ApiPublicTradingviewWebhookRoute: ApiPublicTradingviewWebhookRoute,
 }
 export const routeTree = rootRouteImport
