@@ -12,6 +12,7 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "verify:pine": "bun engine-worker/verify-pine.ts",
+    "verify:worker": "bun engine-worker/verify-worker.ts",
     "test:watch": "vitest"
   },
   "overrides": {

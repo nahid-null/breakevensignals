@@ -5,11 +5,15 @@ import { initialState, MINUTE, validateCandle } from '../src/lib/engine/model';
 import { processCandle } from '../src/lib/engine/scalper';
 import { comparePineRows, type ParityRow, type ParityValue } from '../src/lib/engine/parity';
 import { runCorrectedPine } from './pine-runtime';
+import { SYMBOLS } from '../src/lib/config';
 
 // Verification-only: no engine API, secrets, database or notification imports.
-const fixtureSchema = z.object({ symbol: z.literal('NEARUSDT'), tickSize: z.number().positive(),
+const fixtureSchema = z.object({ symbol: z.enum(SYMBOLS), tickSize: z.number().positive(),
   candles: z.array(z.object({ time: z.number().int(), open: z.number(), high: z.number(), low: z.number(), close: z.number(), volume: z.number() })).min(200) });
-const fixture = fixtureSchema.parse(JSON.parse(await readFile(new URL('../src/test/fixtures/binance-near-1m.json', import.meta.url), 'utf8')));
+const args = process.argv.slice(2);
+const fixtureArgument = args.find((arg) => arg.startsWith('--fixture='))?.slice('--fixture='.length);
+const fixturePath = fixtureArgument ?? new URL('../src/test/fixtures/binance-near-1m.json', import.meta.url);
+const fixture = fixtureSchema.parse(JSON.parse(await readFile(fixturePath, 'utf8')));
 const state = initialState(fixture.symbol, fixture.tickSize);
 const native: Record<'LONG' | 'SHORT', ParityRow[]> = { LONG: [], SHORT: [] };
 for (const c of fixture.candles) {
@@ -34,13 +38,15 @@ for (const c of fixture.candles) {
       activeEntry: side.trade?.entry ?? null, activeStop: side.trade?.stop ?? null,
       activeTarget: side.trade?.target ?? null, total: side.performance.total, wins: side.performance.wins,
       losses: side.performance.losses, netR: side.performance.netR, drawdown: side.performance.maxDrawdownR,
+      eventEntry: events[0]?.entry_price ?? null, eventStop: events[0]?.stop_loss ?? null,
+      eventTarget: events[0]?.take_profit ?? null,
     } });
   }
 }
 const metadata: ISymbolInfo = {
   current_contract: fixture.symbol, description: 'Binance USD-M Futures historical verification', isin: '',
   main_tickerid: `BINANCE:${fixture.symbol}.P`, prefix: 'BINANCE', root: fixture.symbol,
-  ticker: fixture.symbol, tickerid: `BINANCE:${fixture.symbol}.P`, type: 'crypto', basecurrency: 'NEAR',
+  ticker: fixture.symbol, tickerid: `BINANCE:${fixture.symbol}.P`, type: 'crypto', basecurrency: fixture.symbol.replace('USDT', ''),
   country: '', currency: 'USDT', timezone: 'Etc/UTC', employees: 0, industry: '', sector: '',
   shareholders: 0, shares_outstanding_float: 0, shares_outstanding_total: 0, expiration_date: 0,
   session: '24x7', volumetype: 'base', mincontract: 1, minmove: 1, mintick: fixture.tickSize,
@@ -54,7 +60,7 @@ const bars = fixture.candles.map((c) => ({ ...c, openTime: c.time, closeTime: c.
 const provider = { async getMarketData() { return bars; }, async getSymbolInfo() { return metadata; }, configure() {} };
 const corrected = !process.argv.includes('--uncorrected');
 const report = { status: 'COMPARISON IN PROGRESS',
-  reference: `PineTS 0.13.1 ${corrected ? 'with isolated EMA/precision corrections' : 'uncorrected'}, intact original uploads with observation plots only`,
+  reference: `PineTS 0.13.1 ${corrected ? 'with isolated EMA, precision, float-comparison and extrema corrections' : 'uncorrected'}, intact original uploads with observation plots only`,
   limitation: 'Local interpreter parity is not an independently exported TradingView result or proof of unattended deployed operation.',
   symbol: fixture.symbol, tickSize: fixture.tickSize, bars: bars.length,
   firstCandle: new Date(bars[0]?.openTime ?? 0).toISOString(), lastCandle: new Date(bars.at(-1)?.openTime ?? 0).toISOString(),
@@ -70,6 +76,9 @@ for (const direction of ['LONG', 'SHORT'] as const) {
     active: 'activeTrade ? 1 : 0', breakevenActive: 'breakevenActive ? 1 : 0',
     activeEntry: 'activeTrade ? tradeEntry : na', activeStop: 'activeTrade ? tradeSL : na', activeTarget: 'activeTrade ? tradeTP : na',
     total: 'totalTrades', wins: 'winningTrades', losses: 'losingTrades', netR: 'netResultR', drawdown: 'maxDrawdownR',
+    eventEntry: `${lower}Signal or stopLossEvent or takeProfitEvent or breakevenEvent ? tradeEntry : na`,
+    eventStop: `${lower}Signal or stopLossEvent or takeProfitEvent or breakevenEvent ? tradeSL : na`,
+    eventTarget: `${lower}Signal or stopLossEvent or takeProfitEvent or breakevenEvent ? tradeTP : na`,
   };
   const observation = Object.entries(fields).map(([name, expr]) => `plot(${expr}, "VERIFY_${name}")`).join('\n');
   const runtime = new PineTS(provider, fixture.symbol, '1', bars.length, bars[0]?.openTime, bars.at(-1)?.closeTime);
@@ -102,7 +111,7 @@ for (const direction of ['LONG', 'SHORT'] as const) {
 }
 report.status = report.comparisons.every((c) => c.matches) ? 'LOCAL INTERPRETER PARITY PASSED; DEPLOYED 24/7 VERIFICATION STILL PENDING'
   : 'PARITY FAILED: do not deploy or change production trading rules to force a match';
-const path = process.argv.slice(2).find((arg) => !arg.startsWith('--')) ?? '/tmp/pine-parity-report.json';
+const path = args.find((arg) => !arg.startsWith('--')) ?? '/tmp/pine-parity-report.json';
 await writeFile(path, JSON.stringify(report, null, 2));
 console.log(JSON.stringify(report, null, 2));
 console.log(`Comparison report saved to ${path}. ${report.limitation}`);
