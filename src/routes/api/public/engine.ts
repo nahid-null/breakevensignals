@@ -13,7 +13,7 @@ export const Route = createFileRoute("/api/public/engine")({
     let input: unknown;
     try { const text = await request.text(); if (text.length > 150_000) return new Response('Too large', { status: 413 }); input = JSON.parse(text); }
     catch { return Response.json({ error: "Invalid JSON" }, { status: 400 }); }
-    const base = z.object({ action: z.enum(["heartbeat", "state", "commit", "market", "deliveries"]), data: z.unknown() }).safeParse(input);
+    const base = z.object({ action: z.enum(["heartbeat", "state", "commit", "market", "deliveries", 'stop', 'market-state']), data: z.unknown() }).safeParse(input);
     if (!base.success) return Response.json({ error: "Invalid request" }, { status: 422 });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     try {
@@ -28,6 +28,11 @@ export const Route = createFileRoute("/api/public/engine")({
         if (error) throw error;
         return Response.json({ checkpoints: data });
       }
+      if (base.data.action === 'market-state') {
+        const { data, error } = await supabaseAdmin.from('market_state').select('*');
+        if (error) throw error;
+        return Response.json({ markets: data });
+      }
       if (base.data.action === "commit") {
         const data = commitSchema.parse(base.data.data);
         const events = data.events.map((e) => ({ ...e,
@@ -38,6 +43,11 @@ export const Route = createFileRoute("/api/public/engine")({
         return Response.json(result);
       }
       const instance = z.object({ instance_id: z.string().uuid() }).parse(base.data.data);
+      if (base.data.action === 'stop') {
+        const result = await supabaseAdmin.rpc('stop_engine', { p_instance: instance.instance_id });
+        if (result.error) throw result.error;
+        return Response.json({ stopped: result.data });
+      }
       const lease = await supabaseAdmin.from('engine_control').select('instance_id').eq('id', 1)
         .eq('instance_id', instance.instance_id).gt('lease_until', new Date().toISOString()).maybeSingle();
       if (!lease.data) return Response.json({ error: "Engine lease expired" }, { status: 409 });

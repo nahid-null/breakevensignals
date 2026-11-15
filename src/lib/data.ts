@@ -82,8 +82,9 @@ export function useStatuses() {
   const h = health.data;
   const lastTg = logs.data?.find((l) => l.delivery_status !== "PENDING");
   const system: Status = health.isError ? "OFFLINE" : !h ? "WAITING" : h.databaseOk && h.heartbeatFresh && h.engine?.status === 'RUNNING' ? "ONLINE" : "OFFLINE";
-  const binance: Status = !h ? 'WAITING' : h.heartbeatFresh && h.engine?.binance_connected ? 'CONNECTED' : 'OFFLINE';
-  const websocket: Status = !h ? 'WAITING' : h.heartbeatFresh && h.engine?.websocket_connected ? 'CONNECTED' : 'OFFLINE';
+  const running = h?.engine?.status !== 'STOPPED';
+  const binance: Status = !h ? 'WAITING' : running && h.heartbeatFresh && h.engine?.binance_connected ? 'CONNECTED' : 'OFFLINE';
+  const websocket: Status = !h ? 'WAITING' : running && h.heartbeatFresh && h.engine?.websocket_connected ? 'CONNECTED' : 'OFFLINE';
   const telegram: Status = !h ? "WAITING" : !h.botConfigured || !h.chatConfigured ? "NOT CONFIGURED" : !lastTg ? "WAITING" : lastTg.delivery_status === "SENT" ? "CONNECTED" : "ERROR";
   return { system, binance, websocket, telegram, health: h, healthQuery: health };
 }

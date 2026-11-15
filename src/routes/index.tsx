@@ -85,7 +85,9 @@ function Dashboard() {
         <div><div className="mb-2 flex items-center gap-2 font-mono text-[10px] text-primary"><Activity className="size-3" /> BINANCE USD-M FUTURES · 1 MINUTE</div><h1 className="text-2xl font-semibold">Market terminal</h1></div>
         <div className="text-right font-mono text-xs text-muted-foreground">21 PAIRS · 42 INDEPENDENT SYSTEMS<br /><span className={system === 'ONLINE' ? 'text-long' : 'text-waiting'}>{health?.engine?.status ?? 'AWAITING ENGINE DEPLOYMENT'}</span></div>
       </div>
-      {system !== 'ONLINE' && <div className="border-l-2 border-waiting bg-waiting/5 px-4 py-3 text-sm text-waiting">{health?.engine?.error ?? (health?.engine ? 'Signal monitoring is not confirmed online. Check System Health.' : 'Always-on engine not deployed. Live monitoring has not started.')}</div>}
+      {(system !== 'ONLINE' || health?.engine?.runtime_mode === 'temporary') && <div className="border-l-2 border-waiting bg-waiting/5 px-4 py-3 text-sm text-waiting">{health?.engine?.runtime_mode === 'temporary'
+        ? system === 'ONLINE' ? 'Temporary real-market verification is running. Permanent monitoring is not deployed.' : 'Temporary verification stopped. Prices are last saved values; permanent monitoring is not deployed.'
+        : health?.engine?.error ?? (health?.engine ? 'Signal monitoring is not confirmed online. Check System Health.' : 'Always-on engine not deployed. Live monitoring has not started.')}</div>}
       <section className="grid grid-cols-2 gap-y-4 border-y border-border py-4 sm:grid-cols-3 lg:grid-cols-6">
         <Stat label="Available / configured" value={`${health?.engine?.available_symbols ?? '—'} / 21`} />
         <Stat label="Active LONG" value={stats?.activeLong ?? '—'} tone="text-long" />
@@ -162,7 +164,7 @@ function Dashboard() {
                   <tr key={r.symbol} className="border-b border-border/60 transition-colors hover:bg-accent/40">
                     <td className="px-3 py-2.5 font-mono font-semibold">{r.symbol}</td>
                     <td className="px-3 py-2.5 font-mono tabular-nums">{fmtPrice(m?.price)}</td>
-                    <td className="px-3 py-2.5"><div className="flex flex-col items-start gap-1"><StatusBadge value={m?.trend ?? 'WAITING'} /><span title={m?.error ?? ''} className="font-mono text-[9px] text-muted-foreground">{!health?.heartbeatFresh && m ? 'STALE' : m?.status ?? 'NO FEED'}</span></div></td>
+                    <td className="px-3 py-2.5"><div className="flex flex-col items-start gap-1"><StatusBadge value={m?.trend ?? 'WAITING'} /><span title={m?.error ?? ''} className="font-mono text-[9px] text-muted-foreground">{m?.status === 'UNAVAILABLE' ? 'UNAVAILABLE' : (!health?.heartbeatFresh || health.engine?.status === 'STOPPED') && m ? 'STALE' : m?.status ?? 'NO FEED'}</span></div></td>
                     {view !== 'SHORT' && <Cells p={r.long} />}
                     {view !== 'LONG' && <Cells p={r.short} />}
                     <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{fmtTime(upd, tz)}</td>

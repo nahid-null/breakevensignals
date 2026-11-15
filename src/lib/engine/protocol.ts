@@ -47,6 +47,7 @@ export const heartbeatSchema = z.object({
   instance_id: z.string().uuid(), websocket_connected: z.boolean(), binance_connected: z.boolean(),
   available_symbols: z.number().int().min(0).max(21), status: z.enum(["STARTING", "RUNNING", "RECOVERING", "ERROR", "STOPPED"]),
   error: z.string().max(500).nullable(),
+  runtime_mode: z.enum(['production','temporary']).default('production'),
 });
 export const commitSchema = z.object({
   instance_id: z.string().uuid(), symbol: z.enum(SYMBOLS), expected_revision: z.number().int().min(0),

@@ -43,6 +43,7 @@ function Health() {
           <Row label="Binance REST"><StatusBadge value={s.binance} /></Row>
           <Row label="Binance WebSocket"><StatusBadge value={s.websocket} /></Row>
           <Row label="Signal engine"><StatusBadge value={h?.heartbeatFresh ? h.engine?.status ?? 'WAITING' : h?.engine ? 'OFFLINE' : 'NOT CONFIGURED'} /></Row>
+          <Row label="Service hosting">{h?.engine?.runtime_mode === 'temporary' ? 'TEMPORARY VERIFICATION' : h?.engine ? 'PRODUCTION' : 'NOT DEPLOYED'}</Row>
           <Row label="Last heartbeat">{fmtTime(h?.engine?.last_heartbeat_at, tz)}</Row>
           <Row label="Last confirmed candle">{fmtTime(h?.lastCandleAt, tz)}</Row>
           <Row label="Last generated signal">{fmtTime(h?.lastSignalAt, tz)}</Row>
@@ -63,7 +64,7 @@ function Health() {
       {!h?.engine && <p className="border-l-2 border-waiting bg-waiting/5 p-3 text-sm text-waiting">Always-on monitoring has not started. Engine deployment is pending.</p>}
       <section className="border-t border-border pt-5"><h2 className="mb-3 text-xs uppercase text-muted-foreground">Contract feeds</h2><div className="grid gap-x-8 sm:grid-cols-2 lg:grid-cols-3">{SYMBOLS.map((symbol) => {
         const m = markets.data?.find((row) => row.symbol === symbol);
-        return <Row key={symbol} label={symbol}><StatusBadge value={m?.status === 'UNAVAILABLE' ? 'UNAVAILABLE' : !h?.heartbeatFresh ? 'WAITING' : m?.status ?? 'WAITING'} /></Row>;
+        return <Row key={symbol} label={symbol}><StatusBadge value={m?.status === 'UNAVAILABLE' ? 'UNAVAILABLE' : !h?.heartbeatFresh || h.engine?.status === 'STOPPED' ? 'OFFLINE' : m?.status ?? 'WAITING'} /></Row>;
       })}</div></section>
     </div>
   );

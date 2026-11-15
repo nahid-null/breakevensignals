@@ -1,6 +1,6 @@
 import WebSocket from "ws";
 import { SYMBOLS, INDICATORS, type Symbol } from "../src/lib/config";
-import { initialState, ENGINE_VERSION, MINUTE, PARAMETERS, type EngineState, type Candle, type Analysis, type Signal } from "../src/lib/engine/model";
+import { initialState, ENGINE_VERSION, MINUTE, PARAMETERS, validateCandle, type EngineState, type Candle, type Analysis, type Signal } from "../src/lib/engine/model";
 import { processCandle } from "../src/lib/engine/scalper";
 import { BINANCE_WS, binanceFetch, history, delay, backoff } from "./binance";
 
@@ -24,9 +24,13 @@ export class SignalService {
   private lastError: string | null = null;
   private lastRestAt = 0;
   private publishing = false;
+  private nextRestProbe = 0;
+  private ownedLease = false;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private recovery = new Set<Symbol>();
   private timers: ReturnType<typeof setInterval>[] = [];
-  constructor(private readonly appUrl: string, private readonly secret: string, private readonly observeOnly = false) {}
+  constructor(private readonly appUrl: string, private readonly secret: string, private readonly observeOnly = false,
+    private readonly runtimeMode: 'production' | 'temporary' = 'production') {}
 
   private async app<T>(action: string, data: unknown): Promise<T> {
     const response = await fetch(`${this.appUrl}/api/public/engine`, { method: 'POST',
@@ -39,8 +43,9 @@ export class SignalService {
     if (this.observeOnly) return;
     const r = await this.app<{ acquired: boolean }>('heartbeat', { instance_id: this.instance,
       websocket_connected: this.connected, binance_connected: Date.now() - this.lastRestAt < 90_000,
-      available_symbols: this.available.size, status, error: this.lastError });
+      available_symbols: this.available.size, status, error: this.lastError, runtime_mode: this.runtimeMode });
     if (!r.acquired) { await this.stop(); throw new Error("Another engine instance owns the lease"); }
+    this.ownedLease = true;
   }
   private market(symbol: Symbol, state: EngineState, c: Candle, a: Analysis | null, status: string): Market {
     return { symbol, price: c.close, trend: a?.trend ?? 'WAITING', status,
@@ -83,6 +88,8 @@ export class SignalService {
     await this.heartbeat('STARTING');
     if (!this.observeOnly) {
       const saved = await this.app<{ checkpoints: { symbol: Symbol; revision: number; state: EngineState }[] }>('state', {});
+      const storedMarkets = await this.app<{ markets: Market[] }>('market-state', {});
+      for (const m of storedMarkets.markets) if (this.available.has(m.symbol)) this.markets.set(m.symbol, m);
       for (const row of saved.checkpoints) {
         if (row.state.version !== ENGINE_VERSION) throw new Error('Unsupported checkpoint version; migration required');
         this.checkpoints.set(row.symbol, row);
@@ -126,6 +133,7 @@ export class SignalService {
     }
     this.initialized = true;
     this.timers.push(setInterval(() => {
+      if (!this.running) return;
       if (this.socket && Date.now() - this.lastMessage > 60_000) this.socket.terminate();
       void this.drain();
       if (!this.observeOnly) void this.app('deliveries', { instance_id: this.instance }).catch((e) => this.fail(e));
@@ -134,14 +142,12 @@ export class SignalService {
       if (this.observeOnly || !this.connected || this.draining) return;
       void this.publishPrices().catch((e) => this.fail(e));
     }, 5000));
-    this.timers.push(setInterval(() => {
-      void binanceFetch('/fapi/v1/time').then(() => { this.lastRestAt = Date.now(); }).catch((e) => this.fail(e));
-    }, 60_000));
     await this.heartbeat();
     console.log(`Signal service started: ${this.available.size}/${SYMBOLS.length} available contracts. ${this.observeOnly ? 'OBSERVATION ONLY: no database writes or Telegram.' : 'Confirmed-candle live processing.'}`);
   }
   private connect() {
     if (!this.running) return;
+    this.reconnectTimer = null;
     const streams = [...this.available.keys()].map((s) => `${s.toLowerCase()}@kline_1m`).join('/');
     const ws = new WebSocket(`${BINANCE_WS}${streams}`);
     this.socket = ws;
@@ -160,9 +166,10 @@ export class SignalService {
         if (!k || !this.available.has(symbol)) return;
         // Intrabar price is display-only. Signal conditions run only for k.x=true.
         const m = this.markets.get(symbol);
-        if (m && Number(k.c) > 0) m.price = Number(k.c);
+        if (m && Number.isFinite(Number(k.c)) && Number(k.c) > 0) m.price = Number(k.c);
         if (!k.x) return;
         const c: Candle = { time: k.t, open: Number(k.o), high: Number(k.h), low: Number(k.l), close: Number(k.c), volume: Number(k.v) };
+        validateCandle(c);
         const q = this.queues.get(symbol) ?? [];
         if (!q.some((x) => x.time === c.time)) q.push(c);
         // Bound memory. Any omitted candles are recovered from REST, never silently skipped.
@@ -174,7 +181,7 @@ export class SignalService {
     ws.on('close', () => {
       this.connected = false;
       for (const s of this.available.keys()) this.recovery.add(s);
-      if (this.running) { const wait = backoff(this.failures++); console.log(`WebSocket disconnected; reconnect in ${wait}ms`); setTimeout(() => this.connect(), wait); }
+      if (this.running) { const wait = backoff(this.failures++); console.log(`WebSocket disconnected; reconnect in ${wait}ms`); this.reconnectTimer = setTimeout(() => this.connect(), wait); }
     });
   }
   private async accept(symbol: Symbol, c: Candle, mode: 'live' | 'recovery') {
@@ -182,6 +189,7 @@ export class SignalService {
     if (!saved || c.time <= (saved.state.lastTime ?? -1)) return;
     const tentative = structuredClone(saved.state);
     const result = processCandle(tentative, c);
+    if (!this.running) return;
     await this.commit(symbol, tentative, this.market(symbol, tentative, c, result.analysis, mode === 'live' ? 'LIVE' : 'RECOVERING'), result.signals, mode);
   }
   private async recover(symbol: Symbol, until: number) {
@@ -201,8 +209,14 @@ export class SignalService {
     if (this.draining || !this.running || !this.initialized) return;
     this.draining = true;
     try {
+      if (Date.now() >= this.nextRestProbe) {
+        this.nextRestProbe = Date.now() + 60_000;
+        await binanceFetch('/fapi/v1/time');
+        this.lastRestAt = Date.now();
+      }
       for (const symbol of [...this.recovery]) await this.recover(symbol, Date.now());
       for (const [symbol, q] of this.queues) {
+        if (!this.running) return;
         if (!this.checkpoints.has(symbol)) continue;
         for (const c of [...q]) {
           const saved = this.checkpoints.get(symbol);
@@ -212,7 +226,7 @@ export class SignalService {
           this.queues.set(symbol, (this.queues.get(symbol) ?? []).filter((x) => x.time > c.time));
         }
       }
-      this.lastError = null;
+      if (this.connected && [...this.available.keys()].every((s) => Date.now() - (this.checkpoints.get(s)?.state.lastTime ?? 0) < 3 * MINUTE)) this.lastError = null;
     } catch (e) { this.fail(e); }
     finally { this.draining = false; }
   }
@@ -232,8 +246,14 @@ export class SignalService {
     receivedAt: this.lastMessage, markets: [...this.markets.values()], counts: [...this.checkpoints].map(([symbol, row]) => ({ symbol, candles: row.state.count, lastTime: row.state.lastTime })) }; }
   disconnectForTest() { this.socket?.terminate(); }
   async stop() {
+    const wasRunning = this.running;
     this.running = false; this.connected = false;
     for (const timer of this.timers) clearInterval(timer);
+    if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
     this.socket?.terminate();
+    if (wasRunning && this.ownedLease && !this.observeOnly) {
+      await this.app('stop', { instance_id: this.instance }).catch((e) => this.fail(e));
+      this.ownedLease = false;
+    }
   }
 }
