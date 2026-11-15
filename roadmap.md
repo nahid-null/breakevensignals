@@ -18,8 +18,8 @@
 - [x] Record final independent architecture and paid-service/predeployment verification restrictions; Render configuration remains prepared, not activated.
 - [x] Produce detailed per-field parity report with zero local mismatches and explicit independent-certification boundary.
 - [x] Reverify real Binance reconnection/candle advance on 20 feeds, disk database reopening and 20-checkpoint worker restart; standalone real Telegram TEST delivered. No production fixture signals or paid activation.
-- [ ] Add Windows boot task, crash supervisor, duplicate-process protection, private local health, persistent logs and setup/troubleshooting scripts.
-- [ ] Add truthful PC/engine status, uptime, last successful scan and directional active counts to dashboard and health.
-- [ ] Document outbound-only secure communication and optional Cloudflare Tunnel configuration without provisioning external resources.
+- [x] Add Windows boot task, crash supervisor, duplicate-process protection, private local health, persistent logs and setup/troubleshooting scripts.
+- [x] Add truthful PC/engine status, uptime, last successful scan and directional active counts to dashboard and health.
+- [x] Document outbound-only secure communication and optional Cloudflare Tunnel configuration without provisioning external resources.
 - [ ] Test changed rules and isolated restart/reconnect; deliver clean Windows source/setup bundle and actual results.
 - [ ] Verify Windows reboot, crash and tunnel on the user's PC — requires installation and Windows access; sandbox checks cannot satisfy this gate.
