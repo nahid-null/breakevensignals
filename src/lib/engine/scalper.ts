@@ -1,5 +1,6 @@
 import { INDICATORS, type Direction } from "../config";
 import { ema, rma, relativeStrength, trueRange, confirmedPivot } from "./calculations";
+import { pineGt as gt, pineLt as lt, pineGe as ge, pineLe as le } from './pine-numbers';
 import { MINUTE, PARAMETERS as P, validateCandle, type EngineState, type Candle, type Trade, type Signal, type SideState, type Analysis } from "./model";
 
 export function calculate(state: EngineState, c: Candle): Analysis {
@@ -19,41 +20,43 @@ export function calculate(state: EngineState, c: Candle): Analysis {
     state.rsi = relativeStrength(rma(state.gain, Math.max(change, 0), P.rsiLength), rma(state.loss, Math.max(-change, 0), P.rsiLength));
   }
   const prior = state.candles.slice(-P.structureLength);
-  const resistance = prior.length ? Math.max(...prior.map((x) => x.high)) : null;
-  const support = prior.length ? Math.min(...prior.map((x) => x.low)) : null;
+  const structureReady = state.count >= P.structureLength - 1;
+  const resistance = structureReady && prior.length ? Math.max(...prior.map((x) => x.high)) : null;
+  const support = structureReady && prior.length ? Math.min(...prior.map((x) => x.low)) : null;
   state.candles.push(c);
   state.candles = state.candles.slice(-Math.max(P.swingLookback, P.volumeLength));
   state.swingLow = confirmedPivot(state.candles, "low") ?? state.swingLow;
   state.swingHigh = confirmedPivot(state.candles, "high") ?? state.swingHigh;
   const volumeSMA = state.candles.length >= P.volumeLength
     ? state.candles.slice(-P.volumeLength).reduce((a, x) => a + x.volume, 0) / P.volumeLength : null;
-  const bullish = c.close > state.ema200 && state.ema9 > state.ema21;
-  const bearish = c.close < state.ema200 && state.ema9 < state.ema21;
-  const volume = volumeSMA !== null && c.volume > volumeSMA * P.volumeMultiplier;
+  const bullish = gt(c.close, state.ema200) && gt(state.ema9, state.ema21);
+  const bearish = lt(c.close, state.ema200) && lt(state.ema9, state.ema21);
+  const volume = volumeSMA !== null && gt(c.volume, volumeSMA * P.volumeMultiplier);
   const rsi = state.rsi;
-  const longScore = (bullish ? 20 : 0) + (c.close > state.ema21 && state.ema9 > state.ema21 ? 10 : 0)
-    + (rsi !== null && previousRsi !== null && rsi > 52 && rsi > previousRsi ? 15 : 0)
-    + (histogram > 0 ? 15 : 0) + (volume ? 10 : 0)
-    + (previous && c.close > c.open && c.close > previous.high ? 15 : 0)
-    + (resistance !== null && c.close > resistance ? 15 : 0);
-  const shortScore = (bearish ? 20 : 0) + (c.close < state.ema21 && state.ema9 < state.ema21 ? 10 : 0)
-    + (rsi !== null && previousRsi !== null && rsi < 48 && rsi < previousRsi ? 15 : 0)
-    + (histogram < 0 ? 15 : 0) + (volume ? 10 : 0)
-    + (previous && c.close < c.open && c.close < previous.low ? 15 : 0)
-    + (support !== null && c.close < support ? 15 : 0);
-  const fallbackLow = Math.min(...state.candles.map((x) => x.low));
-  const fallbackHigh = Math.max(...state.candles.map((x) => x.high));
-  const low = state.swingLow !== null && state.swingLow < c.close ? state.swingLow : fallbackLow;
-  const high = state.swingHigh !== null && state.swingHigh > c.close ? state.swingHigh : fallbackHigh;
-  const longStop = atr === null ? null : Math.min(c.close - atr * P.atrStopMult, low - atr * P.swingBuffer);
-  const shortStop = atr === null ? null : Math.max(c.close + atr * P.atrStopMult, high + atr * P.swingBuffer);
-  const valid = (risk: number) => atr !== null && risk >= atr * P.minStopATR && risk <= atr * P.maxStopATR && risk > state.tickSize;
-  const volatility = atr !== null && atr / c.close * 100 >= P.minAtrPercent && atr / c.close * 100 <= P.maxAtrPercent;
+  const longScore = (bullish ? 20 : 0) + (gt(c.close, state.ema21) && gt(state.ema9, state.ema21) ? 10 : 0)
+    + (rsi !== null && previousRsi !== null && gt(rsi, 52) && gt(rsi, previousRsi) ? 15 : 0)
+    + (gt(histogram, 0) ? 15 : 0) + (volume ? 10 : 0)
+    + (previous && gt(c.close, c.open) && gt(c.close, previous.high) ? 15 : 0)
+    + (resistance !== null && gt(c.close, resistance) ? 15 : 0);
+  const shortScore = (bearish ? 20 : 0) + (lt(c.close, state.ema21) && lt(state.ema9, state.ema21) ? 10 : 0)
+    + (rsi !== null && previousRsi !== null && lt(rsi, 48) && lt(rsi, previousRsi) ? 15 : 0)
+    + (lt(histogram, 0) ? 15 : 0) + (volume ? 10 : 0)
+    + (previous && lt(c.close, c.open) && lt(c.close, previous.low) ? 15 : 0)
+    + (support !== null && lt(c.close, support) ? 15 : 0);
+  const swingWindow = state.candles.slice(-P.swingLookback);
+  const fallbackLow = swingWindow.length >= P.swingLookback ? Math.min(...swingWindow.map((x) => x.low)) : null;
+  const fallbackHigh = swingWindow.length >= P.swingLookback ? Math.max(...swingWindow.map((x) => x.high)) : null;
+  const low = state.swingLow !== null && lt(state.swingLow, c.close) ? state.swingLow : fallbackLow;
+  const high = state.swingHigh !== null && gt(state.swingHigh, c.close) ? state.swingHigh : fallbackHigh;
+  const longStop = atr === null || low === null ? null : Math.min(c.close - atr * P.atrStopMult, low - atr * P.swingBuffer);
+  const shortStop = atr === null || high === null ? null : Math.max(c.close + atr * P.atrStopMult, high + atr * P.swingBuffer);
+  const valid = (risk: number) => atr !== null && ge(risk, atr * P.minStopATR) && le(risk, atr * P.maxStopATR) && gt(risk, state.tickSize);
+  const volatility = atr !== null && ge(atr / c.close * 100, P.minAtrPercent) && le(atr / c.close * 100, P.maxAtrPercent);
   const history = atr !== null && volumeSMA !== null && resistance !== null && support !== null;
   return { ema9: state.ema9, ema21: state.ema21, ema200: state.ema200, rsi, atr, macd, histogram, volumeSMA,
     trend: bullish ? "BULLISH" : bearish ? "BEARISH" : "SIDEWAYS", longScore, shortScore, longStop, shortStop,
-    longSetup: history && bullish && rsi !== null && rsi > 50 && histogram > 0 && volatility && longScore >= P.scoreThreshold && longStop !== null && valid(c.close - longStop),
-    shortSetup: history && bearish && rsi !== null && rsi < 50 && histogram < 0 && volatility && shortScore >= P.scoreThreshold && shortStop !== null && valid(shortStop - c.close) };
+    longSetup: history && bullish && rsi !== null && gt(rsi, 50) && gt(histogram, 0) && volatility && longScore >= P.scoreThreshold && longStop !== null && valid(c.close - longStop),
+    shortSetup: history && bearish && rsi !== null && lt(rsi, 50) && lt(histogram, 0) && volatility && shortScore >= P.scoreThreshold && shortStop !== null && valid(shortStop - c.close) };
 }
 
 function signal(state: EngineState, trade: Trade, event: Signal["event"], time: number, exit?: number, net?: number): Signal {
@@ -67,8 +70,8 @@ export function manageTrade(state: EngineState, side: SideState, c: Candle): Sig
   const t = side.trade;
   if (!t || c.time <= t.entryTime) return null;
   const long = t.direction === "LONG";
-  const stop = long ? c.low <= t.stop : c.high >= t.stop;
-  const target = long ? c.high >= t.target : c.low <= t.target;
+  const stop = long ? le(c.low, t.stop) : ge(c.high, t.stop);
+  const target = long ? ge(c.high, t.target) : le(c.low, t.target);
   if (stop || target) {
     const exit = stop ? t.stop : t.target;
     const gross = (long ? exit - t.entry : t.entry - exit) / t.risk;
@@ -76,16 +79,16 @@ export function manageTrade(state: EngineState, side: SideState, c: Candle): Sig
     const net = gross - cost;
     const perf = side.performance;
     perf.total += 1;
-    if (net > 0) { perf.wins += 1; perf.positiveNetR += net; }
+    if (gt(net, 0)) { perf.wins += 1; perf.positiveNetR += net; }
     else { perf.losses += 1; perf.negativeNetR += Math.abs(net); }
-    if (gross > 0) perf.grossProfitR += gross; else perf.grossLossR += Math.abs(gross);
+    if (gt(gross, 0)) perf.grossProfitR += gross; else perf.grossLossR += Math.abs(gross);
     perf.netR += net; perf.peakR = Math.max(perf.peakR, perf.netR);
     perf.maxDrawdownR = Math.max(perf.maxDrawdownR, perf.peakR - perf.netR);
     side.lastExitTime = c.time; side.trade = null;
     return signal(state, t, stop ? "stop_loss_hit" : "take_profit_hit", c.time, exit, net);
   }
   const trigger = long ? t.entry + t.risk * P.breakevenTrigger : t.entry - t.risk * P.breakevenTrigger;
-  if (P.enableBreakeven && !t.breakeven && (long ? c.high >= trigger : c.low <= trigger)) {
+  if (P.enableBreakeven && !t.breakeven && (long ? ge(c.high, trigger) : le(c.low, trigger))) {
     t.breakeven = true; t.breakevenTime = c.time; t.stop = long ? Math.max(t.stop, t.entry) : Math.min(t.stop, t.entry);
     return signal(state, t, "breakeven_activated", c.time);
   }

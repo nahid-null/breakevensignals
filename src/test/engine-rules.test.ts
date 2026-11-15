@@ -6,6 +6,7 @@ import { manageTrade, processCandle, cooldownFinished } from '@/lib/engine/scalp
 import { commitSchema, eventSource, signalSchema } from '@/lib/engine/protocol';
 import { winRate } from '@/lib/engine/stats';
 import { breakevenTriggerPrice, lastSignalTime } from '@/lib/engine/position-values';
+import { pineGt, pineLt, pineGe, pineLe } from '@/lib/engine/pine-numbers';
 
 const candle = (index: number, close = 100): Candle => ({ time: index * MINUTE, open: close, high: close + 0.5, low: close - 0.5, close, volume: 100 });
 const trade = (direction: 'LONG' | 'SHORT'): Trade => ({ id: 'native-NEARUSDT-test', direction, entry: 100,
@@ -34,6 +35,23 @@ describe('original Pine calculation rules', () => {
   it('requires strictly more than five completed bars after exit', () => {
     expect(cooldownFinished(0, 5 * MINUTE)).toBe(false);
     expect(cooldownFinished(0, 6 * MINUTE)).toBe(true);
+  });
+  it('preserves Pine nine-fractional-digit float comparison without inventing RSI momentum on flat closes', () => {
+    expect(pineLt(38.493122993105565, 38.49312299310558)).toBe(false);
+    expect(pineGt(52.0000000001, 52)).toBe(false);
+    expect(pineGt(52.000000001, 52)).toBe(true);
+    expect(pineGe(100.0000000001, 100)).toBe(true);
+    expect(pineLe(100.0000000001, 100)).toBe(true);
+  });
+  it('keeps unavailable rolling extrema unavailable until their Pine startup bar', () => {
+    const state = initialState('NEARUSDT', 0.001);
+    for (let i = 0; i < 19; i++) {
+      const result = processCandle(state, candle(i));
+      if (i === 13) { expect(result.analysis?.longStop).toBeNull(); expect(result.analysis?.shortStop).toBeNull(); }
+    }
+    const result = processCandle(state, candle(19));
+    expect(result.analysis?.longStop).toBeCloseTo(98.5, 12);
+    expect(result.analysis?.shortStop).toBeCloseTo(101.5, 12);
   });
   for (const direction of ['LONG', 'SHORT'] as const) {
     it(`${direction}: stop wins when SL and TP are both touched`, () => {
