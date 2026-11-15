@@ -9,9 +9,11 @@ export const Route = createFileRoute("/signals")({
   head: () => ({
     meta: [
       { title: "Signal History — Crypto Signal Terminal" },
-      { name: "description", content: "Every entry, breakeven, stop loss and take profit event received from TradingView." },
+      { name: "description", content: "Independent Binance Futures entry, breakeven, stop loss and take profit history." },
       { property: "og:title", content: "Signal History — Crypto Signal Terminal" },
-      { property: "og:description", content: "Every indicator event received from TradingView." },
+      { property: "og:description", content: "Live, recovered and historical signal events from the independent engine." },
+      { property: 'og:type', content: 'website' },
+      { name: 'twitter:card', content: 'summary_large_image' },
     ],
   }),
   component: Signals,
@@ -41,8 +43,8 @@ function Signals() {
   );
   return (
     <div className="space-y-4">
-      <h1 className="font-mono text-lg tracking-widest">SIGNAL HISTORY</h1>
-      <div className="glass flex flex-wrap gap-2 p-3">
+      <h1 className="text-2xl font-semibold">Signal history</h1>
+      <div className="flex flex-wrap gap-2 border-y border-border py-3">
         <select className={sel} value={coin} onChange={(e) => setCoin(e.target.value)}>
           <option value="">All coins</option>
           {SYMBOLS.map((s) => <option key={s}>{s}</option>)}
@@ -57,11 +59,11 @@ function Signals() {
         <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="h-9 w-40 font-mono text-xs" aria-label="From date" />
         <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="h-9 w-40 font-mono text-xs" aria-label="To date" />
       </div>
-      <div className="glass overflow-x-auto">
+      <div className="overflow-x-auto">
         <table className="w-full min-w-[1100px] text-sm">
           <thead className="text-[10px] uppercase tracking-widest text-muted-foreground">
             <tr className="border-b border-border">
-              {["Time", "Coin", "Side", "Event", "Indicator", "TF", "Entry", "Stop loss", "Take profit", "Processing"].map((h) => (
+              {["Time", "Coin", "Side", "Event", "Source", "TF", "Entry", "Stop loss", "Take profit", "Processing"].map((h) => (
                 <th key={h} className="px-3 py-2 text-left">{h}</th>
               ))}
             </tr>
@@ -77,7 +79,7 @@ function Signals() {
                 <td className="px-3 py-2 font-mono font-semibold">{e.symbol}</td>
                 <td className="px-3 py-2"><StatusBadge value={e.direction} /></td>
                 <td className="px-3 py-2 font-mono text-xs">{e.event_type}</td>
-                <td className="px-3 py-2 text-xs text-muted-foreground">{e.indicator_name}</td>
+                <td className="px-3 py-2 font-mono text-xs text-muted-foreground" title={e.trade_id}>{e.source.toUpperCase()}</td>
                 <td className="px-3 py-2 font-mono text-xs">{e.timeframe}</td>
                 <td className="px-3 py-2 font-mono tabular-nums">{fmtPrice(e.entry_price)}</td>
                 <td className="px-3 py-2 font-mono tabular-nums">{fmtPrice(e.stop_loss)}</td>

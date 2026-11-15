@@ -29,6 +29,10 @@ use the editor.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
 
-- TradingView alerts POST to `/api/public/tradingview-webhook?token=WEBHOOK_SECRET`; all state changes go through the SQL function `process_signal_event` so dedupe and Telegram-only-on-breakeven are enforced atomically in the database.
-- Public dashboard has no login: tables are anon-readable, all writes go through server code with the admin client; raw payloads live only in service-only `webhook_receipts`.
+- Run market calculations in the separate always-on `engine-worker`, never web requests or browser components, because the web runtime cannot guarantee continuous subscriptions.
+- Keep pure candle calculations in `src/lib/engine`; persist checkpoints, events and notification outbox atomically through the shared-secret engine API to prevent replay and concurrency drift.
+- Tag warmup adoption and recovery separately, suppress their notifications, and keep replayed closed trades out of live history so historical events cannot masquerade as live execution.
+- Keep public dashboard tables anon-readable and checkpoints service-only; all writes go through server code, and retained legacy receipts must never receive new signal traffic.
 - Telegram goes through the connector gateway (`src/lib/telegram.server.ts`); chat target comes from the `TELEGRAM_CHAT_ID` secret.
+- Use a publishable, no-session server client for public health reads; reserve the admin client for privileged writes so public read paths remain covered by database access policies.
+- Test transaction behavior against migrations in isolated PostgreSQL, never production test trades, because persistent history must remain genuine.

@@ -11,9 +11,11 @@ export const Route = createFileRoute("/telegram")({
   head: () => ({
     meta: [
       { title: "Telegram History — Crypto Signal Terminal" },
-      { name: "description", content: "Breakeven notifications sent to Telegram with delivery status." },
+      { name: "description", content: "Configured signal notifications and Telegram delivery outcomes." },
       { property: "og:title", content: "Telegram History — Crypto Signal Terminal" },
-      { property: "og:description", content: "Breakeven notifications sent to Telegram." },
+      { property: "og:description", content: "Signal notification history, delivery status and safe retry handling." },
+      { property: 'og:type', content: 'website' },
+      { name: 'twitter:card', content: 'summary_large_image' },
     ],
   }),
   component: TelegramPage,
@@ -32,8 +34,7 @@ function TelegramPage() {
   };
   return (
     <div className="space-y-4">
-      <h1 className="font-mono text-lg tracking-widest">TELEGRAM HISTORY</h1>
-      <p className="text-sm text-muted-foreground">Only Breakeven activations send Telegram messages. Test messages are marked TEST.</p>
+      <h1 className="text-2xl font-semibold">Telegram history</h1>
       {logs.isLoading && <div className="glass p-10 text-center text-muted-foreground">Loading…</div>}
       {!logs.isLoading && (logs.data ?? []).length === 0 && (
         <div className="glass p-10 text-center text-muted-foreground">No notifications yet.</div>
@@ -52,7 +53,7 @@ function TelegramPage() {
               {l.retry_count > 0 && <span>Retries: {l.retry_count}</span>}
             </div>
             {l.error_message && <p className="rounded border border-short/30 bg-short/10 p-2 font-mono text-[11px] text-short">{l.error_message}</p>}
-            {l.delivery_status === "FAILED" && (
+            {l.delivery_status === "FAILED" && !l.delivery_uncertain && (
               <Button size="sm" variant="outline" disabled={busy === l.id} onClick={() => retry(l.id)}>
                 <RotateCw className="h-3.5 w-3.5" /> Retry delivery
               </Button>

@@ -1,14 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { fmtTime, useSettings, useStatuses, useTelegramLogs } from "@/lib/data";
+import { fmtTime, useSettings, useStatuses, useTelegramLogs, useMarkets } from "@/lib/data";
+import { SYMBOLS } from '@/lib/config';
 import { StatusBadge } from "@/components/terminal/StatusBadge";
 
 export const Route = createFileRoute("/health")({
   head: () => ({
     meta: [
       { title: "System Health — Crypto Signal Terminal" },
-      { name: "description", content: "Webhook, database and Telegram connection status." },
+      { name: "description", content: "Binance Futures, WebSocket, signal engine, database and Telegram connection health." },
       { property: "og:title", content: "System Health — Crypto Signal Terminal" },
-      { property: "og:description", content: "Webhook, database and Telegram connection status." },
+      { property: "og:description", content: "Real connection status and candle-processing health for the independent signal engine." },
+      { property: 'og:type', content: 'website' },
+      { name: 'twitter:card', content: 'summary_large_image' },
     ],
   }),
   component: Health,
@@ -18,7 +21,7 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
   return (
     <div className="flex items-center justify-between gap-4 border-b border-border/60 py-3 last:border-0">
       <span className="text-sm text-muted-foreground">{label}</span>
-      <span className="text-right font-mono text-sm">{children}</span>
+      <span className="min-w-0 break-words text-right font-mono text-xs">{children}</span>
     </div>
   );
 }
@@ -28,22 +31,26 @@ function Health() {
   const logs = useTelegramLogs();
   const tz = useSettings().data?.display_timezone ?? "UTC";
   const h = s.health;
+  const markets = useMarkets();
   const lastSent = logs.data?.find((l) => l.delivery_status === "SENT");
   const lastFailed = logs.data?.find((l) => l.delivery_status === "FAILED");
   return (
     <div className="space-y-4">
-      <h1 className="font-mono text-lg tracking-widest">SYSTEM HEALTH</h1>
+      <h1 className="text-2xl font-semibold">System health</h1>
       <div className="grid gap-4 lg:grid-cols-2">
-        <section className="glass p-4">
+        <section className="py-4 lg:pr-8">
           <h2 className="mb-2 text-xs uppercase tracking-widest text-muted-foreground">Signal pipeline</h2>
-          <Row label="TradingView alerts (42)"><StatusBadge value="MANUAL VERIFICATION REQUIRED" /></Row>
-          <Row label="Webhook endpoint"><StatusBadge value={s.webhook} /></Row>
-          <Row label="Last received webhook">{fmtTime(h?.lastWebhookAt, tz)}</Row>
-          <Row label="Last processed event">{fmtTime(h?.lastProcessedAt, tz)}</Row>
-          <Row label="Rejected / failed webhooks"><span className={h?.failedWebhooks ? "text-short" : ""}>{h?.failedWebhooks ?? "—"}</span></Row>
+          <Row label="Binance REST"><StatusBadge value={s.binance} /></Row>
+          <Row label="Binance WebSocket"><StatusBadge value={s.websocket} /></Row>
+          <Row label="Signal engine"><StatusBadge value={h?.heartbeatFresh ? h.engine?.status ?? 'WAITING' : h?.engine ? 'OFFLINE' : 'NOT CONFIGURED'} /></Row>
+          <Row label="Last heartbeat">{fmtTime(h?.engine?.last_heartbeat_at, tz)}</Row>
+          <Row label="Last confirmed candle">{fmtTime(h?.lastCandleAt, tz)}</Row>
+          <Row label="Last generated signal">{fmtTime(h?.lastSignalAt, tz)}</Row>
+          <Row label="Available / configured coins">{h?.engine?.available_symbols ?? '—'} / {SYMBOLS.length}</Row>
+          <Row label="Active positions">{h?.activePositions ?? '—'}</Row>
           <Row label="Database"><StatusBadge value={s.healthQuery.isError ? "ERROR" : h ? (h.databaseOk ? "CONNECTED" : "ERROR") : "WAITING"} /></Row>
         </section>
-        <section className="glass p-4">
+        <section className="py-4">
           <h2 className="mb-2 text-xs uppercase tracking-widest text-muted-foreground">Telegram</h2>
           <Row label="Bot configuration"><StatusBadge value={h ? (h.botConfigured ? "CONNECTED" : "NOT CONFIGURED") : "WAITING"} /></Row>
           <Row label="Target chat"><StatusBadge value={h ? (h.chatConfigured ? "CONNECTED" : "NOT CONFIGURED") : "WAITING"} /></Row>
@@ -52,9 +59,12 @@ function Health() {
           <Row label="Last failed delivery">{fmtTime(lastFailed?.created_at, tz)}</Row>
         </section>
       </div>
-      <p className="text-xs text-muted-foreground">
-        TradingView does not share alert status with outside apps, so check in TradingView that all 42 alerts are active. Statuses here only turn green after real data arrives.
-      </p>
+      {h?.engine?.error && <p className="border-l-2 border-short bg-short/10 p-3 text-sm text-short">{h.engine.error}</p>}
+      {!h?.engine && <p className="border-l-2 border-waiting bg-waiting/5 p-3 text-sm text-waiting">Always-on monitoring has not started. Engine deployment is pending.</p>}
+      <section className="border-t border-border pt-5"><h2 className="mb-3 text-xs uppercase text-muted-foreground">Contract feeds</h2><div className="grid gap-x-8 sm:grid-cols-2 lg:grid-cols-3">{SYMBOLS.map((symbol) => {
+        const m = markets.data?.find((row) => row.symbol === symbol);
+        return <Row key={symbol} label={symbol}><StatusBadge value={m?.status === 'UNAVAILABLE' ? 'UNAVAILABLE' : !h?.heartbeatFresh ? 'WAITING' : m?.status ?? 'WAITING'} /></Row>;
+      })}</div></section>
     </div>
   );
 }

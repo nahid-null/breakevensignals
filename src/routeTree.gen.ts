@@ -11,10 +11,12 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as HealthRouteImport } from './routes/health'
+import { Route as PositionsRouteImport } from './routes/positions'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SetupRouteImport } from './routes/setup'
 import { Route as SignalsRouteImport } from './routes/signals'
 import { Route as TelegramRouteImport } from './routes/telegram'
+import { Route as ApiPublicEngineRouteImport } from './routes/api/public/engine'
 import { Route as ApiPublicTradingviewWebhookRouteImport } from './routes/api/public/tradingview-webhook'
 
 const IndexRoute = IndexRouteImport.update({
@@ -25,6 +27,11 @@ const IndexRoute = IndexRouteImport.update({
 const HealthRoute = HealthRouteImport.update({
   id: '/health',
   path: '/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PositionsRoute = PositionsRouteImport.update({
+  id: '/positions',
+  path: '/positions',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsRoute = SettingsRouteImport.update({
@@ -47,6 +54,11 @@ const TelegramRoute = TelegramRouteImport.update({
   path: '/telegram',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicEngineRoute = ApiPublicEngineRouteImport.update({
+  id: '/api/public/engine',
+  path: '/api/public/engine',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicTradingviewWebhookRoute =
   ApiPublicTradingviewWebhookRouteImport.update({
     id: '/api/public/tradingview-webhook',
@@ -57,29 +69,35 @@ const ApiPublicTradingviewWebhookRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/health': typeof HealthRoute
+  '/positions': typeof PositionsRoute
   '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
   '/signals': typeof SignalsRoute
   '/telegram': typeof TelegramRoute
+  '/api/public/engine': typeof ApiPublicEngineRoute
   '/api/public/tradingview-webhook': typeof ApiPublicTradingviewWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/health': typeof HealthRoute
+  '/positions': typeof PositionsRoute
   '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
   '/signals': typeof SignalsRoute
   '/telegram': typeof TelegramRoute
+  '/api/public/engine': typeof ApiPublicEngineRoute
   '/api/public/tradingview-webhook': typeof ApiPublicTradingviewWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/health': typeof HealthRoute
+  '/positions': typeof PositionsRoute
   '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
   '/signals': typeof SignalsRoute
   '/telegram': typeof TelegramRoute
+  '/api/public/engine': typeof ApiPublicEngineRoute
   '/api/public/tradingview-webhook': typeof ApiPublicTradingviewWebhookRoute
 }
 export interface FileRouteTypes {
@@ -87,38 +105,46 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/health'
+    | '/positions'
     | '/settings'
     | '/setup'
     | '/signals'
     | '/telegram'
+    | '/api/public/engine'
     | '/api/public/tradingview-webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/health'
+    | '/positions'
     | '/settings'
     | '/setup'
     | '/signals'
     | '/telegram'
+    | '/api/public/engine'
     | '/api/public/tradingview-webhook'
   id:
     | '__root__'
     | '/'
     | '/health'
+    | '/positions'
     | '/settings'
     | '/setup'
     | '/signals'
     | '/telegram'
+    | '/api/public/engine'
     | '/api/public/tradingview-webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   HealthRoute: typeof HealthRoute
+  PositionsRoute: typeof PositionsRoute
   SettingsRoute: typeof SettingsRoute
   SetupRoute: typeof SetupRoute
   SignalsRoute: typeof SignalsRoute
   TelegramRoute: typeof TelegramRoute
+  ApiPublicEngineRoute: typeof ApiPublicEngineRoute
   ApiPublicTradingviewWebhookRoute: typeof ApiPublicTradingviewWebhookRoute
 }
 
@@ -136,6 +162,13 @@ declare module '@tanstack/react-router' {
       path: '/health'
       fullPath: '/health'
       preLoaderRoute: typeof HealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/positions': {
+      id: '/positions'
+      path: '/positions'
+      fullPath: '/positions'
+      preLoaderRoute: typeof PositionsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings': {
@@ -166,6 +199,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TelegramRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/engine': {
+      id: '/api/public/engine'
+      path: '/api/public/engine'
+      fullPath: '/api/public/engine'
+      preLoaderRoute: typeof ApiPublicEngineRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/tradingview-webhook': {
       id: '/api/public/tradingview-webhook'
       path: '/api/public/tradingview-webhook'
@@ -179,10 +219,12 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   HealthRoute: HealthRoute,
+  PositionsRoute: PositionsRoute,
   SettingsRoute: SettingsRoute,
   SetupRoute: SetupRoute,
   SignalsRoute: SignalsRoute,
   TelegramRoute: TelegramRoute,
+  ApiPublicEngineRoute: ApiPublicEngineRoute,
   ApiPublicTradingviewWebhookRoute: ApiPublicTradingviewWebhookRoute,
 }
 export const routeTree = rootRouteImport

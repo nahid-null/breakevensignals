@@ -84,7 +84,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Crypto Signal Terminal" },
-      { name: "description", content: "Personal 24/7 crypto signal monitor for PRO LONG and SHORT SCALPER alerts." },
+      { name: "description", content: "Independent Binance Futures LONG and SHORT signal terminal." },
       { name: "author", content: "Lovable" },
       { property: "og:title", content: "Crypto Signal Terminal" },
       { property: "og:description", content: "Personal 24/7 crypto signal monitor." },

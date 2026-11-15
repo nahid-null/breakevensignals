@@ -3,13 +3,15 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { getSystemHealth } from "./ops.functions";
+import type { TerminalStats } from './engine/stats';
 
 export type Position = Database["public"]["Tables"]["active_positions"]["Row"];
 export type SignalEvent = Database["public"]["Tables"]["signal_events"]["Row"];
 export type TelegramLog = Database["public"]["Tables"]["telegram_logs"]["Row"];
 export type Settings = Database["public"]["Tables"]["app_settings"]["Row"];
+export type MarketState = Database["public"]["Tables"]["market_state"]["Row"];
 
-const TABLES = ["active_positions", "signal_events", "telegram_logs", "app_settings"] as const;
+const TABLES = ["active_positions", "signal_events", "telegram_logs", "app_settings", "market_state", "engine_health"] as const;
 
 /** Subscribe once (in the shell) and refresh every query when backend data changes. */
 export function useRealtimeSync() {
@@ -18,8 +20,9 @@ export function useRealtimeSync() {
     const channel = supabase.channel(`terminal-${Math.random().toString(36).slice(2)}`);
     for (const table of TABLES) {
       channel.on("postgres_changes", { event: "*", schema: "public", table }, () => {
-        void qc.invalidateQueries({ queryKey: [table] });
-        void qc.invalidateQueries({ queryKey: ["health"] });
+         void qc.invalidateQueries({ queryKey: [table] });
+         if (table !== 'market_state') void qc.invalidateQueries({ queryKey: ["health"] });
+         if (table !== 'market_state' && table !== 'engine_health') void qc.invalidateQueries({ queryKey: ['terminal_statistics'] });
       });
     }
     channel.subscribe();
@@ -62,6 +65,15 @@ export const useSettings = () =>
 export const useHealth = () =>
   useQuery({ queryKey: ["health"], queryFn: () => getSystemHealth(), refetchInterval: 30000 });
 
+export const useMarkets = () => useQuery({ queryKey: ['market_state'], queryFn: () =>
+  must<MarketState[]>(supabase.from('market_state').select('*')), refetchInterval: 15000 });
+
+export const useStats = () => useQuery({ queryKey: ['terminal_statistics'], queryFn: async () => {
+  const { data, error } = await supabase.rpc('terminal_statistics');
+  if (error) throw error;
+  return data as unknown as TerminalStats;
+} });
+
 export type Status = "ONLINE" | "OFFLINE" | "CONNECTED" | "NOT CONFIGURED" | "ERROR" | "WAITING" | "MANUAL VERIFICATION REQUIRED";
 
 export function useStatuses() {
@@ -69,10 +81,11 @@ export function useStatuses() {
   const logs = useTelegramLogs();
   const h = health.data;
   const lastTg = logs.data?.find((l) => l.delivery_status !== "PENDING");
-  const system: Status = health.isError ? "OFFLINE" : !h ? "WAITING" : h.databaseOk && h.webhookConfigured ? "ONLINE" : "OFFLINE";
-  const webhook: Status = !h ? "WAITING" : !h.webhookConfigured ? "NOT CONFIGURED" : h.lastWebhookAt ? "CONNECTED" : "WAITING";
+  const system: Status = health.isError ? "OFFLINE" : !h ? "WAITING" : h.databaseOk && h.heartbeatFresh && h.engine?.status === 'RUNNING' ? "ONLINE" : "OFFLINE";
+  const binance: Status = !h ? 'WAITING' : h.heartbeatFresh && h.engine?.binance_connected ? 'CONNECTED' : 'OFFLINE';
+  const websocket: Status = !h ? 'WAITING' : h.heartbeatFresh && h.engine?.websocket_connected ? 'CONNECTED' : 'OFFLINE';
   const telegram: Status = !h ? "WAITING" : !h.botConfigured || !h.chatConfigured ? "NOT CONFIGURED" : !lastTg ? "WAITING" : lastTg.delivery_status === "SENT" ? "CONNECTED" : "ERROR";
-  return { system, webhook, telegram, tradingview: "MANUAL VERIFICATION REQUIRED" as Status, health: h, healthQuery: health };
+  return { system, binance, websocket, telegram, health: h, healthQuery: health };
 }
 
 /** Latest position per symbol+direction. */
