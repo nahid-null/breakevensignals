@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { PineTS } from 'pinets';
 import { ema } from '@/lib/engine/calculations';
 import { comparePineRows } from '@/lib/engine/parity';
+import { runCorrectedPine } from '../../engine-worker/pine-runtime';
 
 describe('Pine comparison safeguards', () => {
   it('does not mistake the experimental SMA-seeded interpreter for Pine first-value EMA', async () => {
@@ -23,6 +24,15 @@ describe('Pine comparison safeguards', () => {
       [{ time: 60000, values: { entry: false, stop: 98, breakeven: true } }]);
     expect(result.matches).toBe(false);
     expect(result.differences.map((d) => d.field)).toEqual(['entry', 'stop', 'breakeven']);
+  });
+  it('corrects reference EMA first-value seed and all MACD EMA calls without a warmup gap', async () => {
+    const bars = [10, 20, 30].map((close, i) => ({ openTime: i * 60000, closeTime: (i + 1) * 60000,
+      open: close, high: close + 1, low: close - 1, close, volume: 100 }));
+    const output = await runCorrectedPine(new PineTS(bars), '//@version=6\nindicator("seed correction")\nplot(ta.ema(close, 3), "EMA")\n[f,s,h] = ta.macd(close, 2, 3, 2)\nplot(f,"MACD")\nplot(h,"Histogram")');
+    expect(output.plots.EMA.data.map((point: { value: number }) => point.value)).toEqual([10, 15, 22.5]);
+    expect(output.plots.MACD.data[0].value).toBe(0);
+    expect(output.plots.MACD.data[1].value).toBeCloseTo(5 / 3, 12);
+    expect(output.plots.Histogram.data[1].value).toBeCloseTo(5 / 9, 12);
   });
   it('rejects missing bars and startup values without discarding warmup', () => {
     const result = comparePineRows([{ time: 0, values: { ema: 10 } }, { time: 60000, values: { ema: 12 } }], [{ time: 0, values: { ema: null } }]);

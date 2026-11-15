@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { initialState, MINUTE, validateCandle } from '../src/lib/engine/model';
 import { processCandle } from '../src/lib/engine/scalper';
 import { comparePineRows, type ParityRow, type ParityValue } from '../src/lib/engine/parity';
+import { runCorrectedPine } from './pine-runtime';
 
 // Verification-only: no engine API, secrets, database or notification imports.
 const fixtureSchema = z.object({ symbol: z.literal('NEARUSDT'), tickSize: z.number().positive(),
@@ -51,12 +52,13 @@ const metadata: ISymbolInfo = {
 const bars = fixture.candles.map((c) => ({ ...c, openTime: c.time, closeTime: c.time + MINUTE,
   quoteAssetVolume: 0, numberOfTrades: 0, takerBuyBaseAssetVolume: 0, takerBuyQuoteAssetVolume: 0, ignore: 0 }));
 const provider = { async getMarketData() { return bars; }, async getSymbolInfo() { return metadata; }, configure() {} };
-const report = { status: 'BLOCKED: experimental interpreter is not a validated Pine oracle',
-  reference: 'PineTS 0.13.1, original uploads executed intact with observation plots only',
-  limitation: 'PineTS SMA-seeds EMA; source Pine EMA first-value seeding differs. Do not change native logic to force a match.',
+const corrected = !process.argv.includes('--uncorrected');
+const report = { status: 'COMPARISON IN PROGRESS',
+  reference: `PineTS 0.13.1 ${corrected ? 'with isolated EMA/precision corrections' : 'uncorrected'}, intact original uploads with observation plots only`,
+  limitation: 'Local interpreter parity is not an independently exported TradingView result or proof of unattended deployed operation.',
   symbol: fixture.symbol, tickSize: fixture.tickSize, bars: bars.length,
   firstCandle: new Date(bars[0]?.openTime ?? 0).toISOString(), lastCandle: new Date(bars.at(-1)?.openTime ?? 0).toISOString(),
-  comparisons: [] as { direction: string; matches: boolean; byField: Record<string, number>; firstDifferences: unknown[] }[] };
+  comparisons: [] as { direction: string; matches: boolean; byField: Record<string, number>; firstDifferences: unknown[]; fields: { field: string; matchingBars: number; mismatchingBars: number; maxAbsoluteError: number; eventCount?: number }[] }[] };
 for (const direction of ['LONG', 'SHORT'] as const) {
   const lower = direction.toLowerCase();
   const source = await readFile(new URL(`../src/test/fixtures/pine-${lower}.original.pine`, import.meta.url), 'utf8');
@@ -71,7 +73,8 @@ for (const direction of ['LONG', 'SHORT'] as const) {
   };
   const observation = Object.entries(fields).map(([name, expr]) => `plot(${expr}, "VERIFY_${name}")`).join('\n');
   const runtime = new PineTS(provider, fixture.symbol, '1', bars.length, bars[0]?.openTime, bars.at(-1)?.closeTime);
-  const output = await runtime.run(`${source}\n${observation}\n`);
+  const code = `${source}\n${observation}\n`;
+  const output = corrected ? await runCorrectedPine(runtime, code) : await runtime.run(code);
   const reference: ParityRow[] = bars.map((bar, i) => {
     const values: Record<string, ParityValue> = {};
     for (const name of Object.keys(fields)) {
@@ -86,10 +89,21 @@ for (const direction of ['LONG', 'SHORT'] as const) {
   const result = comparePineRows(native[direction], reference);
   const byField: Record<string, number> = {};
   for (const difference of result.differences) byField[difference.field] = (byField[difference.field] ?? 0) + 1;
-  report.comparisons.push({ direction, matches: result.matches, byField, firstDifferences: result.differences.slice(0, 15) });
+  const fieldResults = Object.keys(fields).map((field) => {
+    let maxAbsoluteError = 0;
+    for (let i = 0; i < native[direction].length; i++) {
+      const a = native[direction][i]?.values[field]; const b = reference[i]?.values[field];
+      if (typeof a === 'number' && typeof b === 'number') maxAbsoluteError = Math.max(maxAbsoluteError, Math.abs(a - b));
+    }
+    return { field, matchingBars: bars.length - (byField[field] ?? 0), mismatchingBars: byField[field] ?? 0, maxAbsoluteError,
+      ...(field.endsWith('Event') ? { eventCount: native[direction].filter((row) => row.values[field] === true).length } : {}) };
+  });
+  report.comparisons.push({ direction, matches: result.matches, byField, firstDifferences: result.differences.slice(0, 30), fields: fieldResults });
 }
-const path = process.argv[2] ?? '/tmp/pine-parity-report.json';
+report.status = report.comparisons.every((c) => c.matches) ? 'LOCAL INTERPRETER PARITY PASSED; DEPLOYED 24/7 VERIFICATION STILL PENDING'
+  : 'PARITY FAILED: do not deploy or change production trading rules to force a match';
+const path = process.argv.slice(2).find((arg) => !arg.startsWith('--')) ?? '/tmp/pine-parity-report.json';
 await writeFile(path, JSON.stringify(report, null, 2));
 console.log(JSON.stringify(report, null, 2));
-console.log(`Candidate comparison report saved to ${path}. NOT a passed deployment gate.`);
-process.exitCode = 2;
+console.log(`Comparison report saved to ${path}. ${report.limitation}`);
+process.exitCode = report.comparisons.every((c) => c.matches) ? 0 : 2;
