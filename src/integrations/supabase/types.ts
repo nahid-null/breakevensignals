@@ -437,6 +437,7 @@ export type Database = {
         Args: { p: Json; tg_message: string }
         Returns: Json
       }
+      terminal_statistics: { Args: never; Returns: Json }
     }
     Enums: {
       [_ in never]: never
