@@ -1,6 +1,14 @@
 # Project memory — Crypto Signal Terminal
 - Personal, no-login monitor for 21 Binance USDT futures pairs × LONG/SHORT (PRO LONG/SHORT SCALPER Pine v6).
-- Flow: TradingView alert() JSON → /api/public/tradingview-webhook → database → live dashboard. Telegram ONLY on breakeven_activated.
+- Requested replacement: fully independent Binance USD-M Futures REST/WebSocket backend signal engine; no TradingView dependency, alerts or manual configuration.
+- Current code still uses TradingView alert() JSON → webhook → database → dashboard; no application conversion has been implemented yet.
+- Existing Telegram preference is breakeven-only. Preserve that default while adding configurable LONG/SHORT entry, breakeven, SL and TP notifications.
 - Pine changes: added tradeEntryTime for trade_id; section 17 alerts now emit JSON. Trading logic unchanged. Scripts: src/pine/*.pine.
 - Pages: Dashboard, Signal History, Telegram, System Health, Settings, Setup Guide.
-- Remaining: user must publish, then create 42 TradingView alerts with the webhook URL.
+- 2026-11-15 inspection: read both complete Pine scripts, current pages, database schema/function and settings. Actual scripts use 1-minute EMA 9/21/200, RSI 14, MACD 12/26/9, ATR 14, volume SMA 20, weighted score threshold 70, structure/pivots and ATR/swing risk controls. They contain no ADX/DI or higher-timeframe requests; do not invent extra filters.
+- Confirmed management rules: stop beats target when both touched; evaluate existing stop/target before breakeven; moved stop effective next candle; cooldown strictly greater than 5 bars; fee 0.04% per side plus one tick slippage per side. LONG/SHORT state must remain independent.
+- Database inspection found zero positions, signal events, Telegram logs and receipts; saved preferences are master/LONG breakeven/SHORT breakeven enabled, timezone UTC, fee 0.04. No data was changed or deleted.
+- Real Binance REST probe succeeded for time, exchangeInfo and NEAR 1m candles. 20 configured contracts have TRADING status; WILDUSDT is not listed. Keep WILDUSDT visible as unavailable; never silently replace it.
+- Reported src/pages/Index.tsx does not exist in this TanStack project; dashboard is src/routes/index.tsx. No matching compiler diagnostic was present in available logs, so do not claim that error was fixed.
+- Blocker: ordinary published request handlers do not supply a continuously running outbound WebSocket service. Need an always-on hosting decision before implementing the persistent signal engine. Do not present scheduled REST polling or browser processing as fulfilling that requirement.
+- Remaining: confirm always-on hosting; implement and deploy native engine, additive persistence, configurable Telegram, redesigned terminal and health; verify original-Pine parity using matching exported values and real unattended operation. No app bugs fixed or app source files modified in this inspection task; chat.md updated.
