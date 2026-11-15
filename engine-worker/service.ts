@@ -17,6 +17,7 @@ export class SignalService {
   private queues = new Map<Symbol, Candle[]>();
   private running = false;
   private draining = false;
+  private initialized = false;
   private connected = false;
   private lastMessage = 0;
   private failures = 0;
@@ -32,7 +33,7 @@ export class SignalService {
     if (!response.ok) throw new Error(`App rejected ${action} (${response.status})`);
     return response.json() as Promise<T>;
   }
-  private async heartbeat(status = this.connected ? 'RUNNING' : 'RECOVERING') {
+  private async heartbeat(status = this.lastError ? 'ERROR' : this.connected && this.initialized && this.recovery.size === 0 ? 'RUNNING' : 'RECOVERING') {
     if (this.observeOnly) return;
     const r = await this.app<{ acquired: boolean }>('heartbeat', { instance_id: this.instance,
       websocket_connected: this.connected, binance_connected: this.available.size > 0,
@@ -109,9 +110,10 @@ export class SignalService {
             direction: t.direction, indicator: INDICATORS[t.direction], timeframe: '1', entry_price: t.entry,
             stop_loss: t.originalStop, take_profit: t.target, fee_rate_percent: PARAMETERS.feePercent,
             timestamp: new Date(t.entryTime + MINUTE).toISOString() });
-          if (t.breakeven) adopted.push({ ...adopted[adopted.length - 1] as Signal,
+          const entry = adopted.at(-1);
+          if (t.breakeven && entry) adopted.push({ ...entry,
             event_id: `${t.id}-breakeven_activated`, event: 'breakeven_activated', stop_loss: t.stop,
-            timestamp: new Date(last.time + MINUTE).toISOString() });
+            timestamp: new Date((t.breakevenTime ?? last.time) + MINUTE).toISOString() });
         }
         await this.commit(symbol, state, this.market(symbol, state, last, analysis, 'RECOVERING'), adopted, 'warmup');
       }
@@ -119,11 +121,16 @@ export class SignalService {
       await this.recover(symbol, Date.now());
       await delay(100);
     }
+    this.initialized = true;
     this.timers.push(setInterval(() => {
       if (this.socket && Date.now() - this.lastMessage > 60_000) this.socket.terminate();
       void this.drain();
       if (!this.observeOnly) void this.app('deliveries', { instance_id: this.instance }).catch((e) => this.fail(e));
     }, 10_000));
+    this.timers.push(setInterval(() => {
+      if (this.observeOnly || !this.connected || this.draining) return;
+      void this.publishPrices().catch((e) => this.fail(e));
+    }, 5000));
     await this.heartbeat();
     console.log(`Signal service started: ${this.available.size}/${SYMBOLS.length} available contracts. ${this.observeOnly ? 'OBSERVATION ONLY: no database writes or Telegram.' : 'Confirmed-candle live processing.'}`);
   }
@@ -185,9 +192,10 @@ export class SignalService {
     this.recovery.delete(symbol);
   }
   private async drain() {
-    if (this.draining || !this.running) return;
+    if (this.draining || !this.running || !this.initialized) return;
     this.draining = true;
     try {
+      for (const symbol of [...this.recovery]) await this.recover(symbol, Date.now());
       for (const [symbol, q] of this.queues) {
         if (!this.checkpoints.has(symbol)) continue;
         for (const c of [...q]) {
@@ -198,8 +206,15 @@ export class SignalService {
           this.queues.set(symbol, (this.queues.get(symbol) ?? []).filter((x) => x.time > c.time));
         }
       }
+      this.lastError = null;
     } catch (e) { this.fail(e); }
     finally { this.draining = false; }
+  }
+  private async publishPrices() {
+    for (const market of this.markets.values()) {
+      if (!this.running) return;
+      await this.app('market', { instance_id: this.instance, market });
+    }
   }
   private fail(e: unknown) {
     this.lastError = e instanceof Error ? e.message.slice(0, 500) : 'Signal processing error';

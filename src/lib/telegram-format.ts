@@ -35,7 +35,7 @@ export function formatBreakevenMessage(e: BreakevenInfo): string {
   ].join("\n");
 }
 
-export function formatSignalMessage(e: BreakevenInfo & { event: string; exit_price?: number; net_result_r?: number }): string {
+export function formatSignalMessage(e: BreakevenInfo & { event: string; exit_price?: number | undefined; net_result_r?: number | undefined }): string {
   if (e.event === "breakeven_activated") return formatBreakevenMessage(e);
   const title = e.event === "entry_confirmed" ? `${e.direction} ENTRY CONFIRMED`
     : e.event === "stop_loss_hit" ? `${e.direction} STOP LOSS HIT` : `${e.direction} TAKE PROFIT HIT`;

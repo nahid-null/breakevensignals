@@ -10,7 +10,7 @@ const NAV = [
   { to: "/telegram", label: "Telegram", icon: Send },
   { to: "/health", label: "System Health", icon: HeartPulse },
   { to: "/settings", label: "Settings", icon: Settings },
-  { to: "/setup", label: "Setup Guide", icon: BookOpen },
+  { to: "/setup", label: "Engine Setup", icon: BookOpen },
 ] as const;
 
 function UtcClock() {
@@ -39,10 +39,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] text-muted-foreground">
             <span className="flex items-center gap-1.5">SYSTEM <StatusBadge value={s.system} /></span>
-            <span className="flex items-center gap-1.5">TRADINGVIEW <StatusBadge value="MANUAL VERIFICATION REQUIRED" /></span>
-            <span className="flex items-center gap-1.5">WEBHOOK <StatusBadge value={s.webhook} /></span>
+            <span className="flex items-center gap-1.5">BINANCE <StatusBadge value={s.binance} /></span>
+            <span className="flex items-center gap-1.5">WEBSOCKET <StatusBadge value={s.websocket} /></span>
             <span className="flex items-center gap-1.5">TELEGRAM <StatusBadge value={s.telegram} /></span>
-            <span>LAST WEBHOOK <span className="font-mono text-foreground">{fmtTime(s.health?.lastWebhookAt)}</span></span>
+            <span>LAST CANDLE <span className="font-mono text-foreground">{fmtTime(s.health?.lastCandleAt)}</span></span>
           </div>
           <div className="ml-auto"><UtcClock /></div>
         </div>

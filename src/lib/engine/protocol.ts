@@ -18,5 +18,6 @@ export const commitSchema = z.object({
   instance_id: z.string().uuid(), symbol: z.enum(SYMBOLS), expected_revision: z.number().int().min(0),
   checkpoint: z.record(z.unknown()).refine((s) => JSON.stringify(s).length < 100_000, "Checkpoint too large"),
   market: marketSchema,
+  mode: z.enum(["live", "warmup", "recovery"]),
   events: z.array(webhookSchema.and(z.object({ net_result_r: z.number().finite().optional() }))).max(4),
 }).refine((p) => p.market.symbol === p.symbol && p.checkpoint['symbol'] === p.symbol && p.events.every((e) => e.symbol === p.symbol), "Symbol mismatch");

@@ -86,7 +86,7 @@ export function manageTrade(state: EngineState, side: SideState, c: Candle): Sig
   }
   const trigger = long ? t.entry + t.risk * P.breakevenTrigger : t.entry - t.risk * P.breakevenTrigger;
   if (P.enableBreakeven && !t.breakeven && (long ? c.high >= trigger : c.low <= trigger)) {
-    t.breakeven = true; t.stop = long ? Math.max(t.stop, t.entry) : Math.min(t.stop, t.entry);
+    t.breakeven = true; t.breakevenTime = c.time; t.stop = long ? Math.max(t.stop, t.entry) : Math.min(t.stop, t.entry);
     return signal(state, t, "breakeven_activated", c.time);
   }
   return null;
@@ -112,7 +112,7 @@ export function processCandle(state: EngineState, c: Candle, allowEntries = true
       const risk = Math.abs(c.close - stop);
       const trade: Trade = { id: `native-${state.symbol}-${direction}-${c.time}`, direction, entry: c.close,
         stop, originalStop: stop, target: c.close + (direction === "LONG" ? 1 : -1) * risk * P.rrMultiplier,
-        risk, entryTime: c.time, breakeven: false };
+        risk, entryTime: c.time, breakeven: false, breakevenTime: null };
       side.trade = trade;
       signals.push(signal(state, trade, "entry_confirmed", c.time));
     }

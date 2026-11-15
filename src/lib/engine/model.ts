@@ -14,7 +14,7 @@ export interface Candle { time: number; open: number; high: number; low: number;
 export interface Average { value: number | null; seed: number[] }
 export interface Trade {
   id: string; direction: Direction; entry: number; stop: number; originalStop: number;
-  target: number; risk: number; entryTime: number; breakeven: boolean;
+  target: number; risk: number; entryTime: number; breakeven: boolean; breakevenTime: number | null;
 }
 export interface Performance {
   total: number; wins: number; losses: number; positiveNetR: number; negativeNetR: number;

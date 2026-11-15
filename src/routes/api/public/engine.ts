@@ -30,7 +30,9 @@ export const Route = createFileRoute("/api/public/engine")({
       }
       if (base.data.action === "commit") {
         const data = commitSchema.parse(base.data.data);
-        const events = data.events.map((e) => ({ ...e, telegram_message: formatSignalMessage({ ...e, fee_rate_percent: e.fee_rate_percent ?? null }) }));
+        const events = data.events.map((e) => ({ ...e,
+          source: data.mode === 'live' ? 'native' : data.mode === 'warmup' ? 'historical' : 'recovery',
+          telegram_message: data.mode === 'live' ? formatSignalMessage({ ...e, fee_rate_percent: e.fee_rate_percent ?? null }) : '' }));
         const { data: result, error } = await supabaseAdmin.rpc("commit_engine_candle", { p: { ...data, events } as Json });
         if (error) throw error;
         return Response.json(result);
