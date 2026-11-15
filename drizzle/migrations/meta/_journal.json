@@ -43,6 +43,13 @@
       "when": 1794752732066,
       "tag": "0005_engine_runtime_identity_and_graceful_stop",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794756160104,
+      "tag": "0006_windows_pc_engine_telemetry",
+      "breakpoints": true
     }
   ]
 }

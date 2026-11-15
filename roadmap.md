@@ -11,10 +11,15 @@
 - [x] Add candidate Pine-language comparison using exact original uploads and 1500 identical real NEARUSDT candles; 44 tests pass, no production trading-rule changes.
 - [x] Correct comparison interpreter EMA/MACD startup, storage precision, extrema startup and float-comparison semantics; both intact originals match native results across 4500 real NEAR/LINK/WIF candles.
 - [ ] Certify exact TradingView outputs before deployment — local interpreter agreement passes, but independent TradingView exports on identical candles/start/inputs are still unavailable.
-- [ ] Deploy and verify permanent live monitoring and Telegram with the browser closed — only after parity, separate final paid-service approval, user-created Render service with matching key, and permission to publish. Temporary runs do not fulfill this task.
+- [ ] Install and verify permanent Windows-PC monitoring with the browser closed — blocked on independent parity evidence, publication permission and access to the user's PC. No paid VPS is wanted; retained Render files are optional legacy preparation only.
 - [x] Update chat.md and document verified results and remaining blockers.
 - [x] Finish uploaded-requirements verification after key setup: 20 real saved candle streams, restart recovery, four genuine recovered trades read back, stopped temporary-test status, 40 passing tests and browser checks.
 - [x] Diagnose offline report and verify Telegram separately — engine STOPPED since 14:29 UTC, website never published, labelled TEST delivered and read back SENT; no matching src/main.tsx / React.queryClient error found.
 - [x] Record final independent architecture and paid-service/predeployment verification restrictions; Render configuration remains prepared, not activated.
 - [x] Produce detailed per-field parity report with zero local mismatches and explicit independent-certification boundary.
 - [x] Reverify real Binance reconnection/candle advance on 20 feeds, disk database reopening and 20-checkpoint worker restart; standalone real Telegram TEST delivered. No production fixture signals or paid activation.
+- [x] Add Windows boot task, crash supervisor, duplicate-process protection, private local health, persistent logs and setup/troubleshooting scripts.
+- [x] Add truthful PC/engine status, uptime, last successful scan and directional active counts to dashboard and health.
+- [x] Document outbound-only secure communication and optional Cloudflare Tunnel configuration without provisioning external resources.
+- [x] Test changed rules and isolated restart/reconnect; deliver clean Windows source/setup bundle and actual results (61 tests, actual isolated Binance recovery and supervisor crash restart; Files package inspected).
+- [ ] Verify Windows reboot, crash and tunnel on the user's PC — requires installation and Windows access; sandbox checks cannot satisfy this gate.

@@ -16,7 +16,7 @@ beforeAll(async () => {
   db = new PGlite();
   await db.exec('CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role;');
   // Test copy only: the isolated database has no realtime service or publication.
-  for (const name of ['0000_migration.sql','0002_independent_signal_engine.sql','0003_engine_event_provenance_and_statistics.sql','0004_fix_engine_checkpoint_time_comparison.sql','0005_engine_runtime_identity_and_graceful_stop.sql']) {
+  for (const name of ['0000_migration.sql','0002_independent_signal_engine.sql','0003_engine_event_provenance_and_statistics.sql','0004_fix_engine_checkpoint_time_comparison.sql','0005_engine_runtime_identity_and_graceful_stop.sql','0006_windows_pc_engine_telemetry.sql']) {
     const sql = (await readFile(new URL(`../../drizzle/migrations/${name}`, import.meta.url), 'utf8')).replace(/^ALTER PUBLICATION.*$/gm, '');
     await db.exec(sql);
   }
@@ -40,6 +40,14 @@ describe('atomic persistence (isolated PostgreSQL, no production rows)', () => {
     const heartbeat = { instance_id: instance, status: 'RUNNING', websocket_connected: true, binance_connected: true, available_symbols: 20, error: null };
     expect((await db.query<{ acquired: boolean }>('select engine_heartbeat($1::jsonb) acquired',[JSON.stringify(heartbeat)])).rows[0]?.acquired).toBe(true);
     expect((await db.query<{ acquired: boolean }>('select engine_heartbeat($1::jsonb) acquired',[JSON.stringify({ ...heartbeat, instance_id: '22222222-2222-4222-8222-222222222222' })])).rows[0]?.acquired).toBe(false);
+  });
+  it('persists actual Windows telemetry without letting a second owner overwrite it', async () => {
+    const heartbeat = { instance_id: instance, status: 'RUNNING', websocket_connected: true, binance_connected: true,
+      available_symbols: 20, error: null, host_kind: 'windows_pc', runtime_mode: 'production',
+      started_at: '2026-11-15T15:20:00Z', uptime_seconds: 120, scanned_symbols: 20, last_scan_at: '2026-11-15T15:22:00Z' };
+    expect((await db.query<{ acquired: boolean }>('select engine_heartbeat($1::jsonb) acquired', [JSON.stringify(heartbeat)])).rows[0]?.acquired).toBe(true);
+    expect((await db.query<{ acquired: boolean }>('select engine_heartbeat($1::jsonb) acquired', [JSON.stringify({ ...heartbeat, instance_id: '22222222-2222-4222-8222-222222222222', uptime_seconds: 999 })])).rows[0]?.acquired).toBe(false);
+    expect((await db.query('select host_kind,uptime_seconds::int,scanned_symbols from engine_health')).rows[0]).toEqual({ host_kind: 'windows_pc', uptime_seconds: 120, scanned_symbols: 20 });
   });
   for (const mode of ['warmup','recovery'] as const) {
     it(`${mode}: stores provenance and checkpoint together without sending historical notifications`, async () => {

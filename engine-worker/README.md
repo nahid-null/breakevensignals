@@ -1,8 +1,8 @@
 # Always-on signal service
 
-The website runs on Lovable; this separate Bun service runs continuously on a paid Render background worker. A sandbox process is only a temporary test and is not production hosting.
+The existing website stays on Lovable. The primary scanner host is now the user's own Windows PC, using the same separate Bun worker. See [Windows setup guide](windows/SETUP.md). No paid VPS or Render service is required. A sandbox process is only a temporary test and is not production hosting; the Windows installation has not been performed or verified here.
 
-## Deployment
+## Optional legacy Render deployment (not the primary choice)
 Do not deploy until original-Pine parity is validated. Render configuration is preparation only; paid activation requires the user's separate final confirmation.
 
 1. Set `ENGINE_SHARED_SECRET` using Lovable's secure secret form (Generate + copy), then paste that same private value into Render. Publish the website after saving the key to activate it at the public HTTPS URL. Never put it in chat or source.

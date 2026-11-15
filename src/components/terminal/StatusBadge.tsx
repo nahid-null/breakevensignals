@@ -15,6 +15,7 @@ const tone: Record<string, string> = {
   "TAKE PROFIT HIT": "text-long border-long/40 bg-long/10",
   "STOP LOSS HIT": "text-short border-short/40 bg-short/10",
   OFFLINE: "text-short border-short/40 bg-short/10",
+  DISCONNECTED: "text-short border-short/40 bg-short/10",
   STOPPED: 'text-short border-short/40 bg-short/10',
   ERROR: "text-short border-short/40 bg-short/10",
   FAILED: "text-short border-short/40 bg-short/10",

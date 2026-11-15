@@ -184,33 +184,48 @@ export type Database = {
           available_symbols: number
           binance_connected: boolean
           error: string | null
+          host_kind: string
           id: number
           instance_id: string
           last_heartbeat_at: string
+          last_scan_at: string | null
           runtime_mode: string
+          scanned_symbols: number
+          started_at: string | null
           status: string
+          uptime_seconds: number
           websocket_connected: boolean
         }
         Insert: {
           available_symbols?: number
           binance_connected?: boolean
           error?: string | null
+          host_kind?: string
           id: number
           instance_id: string
           last_heartbeat_at?: string
+          last_scan_at?: string | null
           runtime_mode?: string
+          scanned_symbols?: number
+          started_at?: string | null
           status: string
+          uptime_seconds?: number
           websocket_connected?: boolean
         }
         Update: {
           available_symbols?: number
           binance_connected?: boolean
           error?: string | null
+          host_kind?: string
           id?: number
           instance_id?: string
           last_heartbeat_at?: string
+          last_scan_at?: string | null
           runtime_mode?: string
+          scanned_symbols?: number
+          started_at?: string | null
           status?: string
+          uptime_seconds?: number
           websocket_connected?: boolean
         }
         Relationships: []

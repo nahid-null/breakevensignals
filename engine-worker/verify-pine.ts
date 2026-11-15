@@ -1,4 +1,6 @@
 import { readFile, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { PineTS, type ISymbolInfo } from 'pinets';
 import { z } from 'zod';
 import { initialState, MINUTE, validateCandle } from '../src/lib/engine/model';
@@ -111,7 +113,7 @@ for (const direction of ['LONG', 'SHORT'] as const) {
 }
 report.status = report.comparisons.every((c) => c.matches) ? 'LOCAL INTERPRETER PARITY PASSED; DEPLOYED 24/7 VERIFICATION STILL PENDING'
   : 'PARITY FAILED: do not deploy or change production trading rules to force a match';
-const path = args.find((arg) => !arg.startsWith('--')) ?? '/tmp/pine-parity-report.json';
+const path = args.find((arg) => !arg.startsWith('--')) ?? join(tmpdir(), 'pine-parity-report.json');
 await writeFile(path, JSON.stringify(report, null, 2));
 console.log(JSON.stringify(report, null, 2));
 console.log(`Comparison report saved to ${path}. ${report.limitation}`);

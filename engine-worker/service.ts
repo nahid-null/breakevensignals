@@ -29,8 +29,11 @@ export class SignalService {
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private recovery = new Set<Symbol>();
   private timers: ReturnType<typeof setInterval>[] = [];
+  private startedAt: number | null = null;
+  private lastScanAt: number | null = null;
   constructor(private readonly appUrl: string, private readonly secret: string, private readonly observeOnly = false,
-    private readonly runtimeMode: 'production' | 'temporary' = 'production') {}
+    private readonly runtimeMode: 'production' | 'temporary' = 'production',
+    private readonly hostKind: 'windows_pc' | 'hosted' | 'temporary' | 'unknown' = 'unknown') {}
 
   private async app<T>(action: string, data: unknown): Promise<T> {
     const response = await fetch(`${this.appUrl}/api/public/engine`, { method: 'POST',
@@ -43,7 +46,8 @@ export class SignalService {
     if (this.observeOnly) return;
     const r = await this.app<{ acquired: boolean }>('heartbeat', { instance_id: this.instance,
       websocket_connected: this.connected, binance_connected: Date.now() - this.lastRestAt < 90_000,
-      available_symbols: this.available.size, status, error: this.lastError, runtime_mode: this.runtimeMode });
+      available_symbols: this.available.size, status, error: this.lastError, runtime_mode: this.runtimeMode,
+      ...this.telemetry() });
     if (!r.acquired) { await this.stop(); throw new Error("Another engine instance owns the lease"); }
     this.ownedLease = true;
   }
@@ -75,6 +79,7 @@ export class SignalService {
     }
   }
   async start() {
+    this.startedAt = Date.now();
     const info = await binanceFetch('/fapi/v1/exchangeInfo') as { symbols?: { symbol: string; status: string; filters: { filterType: string; tickSize?: string }[] }[] };
     this.lastRestAt = Date.now();
     for (const symbol of SYMBOLS) {
@@ -134,6 +139,7 @@ export class SignalService {
       await delay(100);
     }
     this.initialized = true;
+    this.recordSuccessfulScan();
     this.timers.push(setInterval(() => {
       if (!this.running) return;
       if (this.socket && Date.now() - this.lastMessage > 60_000) this.socket.terminate();
@@ -228,7 +234,10 @@ export class SignalService {
           this.queues.set(symbol, (this.queues.get(symbol) ?? []).filter((x) => x.time > c.time));
         }
       }
-      if (this.connected && [...this.available.keys()].every((s) => Date.now() - (this.checkpoints.get(s)?.state.lastTime ?? 0) < 3 * MINUTE)) this.lastError = null;
+      if (this.connected && [...this.available.keys()].every((s) => Date.now() - (this.checkpoints.get(s)?.state.lastTime ?? 0) < 3 * MINUTE)) {
+        this.lastError = null;
+        this.recordSuccessfulScan();
+      }
     } catch (e) { this.fail(e); }
     finally { this.draining = false; }
   }
@@ -244,7 +253,21 @@ export class SignalService {
     this.lastError = e instanceof Error ? e.message.slice(0, 500) : 'Signal processing error';
     console.error(this.lastError);
   }
+  private recordSuccessfulScan() {
+    const times = [...this.available.keys()].map((s) => this.checkpoints.get(s)?.state.lastTime);
+    if (times.length && times.every((t): t is number => t !== undefined && t !== null)) {
+      // Slowest durable feed; never call a wall-clock poll a completed candle scan.
+      this.lastScanAt = Math.min(...times) + MINUTE;
+    }
+  }
+  private telemetry() {
+    return { host_kind: this.hostKind, started_at: this.startedAt === null ? null : new Date(this.startedAt).toISOString(),
+      uptime_seconds: this.startedAt === null ? 0 : Math.max(0, Math.floor((Date.now() - this.startedAt) / 1000)),
+      scanned_symbols: [...this.available.keys()].filter((s) => this.checkpoints.has(s)).length,
+      last_scan_at: this.lastScanAt === null ? null : new Date(this.lastScanAt).toISOString() };
+  }
   snapshot() { return { connected: this.connected, configured: SYMBOLS.length, available: this.available.size,
+    running: this.running, initialized: this.initialized, error: this.lastError, ...this.telemetry(),
     receivedAt: this.lastMessage, markets: [...this.markets.values()], counts: [...this.checkpoints].map(([symbol, row]) => ({ symbol, candles: row.state.count, lastTime: row.state.lastTime })) }; }
   disconnectForTest() { this.socket?.terminate(); }
   async stop() {

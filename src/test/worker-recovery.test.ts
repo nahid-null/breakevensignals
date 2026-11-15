@@ -55,6 +55,8 @@ describe('persistent worker orchestration (simulated transport)', () => {
       await service.start();
       const first = sockets[0]; if (!first) throw new Error('Socket not created'); first.emit('open');
       expect(service.snapshot().configured).toBe(21); expect(service.snapshot().available).toBe(1);
+      expect(service.snapshot().scanned_symbols).toBe(1);
+      expect(service.snapshot().last_scan_at).toBe(new Date(Date.now()).toISOString());
       expect(service.snapshot().markets.filter((m) => m.status === 'UNAVAILABLE')).toHaveLength(20);
       const previous = service.snapshot().counts[0]?.lastTime; if (previous === undefined || previous === null) throw new Error('Missing checkpoint');
       first.terminate(); expect(service.snapshot().connected).toBe(false);

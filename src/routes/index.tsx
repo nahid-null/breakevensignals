@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { Button } from '@/components/ui/button';
 import { winRate } from '@/lib/engine/stats';
 import { lastSignalTime } from '@/lib/engine/position-values';
+import { PcMonitor } from '@/components/terminal/PcMonitor';
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -90,6 +91,7 @@ function Dashboard() {
       {(system !== 'ONLINE' || health?.engine?.runtime_mode === 'temporary') && <div className="border-l-2 border-waiting bg-waiting/5 px-4 py-3 text-sm text-waiting">{health?.engine?.runtime_mode === 'temporary'
         ? system === 'ONLINE' ? 'Temporary real-market verification is running. Permanent monitoring is not deployed.' : 'Temporary verification stopped. Prices are last saved values; permanent monitoring is not deployed.'
         : health?.engine?.error ?? (health?.engine ? 'Signal monitoring is not confirmed online. Check System Health.' : 'Always-on engine not deployed. Live monitoring has not started.')}</div>}
+      <PcMonitor />
       <section className="grid grid-cols-2 gap-y-4 border-y border-border py-4 sm:grid-cols-3 lg:grid-cols-6">
         <Stat label="Available / configured" value={`${health?.engine?.available_symbols ?? '—'} / 21`} />
         <Stat label="Active LONG" value={stats?.activeLong ?? '—'} tone="text-long" />
