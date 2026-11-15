@@ -4,6 +4,7 @@ import { localHealthResponse, authorized } from './local-health';
 
 // Windows task executes this standalone Bun process, never the web runtime.
 const root = resolve(import.meta.dir, '..');
+const observe = process.argv.includes('--observe');
 const healthSecret = process.env['LOCAL_HEALTH_SECRET'] ?? '';
 if (healthSecret.length < 32) throw new Error('LOCAL_HEALTH_SECRET must contain at least 32 characters');
 const instance = crypto.randomUUID();
@@ -59,7 +60,7 @@ log('supervisor', 'Supervisor started; loopback ownership acquired');
 while (!stopping) {
   childHealth = null;
   const born = Date.now(); let failures = 0; let initializedOnce = false;
-  child = Bun.spawn([process.execPath, join(root, 'engine-worker/main.ts')], {
+  child = Bun.spawn([process.execPath, join(root, 'engine-worker/main.ts'), ...(observe ? ['--observe'] : [])], {
     cwd: root, env: { ...process.env, ENGINE_HOST_KIND: 'windows_pc', SUPERVISOR_INSTANCE: instance, SUPERVISOR_PORT: String(port), ENGINE_HEALTH_PORT: String(childPort) },
     stdout: 'pipe', stderr: 'pipe',
   });

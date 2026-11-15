@@ -1,9 +1,10 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { getSystemHealth } from "./ops.functions";
 import type { TerminalStats } from './engine/stats';
+import { engineHealth } from './engine/health';
 
 export type Position = Database["public"]["Tables"]["active_positions"]["Row"];
 export type SignalEvent = Database["public"]["Tables"]["signal_events"]["Row"];
@@ -79,7 +80,14 @@ export type Status = "ONLINE" | "OFFLINE" | "CONNECTED" | "DISCONNECTED" | "NOT 
 export function useStatuses() {
   const health = useHealth();
   const logs = useTelegramLogs();
-  const h = health.data;
+  const [now, setNow] = useState<number | null>(null);
+  useEffect(() => {
+    setNow(Date.now());
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+  // Expire cached status even if the next read fails or is still pending.
+  const h = health.data && now !== null ? { ...health.data, ...engineHealth(health.data.engine, health.data.databaseOk && !health.isError, now) } : health.data;
   const lastTg = logs.data?.find((l) => l.delivery_status !== "PENDING");
   const system: Status = health.isError ? "OFFLINE" : !h ? "WAITING" : h.databaseOk && h.heartbeatFresh && h.engine?.status === 'RUNNING' ? "ONLINE" : "OFFLINE";
   const binance: Status = health.isError ? 'DISCONNECTED' : !h ? 'WAITING' : h.binance === 'CONNECTED' ? 'CONNECTED' : 'DISCONNECTED';
