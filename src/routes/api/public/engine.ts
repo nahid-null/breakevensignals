@@ -43,7 +43,10 @@ export const Route = createFileRoute("/api/public/engine")({
       if (!lease.data) return Response.json({ error: "Engine lease expired" }, { status: 409 });
       if (base.data.action === "market") {
         const data = z.object({ market: marketSchema }).parse(base.data.data);
-        const { error } = await supabaseAdmin.from('market_state').upsert({ ...data.market, updated_at: new Date().toISOString() });
+        const update = { price: data.market.price, updated_at: new Date().toISOString() };
+        const { error } = data.market.status === 'UNAVAILABLE'
+          ? await supabaseAdmin.from('market_state').upsert({ ...data.market, ...update })
+          : await supabaseAdmin.from('market_state').update(update).eq('symbol', data.market.symbol);
         if (error) throw error;
       } else {
         const { drainTelegram } = await import('@/lib/telegram.server');
