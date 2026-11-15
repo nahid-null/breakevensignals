@@ -3,6 +3,8 @@
 The website runs on Lovable; this separate Bun service runs continuously on a paid Render background worker. A sandbox process is only a temporary test and is not production hosting.
 
 ## Deployment
+Do not deploy until original-Pine parity is validated. Render configuration is preparation only; paid activation requires the user's separate final confirmation.
+
 1. Set `ENGINE_SHARED_SECRET` using Lovable's secure secret form (Generate + copy), then paste that same private value into Render. Publish the website after saving the key to activate it at the public HTTPS URL. Never put it in chat or source.
 2. Connect the project source repository to Render and create a Blueprint from `render.yaml`. It requests one Frankfurt background-worker instance on the 0.5c-512mb plan (approximately $7/month; confirm current pricing in Render before approving).
 3. Set `ENGINE_APP_URL` to the published website origin (no trailing path) and `ENGINE_SHARED_SECRET` to the same private value saved in Lovable. No database administrator key or Binance trading key is required.
@@ -13,7 +15,7 @@ The website runs on Lovable; this separate Bun service runs continuously on a pa
 - Original one-minute Pine defaults, without invented ADX or 5m/15m filters.
 - Initial 1500-candle replay runs the entire trading state machine and cooldown. Closed replay trades are backtest-only, not live history. An open historical trade is explicitly adopted as `historical` with its original prices and without a Telegram alert, so locks are not reset arbitrarily. It is not a newly detected live entry.
 - Later missing candles are processed chronologically as `recovery`; historical/recovery events do not produce stale Telegram alerts. Current confirmed WebSocket candles are `native` live signals. Sources are visible in history.
-- Original Pine calculations seeded from identical starting candles can be compared. No automated tool here executes Pine; parity remains unverified until matching reference outputs are supplied. EMA warm-up starting at a different history boundary can differ from a chart with more history.
+- `bun run verify:pine` executes the unmodified original uploads locally through the test-only PineTS interpreter against identical saved Binance candles, and compares indicators, setup conditions, all events, active levels and performance bar by bar. This is a candidate comparison, not certification: PineTS 0.13.1 SMA-seeds EMA instead of Pine's first-value seed. The command writes a report to `/tmp/pine-parity-report.json` and exits 2 (blocked). Do not alter native trading rules to fit an incorrect reference, discard startup differences, or claim deployment readiness. A validated Pine-compatible oracle or independently validated identical-candle outputs are still required.
 - SL beats TP on the same candle, and both precede breakeven. Moved stops take effect on the next candle. Fees and slippage produce estimated R results, not real exchange fills.
 - Native calculations monitor signals only; they do not place exchange orders.
 

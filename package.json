@@ -11,6 +11,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "test": "vitest run",
+    "verify:pine": "bun engine-worker/verify-pine.ts",
     "test:watch": "vitest"
   },
   "overrides": {
@@ -93,6 +94,7 @@
     "globals": "^15.15.0",
     "jsdom": "^20.0.3",
     "nitro": "3.0.260603-beta",
+    "pinets": "0.13.1",
     "postgres": "^4.1.1",
     "prettier": "^3.7.3",
     "typescript": "^5.8.3",
