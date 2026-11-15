@@ -58,7 +58,7 @@ for (const event of ['SIGINT','SIGTERM'] as const) process.on(event, () => { voi
 log('supervisor', 'Supervisor started; loopback ownership acquired');
 while (!stopping) {
   childHealth = null;
-  const born = Date.now(); let failures = 0;
+  const born = Date.now(); let failures = 0; let initializedOnce = false;
   child = Bun.spawn([process.execPath, join(root, 'engine-worker/main.ts')], {
     cwd: root, env: { ...process.env, ENGINE_HOST_KIND: 'windows_pc', SUPERVISOR_INSTANCE: instance, SUPERVISOR_PORT: String(port), ENGINE_HEALTH_PORT: String(childPort) },
     stdout: 'pipe', stderr: 'pipe',
@@ -70,6 +70,7 @@ while (!stopping) {
       const response = await fetch(`http://127.0.0.1:${childPort}/health`, { headers: { authorization: `Bearer ${healthSecret}` }, signal: AbortSignal.timeout(4000) });
       if (!response.ok) throw new Error('Worker health unavailable');
       childHealth = await response.json() as Record<string, unknown>;
+      if (childHealth['initialized'] === true) initializedOnce = true;
       const messageAge = Date.now() - Number(childHealth['receivedAt'] ?? 0);
       const engineStuck = childHealth['initialized'] === true && messageAge > 300_000;
       const startupStuck = childHealth['initialized'] !== true && Date.now() - born > 600_000;
@@ -78,7 +79,7 @@ while (!stopping) {
     } catch {
       failures++;
       childHealth = null;
-      if (failures >= 3 && (Date.now() - born > 600_000 || childHealth?.['initialized'] === true)) {
+      if (failures >= 3 && (Date.now() - born > 600_000 || initializedOnce)) {
         lastError = 'Worker unresponsive; restarting'; log('supervisor', lastError); child?.kill();
       }
     }

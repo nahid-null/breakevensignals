@@ -3,6 +3,7 @@ param([string]$WebsiteUrl, [switch]$InstallTunnelClient)
 . "$PSScriptRoot\common.ps1"
 Assert-Administrator
 $SourceRoot = (Resolve-Path "$PSScriptRoot\..\..").Path
+if ($SourceRoot -eq $AppRoot) { throw 'Run installation from the extracted source bundle, not the installed app folder.' }
 if (Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue) { throw 'Stop and uninstall startup before upgrading. Logs and configuration will be kept.' }
 $bun = Get-Command bun.exe -ErrorAction SilentlyContinue
 if (-not $bun) { throw 'Install Bun for Windows from https://bun.sh/docs/installation, reopen PowerShell, then retry. No paid software is required.' }
@@ -15,7 +16,9 @@ New-Item -ItemType Directory -Force $InstallRoot, $AppRoot, (Join-Path $InstallR
 if ($LASTEXITCODE -ne 0) { throw 'Unable to restrict local folder permissions.' }
 Copy-Item $bun.Source (Join-Path $InstallRoot 'bun.exe') -Force
 foreach ($item in @('engine-worker','src','drizzle','package.json','bun.lock','bunfig.toml')) {
-    Copy-Item (Join-Path $SourceRoot $item) $AppRoot -Recurse -Force
+    $destination = Join-Path $AppRoot $item
+    if (Test-Path $destination) { Remove-Item $destination -Recurse -Force }
+    Copy-Item (Join-Path $SourceRoot $item) $destination -Recurse -Force
 }
 $EnvPath = Join-Path $InstallRoot 'engine.env'
 if (-not (Test-Path $EnvPath)) {
