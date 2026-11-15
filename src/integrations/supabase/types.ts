@@ -14,13 +14,243 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      active_positions: {
+        Row: {
+          breakeven_timestamp: string | null
+          created_at: string
+          current_stop_loss: number
+          direction: string
+          entry_price: number
+          entry_timestamp: string
+          exit_price: number | null
+          exit_timestamp: string | null
+          fee_rate_percent: number | null
+          id: string
+          indicator_name: string
+          original_stop_loss: number
+          status: string
+          symbol: string
+          take_profit: number
+          timeframe: string
+          trade_id: string
+          updated_at: string
+        }
+        Insert: {
+          breakeven_timestamp?: string | null
+          created_at?: string
+          current_stop_loss: number
+          direction: string
+          entry_price: number
+          entry_timestamp: string
+          exit_price?: number | null
+          exit_timestamp?: string | null
+          fee_rate_percent?: number | null
+          id?: string
+          indicator_name: string
+          original_stop_loss: number
+          status?: string
+          symbol: string
+          take_profit: number
+          timeframe: string
+          trade_id: string
+          updated_at?: string
+        }
+        Update: {
+          breakeven_timestamp?: string | null
+          created_at?: string
+          current_stop_loss?: number
+          direction?: string
+          entry_price?: number
+          entry_timestamp?: string
+          exit_price?: number | null
+          exit_timestamp?: string | null
+          fee_rate_percent?: number | null
+          id?: string
+          indicator_name?: string
+          original_stop_loss?: number
+          status?: string
+          symbol?: string
+          take_profit?: number
+          timeframe?: string
+          trade_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      app_settings: {
+        Row: {
+          default_fee_rate_percent: number
+          display_timezone: string
+          id: number
+          long_breakeven_enabled: boolean
+          short_breakeven_enabled: boolean
+          telegram_enabled: boolean
+          updated_at: string
+        }
+        Insert: {
+          default_fee_rate_percent?: number
+          display_timezone?: string
+          id?: number
+          long_breakeven_enabled?: boolean
+          short_breakeven_enabled?: boolean
+          telegram_enabled?: boolean
+          updated_at?: string
+        }
+        Update: {
+          default_fee_rate_percent?: number
+          display_timezone?: string
+          id?: number
+          long_breakeven_enabled?: boolean
+          short_breakeven_enabled?: boolean
+          telegram_enabled?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      signal_events: {
+        Row: {
+          created_at: string
+          direction: string
+          entry_price: number | null
+          event_id: string
+          event_type: string
+          exit_price: number | null
+          fee_rate_percent: number | null
+          id: string
+          indicator_name: string
+          processed_status: string
+          processing_note: string | null
+          stop_loss: number | null
+          symbol: string
+          take_profit: number | null
+          timeframe: string
+          timestamp: string
+          trade_id: string
+        }
+        Insert: {
+          created_at?: string
+          direction: string
+          entry_price?: number | null
+          event_id: string
+          event_type: string
+          exit_price?: number | null
+          fee_rate_percent?: number | null
+          id?: string
+          indicator_name: string
+          processed_status: string
+          processing_note?: string | null
+          stop_loss?: number | null
+          symbol: string
+          take_profit?: number | null
+          timeframe: string
+          timestamp: string
+          trade_id: string
+        }
+        Update: {
+          created_at?: string
+          direction?: string
+          entry_price?: number | null
+          event_id?: string
+          event_type?: string
+          exit_price?: number | null
+          fee_rate_percent?: number | null
+          id?: string
+          indicator_name?: string
+          processed_status?: string
+          processing_note?: string | null
+          stop_loss?: number | null
+          symbol?: string
+          take_profit?: number | null
+          timeframe?: string
+          timestamp?: string
+          trade_id?: string
+        }
+        Relationships: []
+      }
+      telegram_logs: {
+        Row: {
+          created_at: string
+          delivery_status: string
+          direction: string | null
+          error_message: string | null
+          event_id: string
+          id: string
+          is_test: boolean
+          message: string
+          retry_count: number
+          symbol: string | null
+          telegram_message_id: number | null
+          trade_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          delivery_status?: string
+          direction?: string | null
+          error_message?: string | null
+          event_id: string
+          id?: string
+          is_test?: boolean
+          message: string
+          retry_count?: number
+          symbol?: string | null
+          telegram_message_id?: number | null
+          trade_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          delivery_status?: string
+          direction?: string | null
+          error_message?: string | null
+          event_id?: string
+          id?: string
+          is_test?: boolean
+          message?: string
+          retry_count?: number
+          symbol?: string | null
+          telegram_message_id?: number | null
+          trade_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      webhook_receipts: {
+        Row: {
+          accepted: boolean
+          event_id: string | null
+          id: string
+          raw_payload: Json | null
+          reason: string | null
+          received_at: string
+        }
+        Insert: {
+          accepted: boolean
+          event_id?: string | null
+          id?: string
+          raw_payload?: Json | null
+          reason?: string | null
+          received_at?: string
+        }
+        Update: {
+          accepted?: boolean
+          event_id?: string | null
+          id?: string
+          raw_payload?: Json | null
+          reason?: string | null
+          received_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      process_signal_event: {
+        Args: { p: Json; tg_message: string }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
