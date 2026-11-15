@@ -1,12 +1,13 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import { Activity, BookOpen, History, Send, Settings, HeartPulse } from "lucide-react";
+import { Activity, BookOpen, History, Send, Settings, HeartPulse, List } from "lucide-react";
 import { useRealtimeSync, useStatuses, fmtTime } from "@/lib/data";
 import { StatusBadge } from "./StatusBadge";
 
 const NAV = [
   { to: "/", label: "Dashboard", icon: Activity },
   { to: "/signals", label: "Signal History", icon: History },
+  { to: '/positions', label: 'Trade Ledger', icon: List },
   { to: "/telegram", label: "Telegram", icon: Send },
   { to: "/health", label: "System Health", icon: HeartPulse },
   { to: "/settings", label: "Settings", icon: Settings },
@@ -35,7 +36,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <div className="flex h-8 w-8 items-center justify-center rounded border border-primary/40 bg-primary/10">
               <Activity className="h-4 w-4 text-primary" />
             </div>
-            <span className="font-mono text-sm font-semibold tracking-[0.2em]">CRYPTO SIGNAL TERMINAL</span>
+            <span className="font-mono text-sm font-semibold">CRYPTO SIGNAL TERMINAL</span>
           </div>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] text-muted-foreground">
             <span className="flex items-center gap-1.5">SYSTEM <StatusBadge value={s.system} /></span>

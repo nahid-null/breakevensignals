@@ -9,15 +9,18 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/terminal/StatusBadge";
-import { WEBHOOK_URL_LIVE, WEBHOOK_URL_PREVIEW } from "@/lib/urls";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import type { Settings } from '@/lib/data';
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
     meta: [
       { title: "Settings — Crypto Signal Terminal" },
-      { name: "description", content: "Telegram breakeven notification switches, timezone and webhook details." },
+      { name: "description", content: "Separate LONG and SHORT Telegram notification controls and display preferences." },
       { property: "og:title", content: "Settings — Crypto Signal Terminal" },
-      { property: "og:description", content: "Notification switches and webhook details." },
+      { property: "og:description", content: "LONG and SHORT notifications for entries, breakeven, stop loss and take profit." },
+      { property: 'og:type', content: 'website' },
+      { name: 'twitter:card', content: 'summary_large_image' },
     ],
   }),
   component: SettingsPage,
@@ -26,71 +29,73 @@ export const Route = createFileRoute("/settings")({
 const TIMEZONES = ["UTC", "Asia/Dhaka", "Asia/Dubai", "Asia/Singapore", "Europe/London", "America/New_York"];
 
 function SettingsPage() {
-  const { data: s } = useSettings();
+  const settings = useSettings();
+  const s = settings.data;
   const st = useStatuses();
   const qc = useQueryClient();
   const [testing, setTesting] = useState(false);
-  type Patch = Partial<{ telegram_enabled: boolean; long_breakeven_enabled: boolean; short_breakeven_enabled: boolean; display_timezone: string; default_fee_rate_percent: number }>;
+  const [saving, setSaving] = useState(false);
+  type NotificationKey = 'telegram_enabled' | 'long_notifications_enabled' | 'short_notifications_enabled' | 'long_entry_enabled' | 'short_entry_enabled' | 'long_breakeven_enabled' | 'short_breakeven_enabled' | 'long_stop_loss_enabled' | 'short_stop_loss_enabled' | 'long_take_profit_enabled' | 'short_take_profit_enabled';
+  type Patch = Partial<Pick<Settings, NotificationKey | 'display_timezone' | 'default_fee_rate_percent'>>;
   const save = async (patch: Patch) => {
+    setSaving(true);
     try {
       await updateSettings({ data: patch });
       await qc.invalidateQueries({ queryKey: ["app_settings"] });
       toast.success("Saved");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Save failed");
+    } finally {
+      setSaving(false);
     }
   };
   const test = async () => {
     setTesting(true);
-    const r = await sendTestTelegram();
-    setTesting(false);
-    if (r.ok) toast.success("Test message delivered to Telegram");
-    else toast.error("error" in r ? String(r.error) : "Failed");
+    try {
+      const r = await sendTestTelegram();
+      await qc.invalidateQueries({ queryKey: ['telegram_logs'] });
+      if (r.ok) toast.success("Test message delivered to Telegram");
+      else toast.error("error" in r ? String(r.error) : "Failed");
+    } catch { toast.error('Telegram test failed'); }
+    finally { setTesting(false); }
   };
-  if (!s) return <div className="glass p-10 text-center text-muted-foreground">Loading settings…</div>;
-  const toggle = (label: string, desc: string, key: "telegram_enabled" | "long_breakeven_enabled" | "short_breakeven_enabled") => (
+  if (settings.isError) return <p className="text-short">Could not load settings.</p>;
+  if (!s) return <div className="p-10 text-center text-muted-foreground">Loading settings…</div>;
+  const toggle = (label: string, key: NotificationKey) => (
     <div className="flex items-center justify-between gap-4 border-b border-border/60 py-3 last:border-0">
-      <div><div className="text-sm">{label}</div><div className="text-xs text-muted-foreground">{desc}</div></div>
-      <Switch checked={s[key]} onCheckedChange={(v) => save({ [key]: v })} />
+      <div className="text-sm">{label}</div>
+      <Switch aria-label={label} checked={s[key]} disabled={saving} onCheckedChange={(v) => save({ [key]: v })} />
     </div>
   );
   return (
     <div className="space-y-4">
-      <h1 className="font-mono text-lg tracking-widest">SETTINGS</h1>
+      <h1 className="text-2xl font-semibold">Settings</h1>
+      <section className="border-y border-border py-3">{toggle('Telegram notifications', 'telegram_enabled')}</section>
       <div className="grid gap-4 lg:grid-cols-2">
-        <section className="glass p-4">
-          <h2 className="mb-2 text-xs uppercase tracking-widest text-muted-foreground">Telegram breakeven notifications</h2>
-          {toggle("Telegram notifications", "Master switch. Events are still stored when off.", "telegram_enabled")}
-          {toggle("LONG breakeven", "PRO LONG SCALPER breakeven activations", "long_breakeven_enabled")}
-          {toggle("SHORT breakeven", "PRO SHORT SCALPER breakeven activations", "short_breakeven_enabled")}
-          <div className="mt-4 flex items-center gap-3">
-            <Button onClick={test} disabled={testing}><Send className="h-4 w-4" /> Send test notification</Button>
-            <StatusBadge value={st.telegram} />
-          </div>
-        </section>
-        <section className="glass space-y-4 p-4">
+        {(['long', 'short'] as const).map((side) => <section key={side} className="border-b border-border py-4 lg:pr-8">
+          <h2 className={`mb-2 font-mono text-sm ${side === 'long' ? 'text-long' : 'text-short'}`}>{side.toUpperCase()} NOTIFICATIONS</h2>
+          {toggle(`${side.toUpperCase()} notifications`, `${side}_notifications_enabled`)}
+          {toggle(`${side.toUpperCase()} entry`, `${side}_entry_enabled`)}
+          {toggle(`${side.toUpperCase()} breakeven`, `${side}_breakeven_enabled`)}
+          {toggle(`${side.toUpperCase()} stop loss`, `${side}_stop_loss_enabled`)}
+          {toggle(`${side.toUpperCase()} take profit`, `${side}_take_profit_enabled`)}
+        </section>)}
+        <section className="space-y-4 py-4">
           <h2 className="text-xs uppercase tracking-widest text-muted-foreground">Display</h2>
           <label className="block text-sm">
             Timezone
-            <select className="mt-1 h-9 w-full rounded-md border border-input bg-transparent px-2 font-mono text-sm" value={s.display_timezone} onChange={(e) => save({ display_timezone: e.target.value })}>
-              {TIMEZONES.map((t) => <option key={t}>{t}</option>)}
-            </select>
+            <Select value={s.display_timezone} onValueChange={(v) => save({ display_timezone: v })} disabled={saving}><SelectTrigger className="mt-2" aria-label="Timezone"><SelectValue /></SelectTrigger><SelectContent>{TIMEZONES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select>
           </label>
           <label className="block text-sm">
             Default fee rate % (display only)
             <Input type="number" step="0.01" min={0} defaultValue={s.default_fee_rate_percent} className="mt-1 font-mono"
               onBlur={(e) => save({ default_fee_rate_percent: Number(e.target.value) })} />
           </label>
-          <p className="text-xs text-muted-foreground">These settings never change your indicator calculations or create signals.</p>
         </section>
-        <section className="glass space-y-3 p-4 lg:col-span-2">
-          <h2 className="text-xs uppercase tracking-widest text-muted-foreground">Webhook endpoint</h2>
-          <div className="flex items-center gap-2 text-sm">Status <StatusBadge value={st.webhook} /></div>
-          <div className="text-xs text-muted-foreground">After publishing (use this in TradingView):</div>
-          <code className="block break-all rounded bg-background/60 p-2 font-mono text-xs">{WEBHOOK_URL_LIVE}</code>
-          <div className="text-xs text-muted-foreground">Preview build (for testing before publishing):</div>
-          <code className="block break-all rounded bg-background/60 p-2 font-mono text-xs">{WEBHOOK_URL_PREVIEW}</code>
-          <p className="text-xs text-muted-foreground">Replace YOUR_WEBHOOK_SECRET with the webhook key you saved. Never share it. See the Setup Guide for a test command.</p>
+        <section className="space-y-3 py-4">
+          <h2 className="text-xs uppercase tracking-widest text-muted-foreground">Telegram connection</h2>
+          <div className="flex flex-wrap items-center gap-3"><Button onClick={test} disabled={testing}><Send className="h-4 w-4" /> Send test notification</Button><StatusBadge value={st.telegram} /></div>
+          <div className="flex items-center justify-between text-sm text-muted-foreground">Private engine credential <StatusBadge value={st.health?.engineConfigured ? 'CONNECTED' : 'NOT CONFIGURED'} /></div>
         </section>
       </div>
     </div>
