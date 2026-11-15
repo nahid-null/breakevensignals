@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { getSystemHealth } from "./ops.functions";
+import type { TerminalStats } from './engine/stats';
 
 export type Position = Database["public"]["Tables"]["active_positions"]["Row"];
 export type SignalEvent = Database["public"]["Tables"]["signal_events"]["Row"];
@@ -21,6 +22,7 @@ export function useRealtimeSync() {
       channel.on("postgres_changes", { event: "*", schema: "public", table }, () => {
          void qc.invalidateQueries({ queryKey: [table] });
          if (table !== 'market_state') void qc.invalidateQueries({ queryKey: ["health"] });
+         if (table !== 'market_state' && table !== 'engine_health') void qc.invalidateQueries({ queryKey: ['terminal_statistics'] });
       });
     }
     channel.subscribe();
@@ -65,6 +67,12 @@ export const useHealth = () =>
 
 export const useMarkets = () => useQuery({ queryKey: ['market_state'], queryFn: () =>
   must<MarketState[]>(supabase.from('market_state').select('*')), refetchInterval: 15000 });
+
+export const useStats = () => useQuery({ queryKey: ['terminal_statistics'], queryFn: async () => {
+  const { data, error } = await supabase.rpc('terminal_statistics');
+  if (error) throw error;
+  return data as unknown as TerminalStats;
+} });
 
 export type Status = "ONLINE" | "OFFLINE" | "CONNECTED" | "NOT CONFIGURED" | "ERROR" | "WAITING" | "MANUAL VERIFICATION REQUIRED";
 

@@ -1,11 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import { Search, Activity, ArrowDownWideNarrow } from "lucide-react";
 import { SYMBOLS } from "@/lib/config";
-import { fmtPrice, fmtTime, latestBySymbol, useEvents, usePositions, useSettings, useStatuses, useTelegramLogs, type Position } from "@/lib/data";
+import { fmtPrice, fmtTime, latestBySymbol, usePositions, useSettings, useStatuses, useMarkets, useStats, type Position } from "@/lib/data";
 import { StatusBadge, positionLabel } from "@/components/terminal/StatusBadge";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { Button } from '@/components/ui/button';
+import { winRate } from '@/lib/engine/stats';
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -14,6 +16,8 @@ export const Route = createFileRoute("/")({
       { name: "description", content: "Live LONG and SHORT positions for 21 Binance USDT futures pairs." },
       { property: "og:title", content: "Dashboard — Crypto Signal Terminal" },
       { property: "og:description", content: "Live LONG and SHORT positions for 21 Binance USDT futures pairs." },
+      { property: 'og:type', content: 'website' },
+      { name: 'twitter:card', content: 'summary_large_image' },
     ],
   }),
   component: Dashboard,
@@ -21,7 +25,7 @@ export const Route = createFileRoute("/")({
 
 function Stat({ label, value, tone }: { label: string; value: number | string; tone?: string | undefined }) {
   return (
-    <div className="glass p-4">
+    <div className="border-l border-border px-4 py-2 first:border-0">
       <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</div>
       <div className={cn("mt-1 font-mono text-2xl font-semibold tabular-nums", tone)}>{value}</div>
     </div>
@@ -39,32 +43,27 @@ function Cells({ p }: { p: Position | undefined }) {
       <td className={cn("px-3 py-2.5 font-mono tabular-nums", p ? tone : "text-muted-foreground")}>{fmtPrice(p?.entry_price)}</td>
       <td className={cn("px-3 py-2.5 font-mono tabular-nums", p?.status === "BREAKEVEN" ? "text-breakeven" : "text-muted-foreground")}>{fmtPrice(p?.current_stop_loss)}</td>
       <td className="px-3 py-2.5 font-mono tabular-nums text-muted-foreground">{fmtPrice(p?.take_profit)}</td>
+      <td className="px-3 py-2.5 font-mono text-xs"><span className={p?.breakeven_timestamp ? 'text-breakeven' : 'text-muted-foreground'}>{p?.breakeven_timestamp ? 'ACTIVATED' : '—'}</span></td>
     </>
   );
 }
 
 function Dashboard() {
   const positions = usePositions();
-  const events = useEvents();
-  const logs = useTelegramLogs();
+  const markets = useMarkets();
+  const statsQuery = useStats();
   const settings = useSettings();
-  const { health } = useStatuses();
+  const { health, system } = useStatuses();
   const tz = settings.data?.display_timezone ?? "UTC";
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<Filter>("ALL");
   const [sort, setSort] = useState<"latest" | "symbol">("symbol");
+  const [view, setView] = useState<'BOTH' | 'LONG' | 'SHORT'>('BOTH');
+  const marketMap = new Map(markets.data?.map((m) => [m.symbol, m]));
 
   const latest = useMemo(() => latestBySymbol(positions.data), [positions.data]);
-  const all = positions.data ?? [];
-  const stats = {
-    activeLong: all.filter((p) => p.direction === "LONG" && p.status === "ACTIVE").length,
-    activeShort: all.filter((p) => p.direction === "SHORT" && p.status === "ACTIVE").length,
-    be: all.filter((p) => p.status === "BREAKEVEN").length,
-    done: all.filter((p) => COMPLETED.includes(p.status)).length,
-    entries: (events.data ?? []).filter((e) => e.event_type === "entry_confirmed").length,
-    beEvents: (events.data ?? []).filter((e) => e.event_type === "breakeven_activated").length,
-    sent: (logs.data ?? []).filter((l) => !l.is_test && l.delivery_status === "SENT").length,
-  };
+  const stats = statsQuery.data;
+  const rate = stats ? winRate(stats) : null;
 
   const rows = useMemo(() => {
     let r = SYMBOLS.map((s) => ({ symbol: s, long: latest.get(`${s}:LONG`), short: latest.get(`${s}:SHORT`) }));
@@ -72,7 +71,7 @@ function Dashboard() {
     const has = (p: Position | undefined, f: (p: Position) => boolean) => !!p && f(p);
     if (filter === "LONG") r = r.filter((x) => x.long);
     if (filter === "SHORT") r = r.filter((x) => x.short);
-    if (filter === "ACTIVE") r = r.filter((x) => has(x.long, (p) => p.status === "ACTIVE") || has(x.short, (p) => p.status === "ACTIVE"));
+    if (filter === "ACTIVE") r = r.filter((x) => has(x.long, (p) => ['ACTIVE','BREAKEVEN'].includes(p.status)) || has(x.short, (p) => ['ACTIVE','BREAKEVEN'].includes(p.status)));
     if (filter === "BREAKEVEN") r = r.filter((x) => has(x.long, (p) => p.status === "BREAKEVEN") || has(x.short, (p) => p.status === "BREAKEVEN"));
     if (filter === "COMPLETED") r = r.filter((x) => has(x.long, (p) => COMPLETED.includes(p.status)) || has(x.short, (p) => COMPLETED.includes(p.status)));
     const ts = (x: (typeof r)[number]) => Math.max(new Date(x.long?.updated_at ?? 0).getTime(), new Date(x.short?.updated_at ?? 0).getTime());
@@ -82,22 +81,21 @@ function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        <Stat label="Monitored coins" value={SYMBOLS.length} />
-        <Stat label="LONG systems" value={SYMBOLS.length} tone="text-long" />
-        <Stat label="SHORT systems" value={SYMBOLS.length} tone="text-short" />
-        <Stat label="Active LONG" value={stats.activeLong} tone="text-long" />
-        <Stat label="Active SHORT" value={stats.activeShort} tone="text-short" />
-        <Stat label="Breakeven active" value={stats.be} tone="text-breakeven" />
-        <Stat label="Completed" value={stats.done} />
-        <Stat label="Entry signals" value={stats.entries} />
-        <Stat label="Breakeven events" value={stats.beEvents} tone="text-breakeven" />
-        <Stat label="Telegram sent" value={stats.sent} />
-        <Stat label="Failed webhooks" value={health?.failedWebhooks ?? "—"} tone={health?.failedWebhooks ? "text-short" : undefined} />
-        <Stat label="Last webhook" value={health?.lastWebhookAt ? fmtTime(health.lastWebhookAt, tz).split(" ")[1] ?? "—" : "—"} />
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div><div className="mb-2 flex items-center gap-2 font-mono text-[10px] text-primary"><Activity className="size-3" /> BINANCE USD-M FUTURES · 1 MINUTE</div><h1 className="text-2xl font-semibold">Market terminal</h1></div>
+        <div className="text-right font-mono text-xs text-muted-foreground">21 PAIRS · 42 INDEPENDENT SYSTEMS<br /><span className={system === 'ONLINE' ? 'text-long' : 'text-waiting'}>{health?.engine?.status ?? 'AWAITING ENGINE DEPLOYMENT'}</span></div>
+      </div>
+      {system !== 'ONLINE' && <div className="border-l-2 border-waiting bg-waiting/5 px-4 py-3 text-sm text-waiting">{health?.engine?.error ?? (health?.engine ? 'Signal monitoring is not confirmed online. Check System Health.' : 'Always-on engine not deployed. Live monitoring has not started.')}</div>}
+      <section className="grid grid-cols-2 gap-y-4 border-y border-border py-4 sm:grid-cols-3 lg:grid-cols-6">
+        <Stat label="Available / configured" value={`${health?.engine?.available_symbols ?? '—'} / 21`} />
+        <Stat label="Active LONG" value={stats?.activeLong ?? '—'} tone="text-long" />
+        <Stat label="Active SHORT" value={stats?.activeShort ?? '—'} tone="text-short" />
+        <Stat label="Breakeven active" value={stats?.breakeven ?? '—'} tone="text-breakeven" />
+        <Stat label="Completed" value={stats?.completed ?? '—'} />
+        <Stat label="Win rate · net costs" value={rate === null ? '—' : `${rate.toFixed(1)}%`} />
       </section>
 
-      <section className="glass overflow-hidden">
+      <section className="overflow-hidden border-y border-border">
         <div className="flex flex-wrap items-center gap-3 border-b border-border p-3">
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -105,21 +103,23 @@ function Dashboard() {
           </div>
           <div className="flex flex-wrap gap-1">
             {(["ALL", "LONG", "SHORT", "ACTIVE", "BREAKEVEN", "COMPLETED"] as Filter[]).map((f) => (
-              <button
+              <Button variant="ghost" size="sm"
                 key={f}
                 onClick={() => setFilter(f)}
                 className={cn("rounded px-2.5 py-1 font-mono text-[11px] transition-colors", filter === f ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent")}
               >
                 {f}
-              </button>
+              </Button>
             ))}
           </div>
-          <div className="ml-auto flex gap-1 text-[11px]">
+          <div className="ml-auto flex flex-wrap gap-1 text-[11px]">
+            {(['BOTH','LONG','SHORT'] as const).map((v) => <Button key={v} size="sm" variant="ghost" onClick={() => setView(v)} className={cn('font-mono text-[11px]', view === v && 'bg-accent')}>{v}</Button>)}
+            <ArrowDownWideNarrow className="mx-1 size-4 self-center text-muted-foreground" />
             <span className="self-center text-muted-foreground">SORT</span>
             {(["symbol", "latest"] as const).map((s) => (
-              <button key={s} onClick={() => setSort(s)} className={cn("rounded px-2.5 py-1 font-mono", sort === s ? "bg-accent text-foreground" : "text-muted-foreground hover:bg-accent")}>
+              <Button variant="ghost" size="sm" key={s} onClick={() => setSort(s)} className={cn("rounded px-2.5 py-1 font-mono text-[11px]", sort === s ? "bg-accent text-foreground" : "text-muted-foreground hover:bg-accent")}>
                 {s === "symbol" ? "COIN" : "LATEST SIGNAL"}
-              </button>
+              </Button>
             ))}
           </div>
         </div>
@@ -128,34 +128,43 @@ function Dashboard() {
             <thead className="text-[10px] uppercase tracking-widest text-muted-foreground">
               <tr className="border-b border-border">
                 <th className="px-3 py-2 text-left">Coin</th>
+                <th className="px-3 py-2 text-left">Price</th>
+                <th className="px-3 py-2 text-left">Trend / feed</th>
+                {view !== 'SHORT' && <>
                 <th className="px-3 py-2 text-left text-long">Long status</th>
                 <th className="px-3 py-2 text-left">Long entry</th>
                 <th className="px-3 py-2 text-left">Long SL</th>
                 <th className="px-3 py-2 text-left">Long TP</th>
+                <th className="px-3 py-2 text-left">Long BE</th></>}
+                {view !== 'LONG' && <>
                 <th className="px-3 py-2 text-left text-short">Short status</th>
                 <th className="px-3 py-2 text-left">Short entry</th>
                 <th className="px-3 py-2 text-left">Short SL</th>
                 <th className="px-3 py-2 text-left">Short TP</th>
-                <th className="px-3 py-2 text-left">Last updated</th>
+                <th className="px-3 py-2 text-left">Short BE</th></>}
+                <th className="px-3 py-2 text-left">Last signal</th>
               </tr>
             </thead>
             <tbody>
               {positions.isLoading && (
-                <tr><td colSpan={10} className="px-3 py-10 text-center text-muted-foreground">Loading positions…</td></tr>
+                <tr><td colSpan={14} className="px-3 py-10 text-center text-muted-foreground">Loading positions…</td></tr>
               )}
               {positions.isError && (
-                <tr><td colSpan={10} className="px-3 py-10 text-center text-short">Could not load positions: {positions.error.message}</td></tr>
+                <tr><td colSpan={14} className="px-3 py-10 text-center text-short">Could not load positions.</td></tr>
               )}
               {!positions.isLoading && rows.length === 0 && (
-                <tr><td colSpan={10} className="px-3 py-10 text-center text-muted-foreground">No coins match this filter.</td></tr>
+                <tr><td colSpan={14} className="px-3 py-10 text-center text-muted-foreground">No coins match this filter.</td></tr>
               )}
               {!positions.isLoading && rows.map((r) => {
                 const upd = [r.long?.updated_at, r.short?.updated_at].filter(Boolean).sort().pop();
+                const m = marketMap.get(r.symbol);
                 return (
                   <tr key={r.symbol} className="border-b border-border/60 transition-colors hover:bg-accent/40">
                     <td className="px-3 py-2.5 font-mono font-semibold">{r.symbol}</td>
-                    <Cells p={r.long} />
-                    <Cells p={r.short} />
+                    <td className="px-3 py-2.5 font-mono tabular-nums">{fmtPrice(m?.price)}</td>
+                    <td className="px-3 py-2.5"><div className="flex flex-col items-start gap-1"><StatusBadge value={m?.trend ?? 'WAITING'} /><span title={m?.error ?? ''} className="font-mono text-[9px] text-muted-foreground">{!health?.heartbeatFresh && m ? 'STALE' : m?.status ?? 'NO FEED'}</span></div></td>
+                    {view !== 'SHORT' && <Cells p={r.long} />}
+                    {view !== 'LONG' && <Cells p={r.short} />}
                     <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{fmtTime(upd, tz)}</td>
                   </tr>
                 );
@@ -164,9 +173,7 @@ function Dashboard() {
           </table>
         </div>
       </section>
-      <p className="text-xs text-muted-foreground">
-        Every coin shows WAITING until a real alert arrives from your TradingView indicators. Values update automatically.
-      </p>
+      <div className="flex flex-wrap gap-x-6 gap-y-2 border-t border-border pt-3 font-mono text-[10px] text-muted-foreground"><span>ENTRIES {stats?.entries ?? '—'}</span><span>BREAKEVEN EVENTS {stats?.breakevenEvents ?? '—'}</span><span>TELEGRAM SENT {stats?.telegramSent ?? '—'}</span><span>NET RESULT {stats ? Number(stats.netR).toFixed(3) : '—'}R</span><span>LAST CANDLE {fmtTime(health?.lastCandleAt, tz)}</span></div>
     </div>
   );
 }
