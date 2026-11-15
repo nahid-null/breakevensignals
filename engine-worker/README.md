@@ -3,7 +3,7 @@
 The website runs on Lovable; this separate Bun service runs continuously on a paid Render background worker. A sandbox process is only a temporary test and is not production hosting.
 
 ## Deployment
-1. Publish the website to get its public HTTPS URL. Enable the shared project secret `ENGINE_SHARED_SECRET` through Lovable Secrets (Generate + copy); paste the same private value into Render. Never put it in chat or source.
+1. Set `ENGINE_SHARED_SECRET` using Lovable's secure secret form (Generate + copy), then paste that same private value into Render. Publish the website after saving the key to activate it at the public HTTPS URL. Never put it in chat or source.
 2. Connect the project source repository to Render and create a Blueprint from `render.yaml`. It requests one Frankfurt background-worker instance on the 0.5c-512mb plan (approximately $7/month; confirm current pricing in Render before approving).
 3. Set `ENGINE_APP_URL` to the published website origin (no trailing path) and `ENGINE_SHARED_SECRET` to the same private value saved in Lovable. No database administrator key or Binance trading key is required.
 4. Deploy. Verify System Health shows a fresh heartbeat, Binance connected, WebSocket connected and 20 available / 21 configured contracts. WILDUSDT is not currently listed and is deliberately unavailable.

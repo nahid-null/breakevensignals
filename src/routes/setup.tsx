@@ -23,7 +23,7 @@ function Setup() {
       <ol className="list-decimal space-y-3 pl-5 text-sm text-muted-foreground">
         <li>Publish this website and connect the project source to your Render account.</li>
         <li>Create a service from the included Render Blueprint. Use one background worker in Frankfurt.</li>
-        <li>Set APP_URL to your published website address, and ENGINE_SHARED_SECRET to the same private key stored in Lovable Cloud.</li>
+        <li>Set ENGINE_APP_URL to your published website address, and ENGINE_SHARED_SECRET to the same private key stored in Lovable Cloud.</li>
         <li>Confirm all available feeds and fresh candles on System Health. Complete the original-Pine comparison before relying on signals.</li>
       </ol>
     </section>

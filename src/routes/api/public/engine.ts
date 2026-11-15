@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { commitSchema, heartbeatSchema, marketSchema } from "@/lib/engine/protocol";
+import { commitSchema, heartbeatSchema, marketSchema, eventSource } from "@/lib/engine/protocol";
 import { formatSignalMessage } from "@/lib/telegram-format";
 import type { Json } from "@/integrations/supabase/types";
 
@@ -31,7 +31,7 @@ export const Route = createFileRoute("/api/public/engine")({
       if (base.data.action === "commit") {
         const data = commitSchema.parse(base.data.data);
         const events = data.events.map((e) => ({ ...e,
-          source: data.mode === 'live' ? 'native' : data.mode === 'warmup' ? 'historical' : 'recovery',
+          source: eventSource(data.mode),
           telegram_message: data.mode === 'live' ? formatSignalMessage({ ...e, fee_rate_percent: e.fee_rate_percent ?? null }) : '' }));
         const { data: result, error } = await supabaseAdmin.rpc("commit_engine_candle", { p: { ...data, events } as Json });
         if (error) throw error;

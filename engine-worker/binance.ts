@@ -6,7 +6,9 @@ export const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(r
 
 export async function binanceFetch(path: string): Promise<unknown> {
   for (let attempt = 0; attempt < 4; attempt++) {
-    const response = await fetch(`${BINANCE_REST}${path}`, { signal: AbortSignal.timeout(20_000) });
+    let response: Response;
+    try { response = await fetch(`${BINANCE_REST}${path}`, { signal: AbortSignal.timeout(20_000) }); }
+    catch (e) { if (attempt === 3) throw e; await delay(1000 * 2 ** attempt); continue; }
     if (response.ok) return response.json();
     if (response.status === 429 || response.status >= 500) {
       const seconds = Number(response.headers.get('retry-after') ?? 2 ** attempt);

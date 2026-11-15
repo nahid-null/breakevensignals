@@ -2,12 +2,13 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 export const getSystemHealth = createServerFn({ method: "GET" }).handler(async () => {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { publicClient } = await import('./public-client.server');
+  const db = publicClient();
   const [engine, candle, lastSignal, positions] = await Promise.all([
-    supabaseAdmin.from("engine_health").select("*").eq('id',1).maybeSingle(),
-    supabaseAdmin.from("market_state").select("last_candle_at").order("last_candle_at", { ascending: false, nullsFirst: false }).limit(1).maybeSingle(),
-    supabaseAdmin.from("signal_events").select("timestamp").order("timestamp", { ascending: false }).limit(1).maybeSingle(),
-    supabaseAdmin.from("active_positions").select("id", { count: 'exact', head: true }).in('status', ['ACTIVE', 'BREAKEVEN']),
+    db.from("engine_health").select("*").eq('id',1).maybeSingle(),
+    db.from("market_state").select("last_candle_at").order("last_candle_at", { ascending: false, nullsFirst: false }).limit(1).maybeSingle(),
+    db.from("signal_events").select("timestamp").order("timestamp", { ascending: false }).limit(1).maybeSingle(),
+    db.from("active_positions").select("id", { count: 'exact', head: true }).in('status', ['ACTIVE', 'BREAKEVEN']),
   ]);
   return {
     databaseOk: !engine.error && !candle.error && !lastSignal.error && !positions.error,

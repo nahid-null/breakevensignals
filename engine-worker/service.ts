@@ -22,6 +22,8 @@ export class SignalService {
   private lastMessage = 0;
   private failures = 0;
   private lastError: string | null = null;
+  private lastRestAt = 0;
+  private publishing = false;
   private recovery = new Set<Symbol>();
   private timers: ReturnType<typeof setInterval>[] = [];
   constructor(private readonly appUrl: string, private readonly secret: string, private readonly observeOnly = false) {}
@@ -36,7 +38,7 @@ export class SignalService {
   private async heartbeat(status = this.lastError ? 'ERROR' : this.connected && this.initialized && this.recovery.size === 0 ? 'RUNNING' : 'RECOVERING') {
     if (this.observeOnly) return;
     const r = await this.app<{ acquired: boolean }>('heartbeat', { instance_id: this.instance,
-      websocket_connected: this.connected, binance_connected: this.available.size > 0,
+      websocket_connected: this.connected, binance_connected: Date.now() - this.lastRestAt < 90_000,
       available_symbols: this.available.size, status, error: this.lastError });
     if (!r.acquired) { await this.stop(); throw new Error("Another engine instance owns the lease"); }
   }
@@ -69,6 +71,7 @@ export class SignalService {
   }
   async start() {
     const info = await binanceFetch('/fapi/v1/exchangeInfo') as { symbols?: { symbol: string; status: string; filters: { filterType: string; tickSize?: string }[] }[] };
+    this.lastRestAt = Date.now();
     for (const symbol of SYMBOLS) {
       const contract = info.symbols?.find((s) => s.symbol === symbol && s.status === 'TRADING');
       const tick = Number(contract?.filters.find((f) => f.filterType === 'PRICE_FILTER')?.tickSize);
@@ -131,6 +134,9 @@ export class SignalService {
       if (this.observeOnly || !this.connected || this.draining) return;
       void this.publishPrices().catch((e) => this.fail(e));
     }, 5000));
+    this.timers.push(setInterval(() => {
+      void binanceFetch('/fapi/v1/time').then(() => { this.lastRestAt = Date.now(); }).catch((e) => this.fail(e));
+    }, 60_000));
     await this.heartbeat();
     console.log(`Signal service started: ${this.available.size}/${SYMBOLS.length} available contracts. ${this.observeOnly ? 'OBSERVATION ONLY: no database writes or Telegram.' : 'Confirmed-candle live processing.'}`);
   }
@@ -211,10 +217,12 @@ export class SignalService {
     finally { this.draining = false; }
   }
   private async publishPrices() {
-    for (const market of this.markets.values()) {
+    if (this.publishing) return;
+    this.publishing = true;
+    try { for (const market of this.markets.values()) {
       if (!this.running) return;
       await this.app('market', { instance_id: this.instance, market });
-    }
+    } } finally { this.publishing = false; }
   }
   private fail(e: unknown) {
     this.lastError = e instanceof Error ? e.message.slice(0, 500) : 'Signal processing error';
