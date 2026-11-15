@@ -15,6 +15,13 @@
       "when": 1794750575644,
       "tag": "0001_migration",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794751625666,
+      "tag": "0002_independent_signal_engine",
+      "breakpoints": true
     }
   ]
 }

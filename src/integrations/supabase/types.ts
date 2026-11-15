@@ -27,7 +27,9 @@ export type Database = {
           fee_rate_percent: number | null
           id: string
           indicator_name: string
+          net_result_r: number | null
           original_stop_loss: number
+          source: string
           status: string
           symbol: string
           take_profit: number
@@ -47,7 +49,9 @@ export type Database = {
           fee_rate_percent?: number | null
           id?: string
           indicator_name: string
+          net_result_r?: number | null
           original_stop_loss: number
+          source?: string
           status?: string
           symbol: string
           take_profit: number
@@ -67,7 +71,9 @@ export type Database = {
           fee_rate_percent?: number | null
           id?: string
           indicator_name?: string
+          net_result_r?: number | null
           original_stop_loss?: number
+          source?: string
           status?: string
           symbol?: string
           take_profit?: number
@@ -83,7 +89,15 @@ export type Database = {
           display_timezone: string
           id: number
           long_breakeven_enabled: boolean
+          long_entry_enabled: boolean
+          long_notifications_enabled: boolean
+          long_stop_loss_enabled: boolean
+          long_take_profit_enabled: boolean
           short_breakeven_enabled: boolean
+          short_entry_enabled: boolean
+          short_notifications_enabled: boolean
+          short_stop_loss_enabled: boolean
+          short_take_profit_enabled: boolean
           telegram_enabled: boolean
           updated_at: string
         }
@@ -92,7 +106,15 @@ export type Database = {
           display_timezone?: string
           id?: number
           long_breakeven_enabled?: boolean
+          long_entry_enabled?: boolean
+          long_notifications_enabled?: boolean
+          long_stop_loss_enabled?: boolean
+          long_take_profit_enabled?: boolean
           short_breakeven_enabled?: boolean
+          short_entry_enabled?: boolean
+          short_notifications_enabled?: boolean
+          short_stop_loss_enabled?: boolean
+          short_take_profit_enabled?: boolean
           telegram_enabled?: boolean
           updated_at?: string
         }
@@ -101,8 +123,127 @@ export type Database = {
           display_timezone?: string
           id?: number
           long_breakeven_enabled?: boolean
+          long_entry_enabled?: boolean
+          long_notifications_enabled?: boolean
+          long_stop_loss_enabled?: boolean
+          long_take_profit_enabled?: boolean
           short_breakeven_enabled?: boolean
+          short_entry_enabled?: boolean
+          short_notifications_enabled?: boolean
+          short_stop_loss_enabled?: boolean
+          short_take_profit_enabled?: boolean
           telegram_enabled?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      engine_checkpoints: {
+        Row: {
+          last_candle_time: number | null
+          revision: number
+          state: Json
+          symbol: string
+          updated_at: string
+        }
+        Insert: {
+          last_candle_time?: number | null
+          revision?: number
+          state: Json
+          symbol: string
+          updated_at?: string
+        }
+        Update: {
+          last_candle_time?: number | null
+          revision?: number
+          state?: Json
+          symbol?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      engine_control: {
+        Row: {
+          id: number
+          instance_id: string
+          lease_until: string
+        }
+        Insert: {
+          id: number
+          instance_id: string
+          lease_until: string
+        }
+        Update: {
+          id?: number
+          instance_id?: string
+          lease_until?: string
+        }
+        Relationships: []
+      }
+      engine_health: {
+        Row: {
+          available_symbols: number
+          binance_connected: boolean
+          error: string | null
+          id: number
+          instance_id: string
+          last_heartbeat_at: string
+          status: string
+          websocket_connected: boolean
+        }
+        Insert: {
+          available_symbols?: number
+          binance_connected?: boolean
+          error?: string | null
+          id: number
+          instance_id: string
+          last_heartbeat_at?: string
+          status: string
+          websocket_connected?: boolean
+        }
+        Update: {
+          available_symbols?: number
+          binance_connected?: boolean
+          error?: string | null
+          id?: number
+          instance_id?: string
+          last_heartbeat_at?: string
+          status?: string
+          websocket_connected?: boolean
+        }
+        Relationships: []
+      }
+      market_state: {
+        Row: {
+          error: string | null
+          last_candle_at: string | null
+          long_score: number
+          price: number | null
+          short_score: number
+          status: string
+          symbol: string
+          trend: string
+          updated_at: string
+        }
+        Insert: {
+          error?: string | null
+          last_candle_at?: string | null
+          long_score?: number
+          price?: number | null
+          short_score?: number
+          status?: string
+          symbol: string
+          trend?: string
+          updated_at?: string
+        }
+        Update: {
+          error?: string | null
+          last_candle_at?: string | null
+          long_score?: number
+          price?: number | null
+          short_score?: number
+          status?: string
+          symbol?: string
+          trend?: string
           updated_at?: string
         }
         Relationships: []
@@ -120,6 +261,7 @@ export type Database = {
           indicator_name: string
           processed_status: string
           processing_note: string | null
+          source: string
           stop_loss: number | null
           symbol: string
           take_profit: number | null
@@ -139,6 +281,7 @@ export type Database = {
           indicator_name: string
           processed_status: string
           processing_note?: string | null
+          source?: string
           stop_loss?: number | null
           symbol: string
           take_profit?: number | null
@@ -158,6 +301,7 @@ export type Database = {
           indicator_name?: string
           processed_status?: string
           processing_note?: string | null
+          source?: string
           stop_loss?: number | null
           symbol?: string
           take_profit?: number | null
@@ -169,14 +313,18 @@ export type Database = {
       }
       telegram_logs: {
         Row: {
+          claimed_at: string | null
           created_at: string
+          delivery_claim: string | null
           delivery_status: string
+          delivery_uncertain: boolean
           direction: string | null
           error_message: string | null
           event_id: string
           id: string
           is_test: boolean
           message: string
+          next_retry_at: string | null
           retry_count: number
           symbol: string | null
           telegram_message_id: number | null
@@ -184,14 +332,18 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          claimed_at?: string | null
           created_at?: string
+          delivery_claim?: string | null
           delivery_status?: string
+          delivery_uncertain?: boolean
           direction?: string | null
           error_message?: string | null
           event_id: string
           id?: string
           is_test?: boolean
           message: string
+          next_retry_at?: string | null
           retry_count?: number
           symbol?: string | null
           telegram_message_id?: number | null
@@ -199,14 +351,18 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          claimed_at?: string | null
           created_at?: string
+          delivery_claim?: string | null
           delivery_status?: string
+          delivery_uncertain?: boolean
           direction?: string | null
           error_message?: string | null
           event_id?: string
           id?: string
           is_test?: boolean
           message?: string
+          next_retry_at?: string | null
           retry_count?: number
           symbol?: string | null
           telegram_message_id?: number | null
@@ -247,6 +403,36 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_telegram_delivery: {
+        Args: { claim_id: string; log_id: string }
+        Returns: {
+          claimed_at: string | null
+          created_at: string
+          delivery_claim: string | null
+          delivery_status: string
+          delivery_uncertain: boolean
+          direction: string | null
+          error_message: string | null
+          event_id: string
+          id: string
+          is_test: boolean
+          message: string
+          next_retry_at: string | null
+          retry_count: number
+          symbol: string | null
+          telegram_message_id: number | null
+          trade_id: string | null
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "telegram_logs"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      commit_engine_candle: { Args: { p: Json }; Returns: Json }
+      engine_heartbeat: { Args: { p: Json }; Returns: boolean }
       process_signal_event: {
         Args: { p: Json; tg_message: string }
         Returns: Json
