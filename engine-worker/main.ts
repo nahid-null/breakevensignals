@@ -8,7 +8,8 @@ if (!observe && (!url || !secret)) throw new Error('Set ENGINE_APP_URL and ENGIN
 if (url && !url.startsWith('https://') && !url.startsWith('http://localhost:')) throw new Error('Engine app URL must use HTTPS');
 const kind = process.env['ENGINE_HOST_KIND'];
 const hostKind = kind === 'windows_pc' || kind === 'hosted' || kind === 'temporary' ? kind : 'unknown';
-const service = new SignalService((url ?? '').replace(/\/$/, ''), secret ?? '', observe, observe ? 'temporary' : 'production', hostKind);
+const runtimeMode = observe || process.env['ENGINE_RUNTIME_MODE'] === 'temporary' ? 'temporary' : 'production';
+const service = new SignalService((url ?? '').replace(/\/$/, ''), secret ?? '', observe, runtimeMode, hostKind);
 const healthSecret = process.env['LOCAL_HEALTH_SECRET'] ?? '';
 // Worker scripts run on Bun, outside SSR. Binding before start prevents duplicate local scans.
 const local = hostKind === 'windows_pc' ? Bun.serve({ hostname: '127.0.0.1', port: Number(process.env['ENGINE_HEALTH_PORT'] ?? 8788),

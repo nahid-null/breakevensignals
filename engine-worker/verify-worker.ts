@@ -11,7 +11,7 @@ import { delay } from './binance';
 const directory = await mkdtemp(join(tmpdir(), 'worker-verification-'));
 let db = new PGlite(join(directory, 'db'));
 await db.exec('CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role;');
-for (const migration of ['0000_migration.sql', '0002_independent_signal_engine.sql', '0003_engine_event_provenance_and_statistics.sql', '0004_fix_engine_checkpoint_time_comparison.sql', '0005_engine_runtime_identity_and_graceful_stop.sql']) {
+for (const migration of ['0000_migration.sql', '0002_independent_signal_engine.sql', '0003_engine_event_provenance_and_statistics.sql', '0004_fix_engine_checkpoint_time_comparison.sql', '0005_engine_runtime_identity_and_graceful_stop.sql', '0006_windows_pc_engine_telemetry.sql']) {
   const sql = (await readFile(new URL(`../drizzle/migrations/${migration}`, import.meta.url), 'utf8')).replace(/^ALTER PUBLICATION.*$/gm, '');
   await db.exec(sql);
 }
@@ -88,6 +88,7 @@ try {
 } finally {
   if (service) await service.stop();
   server.stop(true); await db.close();
-  await writeFile('/tmp/worker-verification-report.json', JSON.stringify(report, null, 2));
+  const output = process.env['WORKER_REPORT_PATH'] ?? join(tmpdir(), 'worker-verification-report.json');
+  await writeFile(output, JSON.stringify(report, null, 2));
 }
 console.log(JSON.stringify(report, null, 2));

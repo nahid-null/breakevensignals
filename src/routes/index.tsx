@@ -93,7 +93,7 @@ function Dashboard() {
         : health?.engine?.error ?? (health?.engine ? 'Signal monitoring is not confirmed online. Check System Health.' : 'Always-on engine not deployed. Live monitoring has not started.')}</div>}
       <PcMonitor />
       <section className="grid grid-cols-2 gap-y-4 border-y border-border py-4 sm:grid-cols-3 lg:grid-cols-6">
-        <Stat label="Scanned / configured" value={`${health?.engine?.scanned_symbols ?? '—'} / 21`} />
+        <Stat label="Available / configured" value={`${health?.engine?.available_symbols ?? '—'} / 21`} />
         <Stat label="Active LONG" value={stats?.activeLong ?? '—'} tone="text-long" />
         <Stat label="Active SHORT" value={stats?.activeShort ?? '—'} tone="text-short" />
         <Stat label="Breakeven active" value={stats?.breakeven ?? '—'} tone="text-breakeven" />

@@ -26,7 +26,8 @@ let logQueue = Promise.resolve();
 function log(name: string, message: string) {
   logQueue = logQueue.then(async () => {
     const file = join(logDir, `${name}.log`);
-    if ((await stat(file).catch(() => null))?.size && (await stat(file)).size > 5_000_000) {
+    const info = await stat(file).catch(() => null);
+    if (info && info.size > 5_000_000) {
       for (let i = 3; i > 0; i--) await rename(`${file}.${i}`, `${file}.${i + 1}`).catch(() => {});
       await rename(file, `${file}.1`).catch(() => {});
     }
@@ -41,6 +42,7 @@ const server = Bun.serve({ hostname: '127.0.0.1', port, fetch(request) {
   return localHealthResponse(request, healthSecret, () => ({
     supervisor: stopping ? 'STOPPED' : 'RUNNING', startedAt, restarts,
     workerProcessAlive: child !== null && child.exitCode === null,
+    workerPid: child?.pid ?? null,
     engine: childHealth, lastError,
   }));
 } });
@@ -59,7 +61,7 @@ while (!stopping) {
   const born = Date.now(); let failures = 0;
   child = Bun.spawn([process.execPath, join(root, 'engine-worker/main.ts')], {
     cwd: root, env: { ...process.env, ENGINE_HOST_KIND: 'windows_pc', SUPERVISOR_INSTANCE: instance, SUPERVISOR_PORT: String(port), ENGINE_HEALTH_PORT: String(childPort) },
-    stdout: 'pipe', stderr: 'pipe', windowsHide: true,
+    stdout: 'pipe', stderr: 'pipe',
   });
   void pipe(child.stdout, 'engine'); void pipe(child.stderr, 'engine-error');
   log('supervisor', `Worker started (pid ${child.pid})`);
@@ -76,7 +78,7 @@ while (!stopping) {
     } catch {
       failures++;
       childHealth = null;
-      if (failures >= 3 && Date.now() - born > 600_000) {
+      if (failures >= 3 && (Date.now() - born > 600_000 || childHealth?.['initialized'] === true)) {
         lastError = 'Worker unresponsive; restarting'; log('supervisor', lastError); child?.kill();
       }
     }
