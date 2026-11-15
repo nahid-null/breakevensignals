@@ -15,3 +15,5 @@
 - [x] Finish uploaded-requirements verification after key setup: 20 real saved candle streams, restart recovery, four genuine recovered trades read back, stopped temporary-test status, 40 passing tests and browser checks.
 - [x] Diagnose offline report and verify Telegram separately — engine STOPPED since 14:29 UTC, website never published, labelled TEST delivered and read back SENT; no matching src/main.tsx / React.queryClient error found.
 - [x] Record final independent architecture and paid-service/predeployment verification restrictions; Render configuration remains prepared, not activated.
+- [ ] Correct comparison-only EMA/MACD startup semantics, rerun both intact original scripts on identical historical candles and produce detailed parity results.
+- [ ] Reverify independent worker reconnection, restart/persistence and Telegram; distinguish sandbox evidence from deployed 24/7 testing. Paid activation remains prohibited without final confirmation.
