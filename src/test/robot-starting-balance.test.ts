@@ -51,12 +51,13 @@ describe('paper initial capital (isolated PostgreSQL)', () => {
     expect((await db.query('select count(*)::int n from robot_positions')).rows).toEqual([{ n: 1 }]);
   });
 
-  it('keeps capital corrections service-only and the account anon-read-only', async () => {
+  it('keeps capital corrections and account reads service-only', async () => {
     await db.exec('SET ROLE anon;');
     try {
       await expect(db.query('select robot_correct_initial_balance(10)')).rejects.toThrow(/permission denied/);
       await expect(db.query('update robot_account set balance = 10 where id = 1')).rejects.toThrow(/permission denied/);
-      expect(await account()).toEqual({ balance: 20, start: 10, deposited: 20 });
+      await expect(account()).rejects.toThrow(/permission denied/);
     } finally { await db.exec('RESET ROLE;'); }
+    expect(await account()).toEqual({ balance: 20, start: 10, deposited: 20 });
   });
 });
