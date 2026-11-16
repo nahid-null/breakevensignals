@@ -26,7 +26,7 @@ beforeAll(async () => {
 afterAll(async () => { await db?.close(); });
 
 describe('paper robot persistence (isolated PostgreSQL, no production rows)', () => {
-  it('starts with a 1,000 USDT paper balance, 70% margin cap and 50x leverage ceiling', async () => {
+  it('preserves the previously seeded account until an explicit capital correction, with existing risk ceilings', async () => {
     expect(await one('select balance::float8 b from robot_account')).toEqual({ b: 1000 });
     expect(await one('select max_allocation_pct::float8 a, max_leverage l, min_score s, high_score h from robot_settings')).toEqual({ a: 70, l: 50, s: 75, h: 85 });
   });
