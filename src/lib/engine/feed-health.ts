@@ -1,14 +1,13 @@
 import { z } from 'zod';
-import { SYMBOLS } from '../config';
 
 export const MESSAGE_MAX_AGE_MS = 60_000;
 export const SCAN_MAX_AGE_MS = 180_000;
 const time = z.string().datetime().nullable();
 export const feedHealthSchema = z.object({
   version: z.literal(1), initialized: z.boolean(), rest_at: time,
-  recovery_symbol: z.enum(SYMBOLS).nullable(),
-  feeds: z.array(z.object({ symbol: z.enum(SYMBOLS), message_at: time, event_at: time,
-    closed_at: time, live_commit_at: time }).strict()).max(21),
+  recovery_symbol: z.string().regex(/^[A-Z0-9]{2,20}USDT$/).nullable(),
+  feeds: z.array(z.object({ symbol: z.string().regex(/^[A-Z0-9]{2,20}USDT$/), message_at: time, event_at: time,
+    closed_at: time, live_commit_at: time }).strict()).max(60),
 }).strict().refine((h) => new Set(h.feeds.map((f) => f.symbol)).size === h.feeds.length, 'Duplicate feed');
 export type FeedHealth = z.infer<typeof feedHealthSchema>;
 
