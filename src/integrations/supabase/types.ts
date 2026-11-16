@@ -275,6 +275,366 @@ export type Database = {
         }
         Relationships: []
       }
+      robot_account: {
+        Row: {
+          balance: number
+          id: number
+          start_balance: number
+          total_deposited: number
+          updated_at: string
+        }
+        Insert: {
+          balance?: number
+          id: number
+          start_balance?: number
+          total_deposited?: number
+          updated_at?: string
+        }
+        Update: {
+          balance?: number
+          id?: number
+          start_balance?: number
+          total_deposited?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      robot_account_events: {
+        Row: {
+          amount: number
+          balance_after: number
+          created_at: string
+          id: string
+          kind: string
+        }
+        Insert: {
+          amount: number
+          balance_after: number
+          created_at?: string
+          id?: string
+          kind: string
+        }
+        Update: {
+          amount?: number
+          balance_after?: number
+          created_at?: string
+          id?: string
+          kind?: string
+        }
+        Relationships: []
+      }
+      robot_backtests: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          period_end: string
+          period_start: string
+          summary: Json
+          symbols: string[]
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          period_end: string
+          period_start: string
+          summary: Json
+          symbols: string[]
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          period_end?: string
+          period_start?: string
+          summary?: Json
+          symbols?: string[]
+        }
+        Relationships: []
+      }
+      robot_market: {
+        Row: {
+          best_direction: string | null
+          best_score: number | null
+          depth_usd: number | null
+          imbalance: number | null
+          last_candle_at: string | null
+          liquidity: string | null
+          note: string | null
+          price: number | null
+          quote_volume_24h: number | null
+          spread_bps: number | null
+          status: string
+          symbol: string
+          trend_15m: number | null
+          trend_1h: number | null
+          updated_at: string
+        }
+        Insert: {
+          best_direction?: string | null
+          best_score?: number | null
+          depth_usd?: number | null
+          imbalance?: number | null
+          last_candle_at?: string | null
+          liquidity?: string | null
+          note?: string | null
+          price?: number | null
+          quote_volume_24h?: number | null
+          spread_bps?: number | null
+          status?: string
+          symbol: string
+          trend_15m?: number | null
+          trend_1h?: number | null
+          updated_at?: string
+        }
+        Update: {
+          best_direction?: string | null
+          best_score?: number | null
+          depth_usd?: number | null
+          imbalance?: number | null
+          last_candle_at?: string | null
+          liquidity?: string | null
+          note?: string | null
+          price?: number | null
+          quote_volume_24h?: number | null
+          spread_bps?: number | null
+          status?: string
+          symbol?: string
+          trend_15m?: number | null
+          trend_1h?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      robot_positions: {
+        Row: {
+          band: string
+          closed_at: string | null
+          direction: string
+          entry_price: number
+          exit_price: number | null
+          exit_reason: string | null
+          fees: number
+          id: string
+          initial_stop: number
+          last_candle_time: number
+          last_price: number | null
+          leverage: number
+          liquidation_price: number
+          liquidity: string | null
+          margin: number
+          mode: string
+          notional: number
+          opened_at: string
+          quantity: number
+          quantity_open: number
+          realized_pnl: number
+          risk_usdt: number
+          score: number
+          setup: string
+          status: string
+          stop_loss: number
+          symbol: string
+          tp1: number
+          tp1_done: boolean
+          tp2: number
+          unrealized_pnl: number
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          band: string
+          closed_at?: string | null
+          direction: string
+          entry_price: number
+          exit_price?: number | null
+          exit_reason?: string | null
+          fees?: number
+          id: string
+          initial_stop: number
+          last_candle_time: number
+          last_price?: number | null
+          leverage: number
+          liquidation_price: number
+          liquidity?: string | null
+          margin: number
+          mode?: string
+          notional: number
+          opened_at: string
+          quantity: number
+          quantity_open: number
+          realized_pnl?: number
+          risk_usdt: number
+          score: number
+          setup: string
+          status?: string
+          stop_loss: number
+          symbol: string
+          tp1: number
+          tp1_done?: boolean
+          tp2: number
+          unrealized_pnl?: number
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          band?: string
+          closed_at?: string | null
+          direction?: string
+          entry_price?: number
+          exit_price?: number | null
+          exit_reason?: string | null
+          fees?: number
+          id?: string
+          initial_stop?: number
+          last_candle_time?: number
+          last_price?: number | null
+          leverage?: number
+          liquidation_price?: number
+          liquidity?: string | null
+          margin?: number
+          mode?: string
+          notional?: number
+          opened_at?: string
+          quantity?: number
+          quantity_open?: number
+          realized_pnl?: number
+          risk_usdt?: number
+          score?: number
+          setup?: string
+          status?: string
+          stop_loss?: number
+          symbol?: string
+          tp1?: number
+          tp1_done?: boolean
+          tp2?: number
+          unrealized_pnl?: number
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
+      }
+      robot_settings: {
+        Row: {
+          cooldown_minutes: number
+          daily_loss_limit_pct: number
+          emergency_stop: boolean
+          enabled: boolean
+          fee_pct: number
+          high_score: number
+          id: number
+          loss_streak_cooldown: number
+          max_allocation_pct: number
+          max_concurrent: number
+          max_hold_minutes: number
+          max_leverage: number
+          max_same_direction: number
+          max_spread_bps: number
+          min_quote_volume_musd: number
+          min_score: number
+          risk_per_trade_pct: number
+          slippage_bps: number
+          updated_at: string
+        }
+        Insert: {
+          cooldown_minutes?: number
+          daily_loss_limit_pct?: number
+          emergency_stop?: boolean
+          enabled?: boolean
+          fee_pct?: number
+          high_score?: number
+          id: number
+          loss_streak_cooldown?: number
+          max_allocation_pct?: number
+          max_concurrent?: number
+          max_hold_minutes?: number
+          max_leverage?: number
+          max_same_direction?: number
+          max_spread_bps?: number
+          min_quote_volume_musd?: number
+          min_score?: number
+          risk_per_trade_pct?: number
+          slippage_bps?: number
+          updated_at?: string
+        }
+        Update: {
+          cooldown_minutes?: number
+          daily_loss_limit_pct?: number
+          emergency_stop?: boolean
+          enabled?: boolean
+          fee_pct?: number
+          high_score?: number
+          id?: number
+          loss_streak_cooldown?: number
+          max_allocation_pct?: number
+          max_concurrent?: number
+          max_hold_minutes?: number
+          max_leverage?: number
+          max_same_direction?: number
+          max_spread_bps?: number
+          min_quote_volume_musd?: number
+          min_score?: number
+          risk_per_trade_pct?: number
+          slippage_bps?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      robot_signals: {
+        Row: {
+          candle_time: string
+          created_at: string
+          decision: string
+          direction: string
+          entry_price: number
+          id: string
+          liquidity: string | null
+          parts: Json
+          reason: string | null
+          score: number
+          setup: string
+          stop_loss: number
+          symbol: string
+          tp1: number
+          tp2: number
+        }
+        Insert: {
+          candle_time: string
+          created_at?: string
+          decision: string
+          direction: string
+          entry_price: number
+          id?: string
+          liquidity?: string | null
+          parts: Json
+          reason?: string | null
+          score: number
+          setup: string
+          stop_loss: number
+          symbol: string
+          tp1: number
+          tp2: number
+        }
+        Update: {
+          candle_time?: string
+          created_at?: string
+          decision?: string
+          direction?: string
+          entry_price?: number
+          id?: string
+          liquidity?: string | null
+          parts?: Json
+          reason?: string | null
+          score?: number
+          setup?: string
+          stop_loss?: number
+          symbol?: string
+          tp1?: number
+          tp2?: number
+        }
+        Relationships: []
+      }
       signal_events: {
         Row: {
           created_at: string
@@ -599,6 +959,20 @@ export type Database = {
         Args: { p: Json; tg_message: string }
         Returns: Json
       }
+      robot_commit: { Args: { p: Json }; Returns: Json }
+      robot_deposit: { Args: { amount: number }; Returns: number }
+      robot_emergency_stop: { Args: never; Returns: number }
+      robot_queue_telegram: {
+        Args: {
+          p_direction: string
+          p_event: string
+          p_message: string
+          p_symbol: string
+          p_trade: string
+        }
+        Returns: undefined
+      }
+      robot_resume: { Args: never; Returns: undefined }
       sim_deposit: { Args: { amount: number }; Returns: Json }
       sim_set_enabled: { Args: { on_off: boolean }; Returns: undefined }
       simulate_engine_candle: { Args: { p: Json }; Returns: undefined }
