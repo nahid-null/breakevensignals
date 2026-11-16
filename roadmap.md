@@ -3,6 +3,7 @@
 ## Safe setup reference request (2026-11-16)
 - [x] Add all required Render setup names, safe public values and copy buttons; private values never appear on the public website, and forgotten keys use the secure replacement form.
 - [x] Verify copy actions and private-value protection: 9 targeted tests passed, all 8 copy buttons verified in browser, desktop/current/phone layouts have no overflow or runtime errors; latest build OK. Mobile hook imports React correctly and quoted diagnostic is absent; no invented hook fix or trading-rule changes.
+- [x] Handle prompt-5 key request safely: secure replacement form confirmed ENGINE_SHARED_SECRET saved; user must copy it into Render and republish. No private value exposed, matching error reproduced, application changes or deployment performed; chat.md updated.
 
 ## Render free hosting request (2026-11-16)
 - [x] Remove PC connection from website and package; replace with cloud scanner status.
