@@ -3,11 +3,11 @@ import { SYMBOLS, INDICATORS, type Symbol } from "../src/lib/config";
 import { initialState, ENGINE_VERSION, MINUTE, PARAMETERS, validateCandle, type EngineState, type Candle, type Analysis, type Signal } from "../src/lib/engine/model";
 import { processCandle } from "../src/lib/engine/scalper";
 import { BINANCE_WS, BinanceRequestError, binanceFetch, checkWebSocketAccess, history, delay, backoff } from "./binance";
-import { initMtf, snapshot as trendSnapshot } from "../src/lib/engine/mtf-trend";
+import { initMtf, snapshot as trendSnapshot, type MtfSnapshot } from "../src/lib/engine/mtf-trend";
 import { feedHasLiveEvidence, MESSAGE_MAX_AGE_MS, type FeedHealth } from '../src/lib/engine/feed-health';
 
 type Market = { symbol: Symbol; price: number | null; trend: string; status: string; last_candle_at: string | null;
-  long_score: number; short_score: number; error: string | null };
+  long_score: number; short_score: number; error: string | null; mtf_trend?: MtfSnapshot | null };
 type Checkpoint = { state: EngineState; revision: number };
 
 export class SignalService {
