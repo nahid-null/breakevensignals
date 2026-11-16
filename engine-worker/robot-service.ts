@@ -241,7 +241,8 @@ export class RobotService {
       const pools = st.levels.filter((l) => l.tf >= 5 && l.sweptAt === null && last);
       const near = (side: 'high' | 'low') => pools.filter((l) => l.side === side).sort((a, c) => Math.abs(a.price - last!.close) - Math.abs(c.price - last!.close))[0];
       const hi = near('high'); const lo = near('low');
-      rows.push({ symbol, price: this.books.get(symbol) ? (this.books.get(symbol)!.bid + this.books.get(symbol)!.ask) / 2 : last?.close ?? null,
+      const book = this.books.get(symbol);
+      rows.push({ symbol, price: book ? Number(((book.bid + book.ask) / 2).toPrecision(10)) : last?.close ?? null,
         spread_bps: b.spreadBps === null ? null : Math.round(b.spreadBps * 100) / 100, depth_usd: null,
         imbalance: b.imbalance === null ? null : Math.round(b.imbalance * 1000) / 1000, quote_volume_24h: Math.round(st.quoteVolume24h),
         trend_1h: st.m60.ema50.value === null ? null : st.m60.trend(true), trend_15m: st.m15.ema21.value === null ? null : st.m15.trend(false), status,
