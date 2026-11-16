@@ -1,5 +1,12 @@
 # Independent Crypto Signal Terminal
 
+## Deployed sweep validation (prompt-18, 2026-11-16)
+- [ ] Inspect current hosted release, 40 feeds, LONG/SHORT decisions, genuine trades and paper safety without changing thresholds.
+- [ ] Add exact running-source fingerprint and deployment status, complete per-candle decision logging and separate new-strategy 30-closed-trade progress/performance.
+- [ ] Test version projection, full decision persistence and paper safeguards; publish matching website and verify it reads actual hosted data.
+- [ ] Redeploy/verify Railway active source — requires Railway service access or the user's active-deployment evidence.
+- [ ] Collect at least30 genuine completed new-strategy paper trades — requires deployed corrected worker and future qualified opportunities; never force entries.
+
 ## Entry audit and liquidity sweep (prompt-17, 2026-11-16)
 - [x] Audit actual entry/execution/accounting code: five genuine LONG pullbacks at initial observation; source-derived fees/sign/quantity/ROI reconcile; entry quote/MAE/MFE absent. Retrospective candles labelled separately.
 - [x] Show findings before replacing entries; add ENTRY AUDIT & LIQUIDITY SWEEP REPORT with old conditions, real frozen evidence and latest up-to20 trades.
