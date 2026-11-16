@@ -12,7 +12,7 @@ const exitReason = z.enum(['TAKE_PROFIT', 'STOP_LOSS', 'BREAKEVEN_STOP', 'EARLY_
 const note = z.string().max(160).nullable();
 const score = z.number().int().min(0).max(100).nullable();
 const entryAudit = z.object({
-  strategy: z.literal('LIQUIDITY_SWEEP_V1'), source: z.enum(['LIVE_BINANCE', 'CANDLE_REPLAY']), explanation: z.string().max(2000),
+  strategy: z.enum(['LIQUIDITY_SWEEP_V1', 'SMC_V1']), source: z.enum(['LIVE_BINANCE', 'CANDLE_REPLAY']), explanation: z.string().max(2000),
   signal_open_at: money, signal_close_at: money, signal_price: price,
   body_pct: money, lower_wick_pct: money, upper_wick_pct: money, volume: money, volume_ratio: money, atr: price,
   pool_price: price, pool_time: money, pool_tf: money, pool_touches: money, sweep_at: money, sweep_extreme: price,
@@ -20,6 +20,11 @@ const entryAudit = z.object({
   bid: price.optional(), ask: price.optional(), spread_bps: money.optional(), quote_received_at: money.optional(), fill_at: money.optional(), delay_ms: money.optional(),
   fill_price: price.optional(), slippage_bps: money.optional(), signal_drift_bps: money.optional(), entry_fee: money.optional(), estimated_exit_fee: money.optional(),
   initial_net_roi_pct: money.optional(), requested_quantity: money.optional(), filled_quantity: money.optional(), depth_levels: money.optional(),
+  mss_kind: z.enum(['MSS', 'CHoCH']).optional(), mss_level: price.optional(), mss_at: money.optional(), zone_kind: z.enum(['FVG', 'OB', 'FVG+OB']).optional(),
+  zone_low: price.optional(), zone_high: price.optional(), fvg_low: price.nullable().optional(), fvg_high: price.nullable().optional(),
+  ob_low: price.nullable().optional(), ob_high: price.nullable().optional(), ote_depth: money.optional(),
+  premium_discount: z.enum(['DISCOUNT', 'PREMIUM', 'EQUILIBRIUM_OR_WRONG_SIDE']).optional(), htf_bias: z.enum(['BULLISH', 'BEARISH', 'NEUTRAL']).optional(),
+  displacement: z.boolean().optional(), score_parts: z.record(z.string().max(30), money).optional(), risk_margin_cap: money.optional(),
 }).strict();
 
 export const robotMarketSchema = z.object({
@@ -85,7 +90,7 @@ export const robotCommitSchema = z.object({
   opens: z.array(robotOpenSchema).max(5).default([]),
   signals: z.array(robotSignalSchema).max(120).default([]),
   scanner: robotScannerSchema.optional(),
-  runtime: z.object({ strategy:z.literal('LIQUIDITY_SWEEP_V1'), source_hash:z.string().regex(/^[a-f0-9]{64}$/), git_commit:z.string().regex(/^[a-f0-9]{7,40}$/).nullable(),
+  runtime: z.object({ strategy:z.enum(['LIQUIDITY_SWEEP_V1','SMC_V1']), source_hash:z.string().regex(/^[a-f0-9]{64}$/), git_commit:z.string().regex(/^[a-f0-9]{7,40}$/).nullable(),
     host_kind:z.enum(['hosted','temporary','unknown']), runtime_mode:z.enum(['production','temporary']), started_at:time }).strict().optional(),
   decisions:z.array(z.object({ event_id:z.string().max(200),symbol,direction,source_hash:z.string().regex(/^[a-f0-9]{64}$/),candle_time:time,
     phase:z.enum(['EVALUATION','EXECUTION']),decision:z.enum(['QUALIFIED','TAKEN','SKIPPED','REJECTED']),reason:z.string().min(1).max(2000),score,

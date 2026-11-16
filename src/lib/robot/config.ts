@@ -38,6 +38,15 @@ export type RobotSettings = {
   entry_max_age_ms: number; quote_max_age_ms: number; max_entry_drift_atr: number;
   min_sweep_atr: number; max_sweep_atr: number; min_rejection_wick: number; min_volume_ratio: number;
   min_reward_risk: number; max_candle_atr: number; sweep_max_age_minutes: number;
+  /** Largest loss at the structural stop, % of balance; size is reduced to respect it. */
+  risk_per_trade_pct: number;
+  /** Optional pauses. Both are OFF by default (user choice); the numbers apply only when switched on. */
+  daily_loss_limit_enabled: boolean; daily_loss_limit_pct: number;
+  loss_streak_enabled: boolean; loss_streak_cooldown: number; cooldown_minutes: number;
+  /** Net ROI (%) that arms break-even protection (stop locked at +2% net after a confirming close). */
+  breakeven_trigger_roi_pct: number;
+  /** Fibonacci OTE retracement window of the post-MSS leg, as fractions. */
+  ote_min: number; ote_max: number;
 };
 export const DEFAULT_SETTINGS: RobotSettings = {
   enabled: true, emergency_stop: false, min_score: 75, high_score: 85,
@@ -46,4 +55,8 @@ export const DEFAULT_SETTINGS: RobotSettings = {
   entry_max_age_ms: 30_000, quote_max_age_ms: 5000, max_entry_drift_atr: 0.2,
   min_sweep_atr: 0.05, max_sweep_atr: 1.5, min_rejection_wick: 0.35, min_volume_ratio: 0.8,
   min_reward_risk: 0.75, max_candle_atr: 1.5, sweep_max_age_minutes: 20,
+  risk_per_trade_pct: 0.5,
+  daily_loss_limit_enabled: false, daily_loss_limit_pct: 3,
+  loss_streak_enabled: false, loss_streak_cooldown: 2, cooldown_minutes: 60,
+  breakeven_trigger_roi_pct: 6, ote_min: 0.62, ote_max: 0.79,
 };

@@ -27,7 +27,7 @@ export const robotResume = createServerFn({ method: 'POST' }).handler(async () =
   return { ok: true };
 });
 
-/** Editable paper settings. Leverage is fixed at 50x and is not editable; there is no daily loss limit or loss-streak pause. */
+/** Editable paper settings. Leverage is fixed at 50x and is not editable. The daily loss limit and loss-streak cooldown are optional switches, off by default. */
 export const robotSettingsSchema = z.object({
   enabled: z.boolean(),
   min_score: z.number().int().min(50).max(100), high_score: z.number().int().min(50).max(100),
@@ -38,9 +38,14 @@ export const robotSettingsSchema = z.object({
   entry_max_age_ms: z.number().int().min(1000).max(120000), quote_max_age_ms: z.number().int().min(500).max(30000), max_entry_drift_atr: z.number().positive().max(1),
   min_sweep_atr: z.number().positive().max(3), max_sweep_atr: z.number().positive().max(5), min_rejection_wick: z.number().min(0.1).max(0.9),
   min_volume_ratio: z.number().min(0.1).max(5), min_reward_risk: z.number().min(0.1).max(5), max_candle_atr: z.number().min(0.5).max(5), sweep_max_age_minutes: z.number().int().min(2).max(60),
+  risk_per_trade_pct: z.number().positive().max(2),
+  daily_loss_limit_enabled: z.boolean(), daily_loss_limit_pct: z.number().positive().max(20),
+  loss_streak_enabled: z.boolean(), loss_streak_cooldown: z.number().int().min(1).max(10), cooldown_minutes: z.number().int().min(0).max(1440),
+  breakeven_trigger_roi_pct: z.number().min(2).lt(10), ote_min: z.number().min(0.3).lt(1), ote_max: z.number().gt(0.3).max(1),
   symbols: z.array(z.string().regex(ROBOT_SYMBOL_PATTERN)).length(40).refine((xs) => new Set(xs).size === 40 && !xs.includes('WILDUSDT'), 'Use 40 different available futures coins, excluding WILDUSDT'),
 }).strict().refine((s) => s.high_score >= s.min_score, { message: 'High-quality score must be at or above the minimum score' })
-  .refine((s) => s.max_sweep_atr > s.min_sweep_atr, 'Maximum sweep must exceed minimum sweep');
+  .refine((s) => s.max_sweep_atr > s.min_sweep_atr, 'Maximum sweep must exceed minimum sweep')
+  .refine((s) => s.ote_max > s.ote_min, 'OTE upper bound must exceed the lower bound');
 
 /** Saves robot settings. The database re-checks every hard limit (70% margin, exactly 50x leverage). */
 export const robotSaveSettings = createServerFn({ method: 'POST' })

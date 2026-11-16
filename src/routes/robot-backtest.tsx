@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { useRobotBacktests } from '@/lib/robot/data';
 import { MetricsTable, pct, signed, tone, usd, EXIT, SETUP } from '@/components/robot/ui';
 import type { Metrics } from '@/lib/robot/metrics';
@@ -31,6 +31,7 @@ function Backtest() {
         <div className="mb-2 font-mono text-[10px] text-active">PAPER ROBOT · BACKTEST</div>
         <h1 className="text-2xl font-semibold">Backtest: {run.period_start.slice(0, 10)} → {run.period_end.slice(0, 10)}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{run.symbols.length} coins · start {usd(s.start_balance)} · end {usd(s.end_balance)}</p>
+        {!String(s.method ?? '').includes('SMC') && <p className="mt-2 text-sm text-waiting">This saved run tested an earlier entry method, not the current SMC_V1 rules. The SMC_V1 replay results are on the <Link to="/robot" className="underline">Paper Robot page</Link>.</p>}
       </div>
       <div className={cn('border p-4 text-sm', verdict ? 'border-long/40 bg-long/5' : 'border-short/40 bg-short/5')}>
         <p className={cn('font-semibold', verdict ? 'text-long' : 'text-short')}>{verdict ? 'Positive result — still needs paper-trading confirmation.' : 'Not profitable yet — no proven edge.'}</p>

@@ -13,7 +13,7 @@ export function deploymentState(runtime: RuntimeEvidence | null | undefined, exp
 type PaperRow = { direction:string; status:string; setup:string; entry_audit:unknown; realized_pnl:number; closed_at:string|null; updated_at:string; risk_usdt:number; mae_roi_pct:number|null; mfe_roi_pct:number|null };
 export function sweepPerformance(rows: PaperRow[], startingBalance:number) {
   const closed=rows.filter((p)=>{
-    const a=p.entry_audit;return p.status==='CLOSED'&&p.setup==='SWEEP_RECLAIM'&&typeof a==='object'&&a!==null&&'strategy' in a&&a.strategy===ROBOT_STRATEGY_VERSION&&'source' in a&&a.source==='LIVE_BINANCE';
+    const a=p.entry_audit;return p.status==='CLOSED'&&typeof a==='object'&&a!==null&&'strategy' in a&&a.strategy===ROBOT_STRATEGY_VERSION&&'source' in a&&a.source==='LIVE_BINANCE'&&p.setup==='SMC_SWEEP_MSS';
   });
   const metric=(xs:PaperRow[])=>computeMetrics(xs.map((p)=>({direction:p.direction,netPnl:Number(p.realized_pnl),exitReason:'',closedAt:Date.parse(p.closed_at??p.updated_at),riskUsdt:p.risk_usdt})),startingBalance);
   const avg=(key:'mae_roi_pct'|'mfe_roi_pct')=>{const xs=closed.map((p)=>p[key]).filter((x):x is number=>x!==null);return xs.length?xs.reduce((a,b)=>a+b,0)/xs.length:null;};

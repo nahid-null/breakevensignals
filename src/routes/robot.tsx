@@ -18,7 +18,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { cn } from '@/lib/utils';
 
 const TITLE = 'Paper Robot — Crypto Signal Terminal';
-const DESC = 'Independent Binance futures paper robot with confirmed liquidity sweeps, fixed 50x leverage, 10% net margin ROI targets, entry audit and preserved trade history.';
+const DESC = 'Independent Binance futures paper robot with Smart Money entries (liquidity sweep, structure shift, FVG/order block, OTE), fixed 50x leverage, 10% net margin ROI targets, entry audit and preserved trade history.';
 export const Route = createFileRoute('/robot')({
   head: () => ({ meta: [
     { title: TITLE }, { name: 'description', content: DESC }, { property: 'og:title', content: TITLE }, { property: 'og:description', content: DESC },
@@ -107,7 +107,9 @@ function RobotPage() {
             <li>• Combined margin never above {pct(Number(settings.data?.max_allocation_pct ?? 70), 0)} of the balance, split across up to {settings.data?.max_concurrent ?? 5} positions; the rest stays in reserve.</li>
             <li>• Score {settings.data?.min_score ?? 75}+ to trade; {settings.data?.high_score ?? 85}+ counts as high quality and gets a full margin slot.</li>
             <li>• Every stop is set from market structure before entry and is never widened.</li>
-            <li>• No daily loss limit, loss-streak pause or daily trade cap; when a trade closes the best waiting setup can take its slot.</li>
+            <li>• Entries need a liquidity sweep and a structure shift (MSS/CHoCH), then a retrace into a fair value gap or order block inside the {pct(Number(settings.data?.ote_min ?? 0.62) * 100, 0)}–{pct(Number(settings.data?.ote_max ?? 0.79) * 100, 0)} retracement band, and a rejection close. No entry right after a large candle; if price leaves the zone the setup is cancelled.</li>
+            <li>• Position size is cut so a stop-out loses at most {pct(Number(settings.data?.risk_per_trade_pct ?? 0.5), 1)} of the balance.</li>
+            <li>• Daily loss limit {settings.data?.daily_loss_limit_enabled ? 'on' : 'off'} · loss-streak cooldown {settings.data?.loss_streak_enabled ? 'on' : 'off'} · no daily trade cap; when a trade closes the best waiting setup can take its slot.</li>
             <li>• Telegram receipts are marked PAPER ROBOT.</li>
           </ul>
           <p className="text-[11px] text-muted-foreground">See the <Link to="/robot-backtest" className="text-primary underline">backtest</Link> and the <Link to="/robot-coins" className="text-primary underline">40-coin monitor</Link>.</p>

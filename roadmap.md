@@ -127,3 +127,10 @@
 - [ ] prompt-19: user sets Publish to Invite only and republishes
 - [ ] prompt-19: user decides whether to press Resume on the Paper Robot (stopped 18:36 UTC)
 - [ ] prompt-19: 30 genuine new-strategy completed trades — waiting on market (0/30)
+## Paper Robot SMC upgrade (prompt-20)
+- [x] SMC_V1 entries (sweep → MSS/CHoCH → FVG/OB → OTE → rejection close), weighted score, structural stop, risk-capped size, cancel-if-price-leaves-zone
+- [x] Optional daily-loss / loss-streak switches (off by default) in settings; worker loads recent closed results
+- [x] Historical replay: Nov 3–11 = 1 trade (−$0.09), Nov 12–16 = 0 trades; shown on robot page
+- [ ] Publish, then redeploy Railway so the worker runs SMC_V1 (new fingerprint bdaa7c7c…) — waits on user
+- [ ] Decide whether to press Resume (robot still stopped) — waits on user
+- [ ] 30 genuine SMC_V1 completed paper trades — waits on market (0/30)

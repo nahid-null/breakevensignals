@@ -1,5 +1,5 @@
 {
-  "strategy": "LIQUIDITY_SWEEP_V1",
-  "source_hash": "7272596fd5327b33b2ff343dd8eaaab32879b24e0db39a88e64d15edeaf210bf",
+  "strategy": "SMC_V1",
+  "source_hash": "bdaa7c7c264acf990b30fa9389450a22bf83216826b4b45b28ddc6d046febe2b",
   "coverage": "Production worker entry/feed/engine/risk/protocol source plus package manifest, lockfile and Dockerfile; no Git metadata or credentials."
 }

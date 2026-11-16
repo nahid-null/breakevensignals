@@ -4,7 +4,7 @@
  */
 import { MINUTE, SymbolState, type Bar } from './series';
 import { evaluate, evaluateLegacy, maxStopFraction, type BookContext, type Candidate, type Direction, type Evaluation } from './strategy';
-import { allocationLimits, DEFAULT_RULES, planMargin, portfolioGate, sizeOrder, type OpenExposure, type SymbolRules } from './risk';
+import { allocationLimits, DEFAULT_RULES, planMargin, portfolioGate, riskMarginCap, sizeOrder, type ClosedResult, type OpenExposure, type SymbolRules } from './risk';
 import { managePosition, manageTick, openPosition, simulateMarketFill, type DepthBook, type Fill, type Position } from './paper';
 import { groupOf, type RobotSettings } from './config';
 
@@ -28,7 +28,9 @@ export type CandleDecision = { symbol: string; direction: Direction; time: numbe
 
 const bump = (m: Record<string, number>, k: string) => { m[k] = (m[k] ?? 0) + 1; };
 /** Collapse score-specific reasons so the diagnostic table groups them. */
-export const reasonKey = (r: string) => r.startsWith('Score ') ? 'Score below threshold' : r.startsWith('Structural stop too wide') ? 'Structural stop too wide for 50x' : r;
+export const reasonKey = (r: string) => r.startsWith('Score ') ? 'Score below threshold' : r.startsWith('Structural stop too wide') ? 'Structural stop too wide for 50x'
+  : r.startsWith('Retracement ') && r.includes('outside OTE') ? 'Retracement outside the OTE band'
+  : r.startsWith('Waiting for bullish MSS') ? 'Waiting for bullish MSS' : r.startsWith('Waiting for bearish MSS') ? 'Waiting for bearish MSS' : r;
 export const exposure = (open: Position[]): OpenExposure[] => open.filter((p) => p.status === 'OPEN')
   .map((p) => ({ symbol: p.symbol, direction: p.direction, margin: p.margin, notional: p.qtyOpen * p.entry }));
 export const signalId = (c: Pick<Candidate, 'symbol' | 'direction' | 'time'>) => `${c.symbol}-${c.direction}-${c.time + MINUTE}`;
@@ -42,6 +44,10 @@ export class RobotCore {
   counters = emptyCounters();
   signals: SignalLog[] = [];
   decisions: CandleDecision[] = [];
+  /** Recently closed results (newest last) for the optional loss limits. */
+  history: ClosedResult[] = [];
+  /** Entry evaluator; replays may swap in an archived one for comparison. */
+  evaluator: (st: SymbolState, d: Direction, s: RobotSettings, b: BookContext) => Evaluation = evaluate;
   constructor(public settings: RobotSettings, private readonly legacyComparison = false) {}
 
   addSymbol(symbol: string, rules: SymbolRules = DEFAULT_RULES) {
@@ -55,7 +61,7 @@ export class RobotCore {
     const fills: PositionFill[] = [];
     for (const p of this.open) if (p.symbol === symbol && p.status === 'OPEN') for (const f of managePosition(p, bar, st, this.settings)) fills.push({ position: p, fill: f });
     if (st.count < WARMUP_BARS) return { accepted: true, fills, evals: [] };
-    const evals = (['LONG', 'SHORT'] as Direction[]).map((d) => (this.legacyComparison ? evaluateLegacy : evaluate)(st, d, this.settings, book));
+    const evals = (['LONG', 'SHORT'] as Direction[]).map((d) => (this.legacyComparison ? evaluateLegacy : this.evaluator)(st, d, this.settings, book));
     const note: Note = { long: null, short: null, longScore: null, shortScore: null };
     for (const e of evals) {
       const key = e.direction === 'LONG' ? 'long' : 'short';
@@ -63,7 +69,7 @@ export class RobotCore {
       note[`${key}Score`] = e.candidate?.score ?? null;
       if (!live) continue;
       this.decisions.push({ symbol, direction: e.direction, time: bar.time, decision: e.rejected ? 'REJECTED' : 'QUALIFIED',
-        reason: e.rejected ?? e.candidate?.liquidity ?? 'Qualified sweep', score: e.candidate?.score ?? null, audit: e.candidate?.audit ?? null });
+        reason: e.rejected ?? e.candidate?.liquidity ?? 'Qualified setup', score: e.candidate?.score ?? null, audit: e.candidate?.audit ?? null });
       this.counters.evaluated++;
       if (e.candidate) {
         if (e.direction === 'LONG') this.counters.long_candidates++; else this.counters.short_candidates++;
@@ -109,7 +115,7 @@ export class RobotCore {
   /** Next queue entry that passes the portfolio gates, recording the reason on every entry it passes over. */
   nextCandidate(now: number, balance: number): Queued | null {
     for (const q of this.rankedQueue(now)) {
-      const gate = portfolioGate(q.c, exposure(this.open), balance, this.settings);
+      const gate = portfolioGate(q.c, exposure(this.open), balance, this.settings, this.history, now);
       const margin = gate ? null : planMargin(q.c, balance, exposure(this.open), this.settings);
       const reason = gate ?? (margin !== null && typeof margin === 'object' ? margin.rejected : null);
       if (!reason) return q;
@@ -134,24 +140,34 @@ export class RobotCore {
       if (age < 0 || age > this.settings.entry_max_age_ms || now >= q.expires) return fail('Stale entry signal');
       if (depth.receivedAt === undefined || now < depth.receivedAt || now - depth.receivedAt > this.settings.quote_max_age_ms) return fail('Stale or unverified order book');
       if ((ask - bid) / ((ask + bid) / 2) * 10_000 > this.settings.max_spread_bps) return fail('Abnormal spread at execution');
-      const gate = portfolioGate(c, exposure(this.open), balance, this.settings);
+      const gate = portfolioGate(c, exposure(this.open), balance, this.settings, this.history, now);
       if (gate) return fail(gate);
     }
     const touch = sign > 0 ? ask : bid;
     const drift = this.legacyComparison ? 0.3 : this.settings.max_entry_drift_atr;
     if (Math.abs(touch - c.entry) > drift * c.atr) return fail('Price moved away before fill');
-    if (c.audit && (touch - c.audit.pool_price) * sign <= 0) return fail('Reclaim lost before execution');
+    const a = c.audit; const smc = a?.zone_low !== undefined && a.zone_high !== undefined;
+    if (smc) {
+      // Simulated limit order at the confirmed zone: only fill while price is still at the zone, otherwise cancel instead of chasing.
+      const far = sign > 0 ? a!.zone_low! : a!.zone_high!; const near = sign > 0 ? a!.zone_high! : a!.zone_low!;
+      if ((touch - far) * sign <= 0) return fail('Price broke through the entry zone — setup cancelled');
+      if ((touch - near) * sign > drift * c.atr) return fail('Price left the entry zone — setup cancelled, not chasing');
+    } else if (a && (touch - a.pool_price) * sign <= 0) return fail('Reclaim lost before execution');
     if ((touch - c.stop) * sign < 0.3 * c.atr) return fail('Price too close to stop at fill time');
     if (((touch - c.stop) * sign) / touch > maxStopFraction(this.settings)) return fail('Stop too wide at fill price');
-    const margin = planMargin(c, balance, exposure(this.open), this.settings);
-    if (typeof margin === 'object') return fail(margin.rejected);
+    const planned = planMargin(c, balance, exposure(this.open), this.settings);
+    if (typeof planned === 'object') return fail(planned.rejected);
+    // Size from the maximum permitted dollar risk at the structural stop (50x stays fixed; only the margin shrinks).
+    const cap = this.legacyComparison ? Infinity : riskMarginCap(balance, touch, c.stop, this.settings);
+    const margin = Math.min(planned, cap);
     const sized = sizeOrder(margin, touch, rules);
     if ('rejected' in sized) return fail(sized.rejected);
     const fill = simulateMarketFill(c.direction, sized.qty, depth, this.settings, rules);
     if ('rejected' in fill) return fail(fill.rejected);
     if (!this.legacyComparison) {
       if (Math.abs(fill.avg - c.entry) > drift * c.atr) return fail('Final fill would chase signal');
-      if (c.audit && (fill.avg - c.audit.pool_price) * sign <= 0) return fail('Final fill invalidates reclaim');
+      if (c.audit && !smc && (fill.avg - c.audit.pool_price) * sign <= 0) return fail('Final fill invalidates reclaim');
+      if (smc && (fill.avg - (sign > 0 ? a!.zone_low! : a!.zone_high!)) * sign <= 0) return fail('Final fill outside the entry zone');
       const riskFraction = (fill.avg - c.stop) * sign / fill.avg + 2 * this.settings.fee_pct / 100 + 2 * this.settings.slippage_bps / 10_000;
       if (c.audit && 0.1 / 50 / riskFraction < this.settings.min_reward_risk) return fail('Net reward too small at executable fill');
     }
@@ -164,7 +180,7 @@ export class RobotCore {
         quote_received_at: depth.receivedAt, fill_at: now, delay_ms: now - c.audit.signal_close_at, fill_price: fill.avg,
         slippage_bps: (fill.avg / touch - 1) * sign * 10_000, signal_drift_bps: (fill.avg / c.entry - 1) * sign * 10_000,
         entry_fee: opened.position.entryFee, estimated_exit_fee: (sign > 0 ? bid : ask) * fill.qty * this.settings.fee_pct / 100,
-        requested_quantity: sized.qty, filled_quantity: fill.qty, depth_levels: fill.levels };
+        requested_quantity: sized.qty, filled_quantity: fill.qty, depth_levels: fill.levels, ...(Number.isFinite(cap) ? { risk_margin_cap: cap } : {}) };
     }
     // Set immediate liquidation-value PnL on the actual exit side, including spread and estimated costs.
     manageTick(opened.position, bid, ask, now, this.settings);
