@@ -353,6 +353,39 @@ export type Database = {
         }
         Relationships: []
       }
+      robot_capital_adjustments: {
+        Row: {
+          amount: number
+          balance_after: number
+          balance_before: number
+          created_at: string
+          id: string
+          new_start_balance: number
+          previous_start_balance: number
+          reason: string
+        }
+        Insert: {
+          amount: number
+          balance_after: number
+          balance_before: number
+          created_at?: string
+          id?: string
+          new_start_balance: number
+          previous_start_balance: number
+          reason: string
+        }
+        Update: {
+          amount?: number
+          balance_after?: number
+          balance_before?: number
+          created_at?: string
+          id?: string
+          new_start_balance?: number
+          previous_start_balance?: number
+          reason?: string
+        }
+        Relationships: []
+      }
       robot_market: {
         Row: {
           best_direction: string | null
@@ -960,6 +993,10 @@ export type Database = {
         Returns: Json
       }
       robot_commit: { Args: { p: Json }; Returns: Json }
+      robot_correct_initial_balance: {
+        Args: { p_start: number }
+        Returns: number
+      }
       robot_deposit: { Args: { amount: number }; Returns: number }
       robot_emergency_stop: { Args: never; Returns: number }
       robot_queue_telegram: {

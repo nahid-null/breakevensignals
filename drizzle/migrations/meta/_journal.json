@@ -106,6 +106,13 @@
       "when": 1794843101470,
       "tag": "0014_signal_stats_exclude_paper_robot",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1794844050445,
+      "tag": "0015_robot_starting_capital",
+      "breakpoints": true
     }
   ]
 }
