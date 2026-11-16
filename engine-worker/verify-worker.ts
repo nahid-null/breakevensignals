@@ -6,18 +6,19 @@ import { SignalService } from './service';
 import { commitSchema, heartbeatSchema, marketSchema } from '../src/lib/engine/protocol';
 import { formatSignalMessage } from '../src/lib/telegram-format';
 import { delay } from './binance';
+import { feedHasLiveEvidence } from '../src/lib/engine/feed-health';
 
 // Real Binance + isolated disk PostgreSQL. Never uses the hosted app or its credentials.
 const directory = await mkdtemp(join(tmpdir(), 'worker-verification-'));
 let db = new PGlite(join(directory, 'db'));
 await db.exec('CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role;');
-for (const migration of ['0000_migration.sql', '0002_independent_signal_engine.sql', '0003_engine_event_provenance_and_statistics.sql', '0004_fix_engine_checkpoint_time_comparison.sql', '0005_engine_runtime_identity_and_graceful_stop.sql', '0006_windows_pc_engine_telemetry.sql', '0007_durable_successful_candle_scans.sql', '0008_guard_restricted_market_writes.sql']) {
+for (const migration of ['0000_migration.sql', '0002_independent_signal_engine.sql', '0003_engine_event_provenance_and_statistics.sql', '0004_fix_engine_checkpoint_time_comparison.sql', '0005_engine_runtime_identity_and_graceful_stop.sql', '0006_windows_pc_engine_telemetry.sql', '0007_durable_successful_candle_scans.sql', '0008_guard_restricted_market_writes.sql', '0009_validated_candle_feed_health.sql']) {
   const sql = (await readFile(new URL(`../drizzle/migrations/${migration}`, import.meta.url), 'utf8')).replace(/^ALTER PUBLICATION.*$/gm, '');
   await db.exec(sql);
 }
 const report = { scope: 'Temporary real Binance worker verification with isolated disk PostgreSQL; NOT deployed production',
   directory, startedAt: new Date().toISOString(), initialContracts: 0, reconnectPassed: false, candleAdvancePassed: false,
-  restoredCheckpoints: 0, restartPassed: false, successfulCandleScans: 0, scanCountRestored: false, isolatedPendingNotifications: 0, productionWrites: 0, completedAt: '' };
+  restoredCheckpoints: 0, restartPassed: false, successfulCandleScans: 0, scanCountRestored: false, validatedLiveFeeds: 0, isolatedPendingNotifications: 0, productionWrites: 0, completedAt: '' };
 const server = Bun.serve({ hostname: '127.0.0.1', port: 0, async fetch(request) {
   if (request.headers.get('authorization') !== 'Bearer isolated-verification-key') return new Response('Unauthorized', { status: 401 });
   try {
@@ -57,18 +58,19 @@ try {
   report.initialContracts = first.available;
   if (!first.connected || first.available < 1) throw new Error('Real Binance worker did not connect');
   service.disconnectForTest();
-  const deadline = Date.now() + 95_000;
+  const deadline = Date.now() + 155_000;
   while (Date.now() < deadline) {
     await delay(2000);
     const latest = service.snapshot();
     report.reconnectPassed = latest.connected;
+    report.validatedLiveFeeds = latest.feed_health.feeds.filter((feed) => feedHasLiveEvidence(feed)).length;
     report.candleAdvancePassed = first.counts.every((saved) => {
       const current = latest.counts.find((c) => c.symbol === saved.symbol);
       return current?.lastTime !== null && current?.lastTime !== undefined && saved.lastTime !== null && current.lastTime > saved.lastTime;
     });
-    if (report.reconnectPassed && report.candleAdvancePassed) break;
+    if (report.reconnectPassed && report.candleAdvancePassed && latest.running && report.validatedLiveFeeds === latest.available) break;
   }
-  if (!report.reconnectPassed || !report.candleAdvancePassed) throw new Error('Real reconnection/candle advance failed');
+  if (!report.reconnectPassed || !report.candleAdvancePassed || report.validatedLiveFeeds !== first.available) throw new Error('Real reconnection/validated live feed/candle advance failed');
   await service.stop(); service = null;
   const before = (await db.query<{ symbol: string; revision: number; state: { lastTime: number } }>('select symbol,revision,state from engine_checkpoints')).rows;
   report.successfulCandleScans = (await db.query<{ n: number }>('select sum(successful_scans)::int n from market_state')).rows[0]?.n ?? 0;

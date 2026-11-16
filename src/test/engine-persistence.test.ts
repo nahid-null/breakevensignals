@@ -17,7 +17,7 @@ beforeAll(async () => {
   db = new PGlite();
   await db.exec('CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role;');
   // Test copy only: the isolated database has no realtime service or publication.
-  for (const name of ['0000_migration.sql','0002_independent_signal_engine.sql','0003_engine_event_provenance_and_statistics.sql','0004_fix_engine_checkpoint_time_comparison.sql','0005_engine_runtime_identity_and_graceful_stop.sql','0006_windows_pc_engine_telemetry.sql','0007_durable_successful_candle_scans.sql','0008_guard_restricted_market_writes.sql']) {
+  for (const name of ['0000_migration.sql','0002_independent_signal_engine.sql','0003_engine_event_provenance_and_statistics.sql','0004_fix_engine_checkpoint_time_comparison.sql','0005_engine_runtime_identity_and_graceful_stop.sql','0006_windows_pc_engine_telemetry.sql','0007_durable_successful_candle_scans.sql','0008_guard_restricted_market_writes.sql','0009_validated_candle_feed_health.sql']) {
     const sql = (await readFile(new URL(`../../drizzle/migrations/${name}`, import.meta.url), 'utf8')).replace(/^ALTER PUBLICATION.*$/gm, '');
     await db.exec(sql);
   }
@@ -49,6 +49,16 @@ describe('atomic persistence (isolated PostgreSQL, no production rows)', () => {
     expect((await db.query<{ acquired: boolean }>('select engine_heartbeat($1::jsonb) acquired', [JSON.stringify(heartbeat)])).rows[0]?.acquired).toBe(true);
     expect((await db.query<{ acquired: boolean }>('select engine_heartbeat($1::jsonb) acquired', [JSON.stringify({ ...heartbeat, instance_id: '22222222-2222-4222-8222-222222222222', uptime_seconds: 999 })])).rows[0]?.acquired).toBe(false);
     expect((await db.query('select host_kind,uptime_seconds::int,scanned_symbols from engine_health')).rows[0]).toEqual({ host_kind: 'windows_pc', uptime_seconds: 120, scanned_symbols: 20 });
+  });
+  it('saves feed evidence only for the owner and clears it for older reports', async () => {
+    const feed_health = { version: 1, initialized: false, rest_at: '2026-11-16T09:18:00Z', recovery_symbol: 'NEARUSDT',
+      feeds: [{ symbol: 'NEARUSDT', message_at: null, event_at: null, closed_at: null, live_commit_at: null }] };
+    const heartbeat = { instance_id: instance, status: 'RECOVERING', websocket_connected: true, binance_connected: true, available_symbols: 1, error: null, feed_health };
+    await db.query('select engine_heartbeat($1::jsonb)', [JSON.stringify(heartbeat)]);
+    await db.query('select engine_heartbeat($1::jsonb)', [JSON.stringify({ ...heartbeat, instance_id: '22222222-2222-4222-8222-222222222222', feed_health: null })]);
+    expect((await db.query('select feed_health from engine_health')).rows[0]).toEqual({ feed_health });
+    await db.query('select engine_heartbeat($1::jsonb)', [JSON.stringify({ ...heartbeat, feed_health: null })]);
+    expect((await db.query('select feed_health from engine_health')).rows[0]).toEqual({ feed_health: null });
   });
   it('persists a restricted hosted heartbeat through the existing schema without candle or notification writes', async () => {
     const heartbeat = { instance_id: instance, status: 'ERROR', websocket_connected: false, binance_connected: false,
