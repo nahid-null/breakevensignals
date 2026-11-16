@@ -1,8 +1,10 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { deploymentState, REQUIRED_PAPER_TRADES, sweepPerformance } from '@/lib/robot/deployment';
 import { DEFAULT_SETTINGS } from '@/lib/robot/config';
 import { RobotCore, WARMUP_BARS } from '@/lib/robot/engine';
 import { sourceFingerprint } from '../../engine-worker/release-fingerprint';
+import expected from '@/lib/robot/expected-release.json';
 
 const hash='a'.repeat(64); const at=Date.parse('2026-11-16T18:00:00Z');
 const runtime={source_hash:hash,strategy:'LIQUIDITY_SWEEP_V1',reported_at:new Date(at).toISOString(),started_at:new Date(at-60000).toISOString(),host_kind:'hosted',runtime_mode:'production',git_commit:null};
@@ -28,6 +30,7 @@ describe('deployment evidence and 30-trade paper validation',()=>{
   });
   it('produces a deterministic64-digit fingerprint from the runtime source files',()=>{
     expect(sourceFingerprint()).toMatch(/^[a-f0-9]{64}$/);expect(sourceFingerprint()).toBe(sourceFingerprint());
+    expect(sourceFingerprint()).toBe(expected.source_hash);
   });
   it('records both rejected LONG and SHORT closed-candle evaluations even without candidate scores',()=>{
     const core=new RobotCore({...DEFAULT_SETTINGS});core.addSymbol('NEARUSDT');

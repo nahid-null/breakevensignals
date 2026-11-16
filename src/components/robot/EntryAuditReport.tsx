@@ -4,12 +4,14 @@ import { MetricsTable, pct, px, signed, usd } from './ui';
 import { fmtTime } from '@/lib/data';
 import type { EntryAudit } from '@/lib/robot/entry-audit';
 import comparison from '@/lib/robot/comparison-results.json';
+import { DeploymentEvidence } from './DeploymentEvidence';
 
 export function EntryAuditReport() {
   const positions = useRobotPositions(); const signals = useRobotSignals();
   const latest = (positions.data ?? []).slice(0, 20);
   return <section className="min-w-0 space-y-6 border-y border-border py-5">
     <header><h2 className="text-lg font-semibold">ENTRY AUDIT &amp; LIQUIDITY SWEEP REPORT</h2><p className="mt-2 text-xs text-muted-foreground">PAPER ONLY · Original audit {fmtTime(AUDIT_AT)} · historical evidence is never invented.</p></header>
+    <DeploymentEvidence />
     <div className="space-y-3"><h3 className="font-semibold">Findings before replacement</h3>{AUDIT_FINDINGS.map(([title, text]) => <details key={title} className="border-b border-border pb-3" open><summary className="cursor-pointer text-sm text-waiting">{title}</summary><p className="mt-2 max-w-5xl text-sm leading-relaxed text-muted-foreground">{text}</p></details>)}</div>
     <details className="border-y border-border py-3"><summary className="cursor-pointer font-semibold">Exactly how the old robot entered and managed trades</summary><div className="mt-4 space-y-4">{OLD_ENTRY_REPORT.map(([title, text]) => <div key={title}><h4 className="text-sm font-semibold">{title}</h4><p className="mt-1 max-w-5xl text-sm leading-relaxed text-muted-foreground">{text}</p></div>)}</div></details>
     <div><h3 className="font-semibold">Five genuine entries available at the original audit</h3><p className="my-2 text-xs text-muted-foreground">All LONG · TREND_PULLBACK · 50x · signal candle opened17:36 UTC, closed17:37 on16 Nov2026. All were OPEN at the audit. Only five trades existed, not20. Bid/ask, spread, exact entry slippage, MAE/MFE and entry-time price comparison were not saved. Price drift below is signal-to-fill, not pure slippage. ROI is the frozen saved observation, not current performance.</p>
