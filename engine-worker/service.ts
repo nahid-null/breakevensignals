@@ -29,6 +29,7 @@ export class SignalService {
   private ownedLease = false;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private startupTimer: ReturnType<typeof setTimeout> | null = null;
+  private heartbeatInFlight: Promise<void> | null = null;
   private recovery = new Set<Symbol>();
   private timers: ReturnType<typeof setInterval>[] = [];
   private startedAt: number | null = null;
@@ -44,11 +45,21 @@ export class SignalService {
     if (!response.ok) throw new Error(`App rejected ${action} (${response.status})`);
     return response.json() as Promise<T>;
   }
-  private async heartbeat(status = this.lastError ? 'ERROR' : this.connected && this.initialized && this.recovery.size === 0 ? 'RUNNING' : 'RECOVERING') {
+  private async heartbeat(status?: string) {
+    // Serialize state reports so a late STARTING response cannot overwrite a restriction.
+    if (this.heartbeatInFlight) await this.heartbeatInFlight;
+    if (!this.running) return;
+    const pending = this.sendHeartbeat(status);
+    this.heartbeatInFlight = pending;
+    try { await pending; }
+    finally { if (this.heartbeatInFlight === pending) this.heartbeatInFlight = null; }
+  }
+  private async sendHeartbeat(status?: string) {
     if (this.observeOnly) return;
+    const currentStatus = this.lastError ? 'ERROR' : status ?? (this.connected && this.initialized && this.recovery.size === 0 ? 'RUNNING' : 'RECOVERING');
     const r = await this.app<{ acquired: boolean }>('heartbeat', { instance_id: this.instance,
       websocket_connected: this.connected && !this.marketPaused, binance_connected: !this.marketPaused && this.lastRestAt > 0 && Date.now() - this.lastRestAt < 90_000,
-      available_symbols: this.available.size, status, error: this.lastError, runtime_mode: this.runtimeMode,
+      available_symbols: this.available.size, status: currentStatus, error: this.lastError, runtime_mode: this.runtimeMode,
       ...this.telemetry() });
     if (!this.running) return;
     if (!r.acquired) { await this.stop(); throw new Error("Another engine instance owns the lease"); }
@@ -130,7 +141,10 @@ export class SignalService {
         if (row.state.version !== ENGINE_VERSION) throw new Error('Unsupported checkpoint version; migration required');
         this.checkpoints.set(row.symbol, row);
       }
-      for (const m of this.markets.values()) if (m.status === 'UNAVAILABLE') await this.app('market', { instance_id: this.instance, market: m });
+      for (const m of this.markets.values()) {
+        if (!this.running || this.marketPaused) return;
+        if (m.status === 'UNAVAILABLE') await this.app('market', { instance_id: this.instance, market: m });
+      }
     }
     if (!this.socket) this.connect(); // Buffer incoming closed candles before REST warm-up.
     for (const [symbol, tick] of this.available) {
@@ -138,6 +152,7 @@ export class SignalService {
       const saved = this.checkpoints.get(symbol);
       if (!saved) {
         const candles = await history(symbol);
+        if (!this.running || this.marketPaused) return;
         if (candles.length < 200) throw new Error(`${symbol}: insufficient Binance history`);
         const state = initialState(symbol, tick);
         let analysis: Analysis | null = null;
@@ -249,6 +264,7 @@ export class SignalService {
     if (!saved || saved.state.lastTime === null) return;
     while (this.running && !this.marketPaused && saved.state.lastTime !== null && saved.state.lastTime + 2 * MINUTE <= until) {
       const candles = await history(symbol, saved.state.lastTime + MINUTE, until);
+      if (!this.running || this.marketPaused) return;
       if (!candles.length) throw new Error(`${symbol}: missing candle recovery incomplete`);
       for (const c of candles) await this.accept(symbol, c, 'recovery');
       const next = this.checkpoints.get(symbol);
@@ -264,6 +280,7 @@ export class SignalService {
       if (Date.now() >= this.nextRestProbe) {
         this.nextRestProbe = Date.now() + 60_000;
         await binanceFetch('/fapi/v1/time');
+        if (!this.running || this.marketPaused) return;
         this.lastRestAt = Date.now();
       }
       for (const symbol of [...this.recovery]) await this.recover(symbol, Date.now());
@@ -278,7 +295,7 @@ export class SignalService {
           this.queues.set(symbol, (this.queues.get(symbol) ?? []).filter((x) => x.time > c.time));
         }
       }
-      if (this.connected && [...this.available.keys()].every((s) => Date.now() - (this.checkpoints.get(s)?.state.lastTime ?? 0) < 3 * MINUTE)) {
+      if (!this.marketPaused && this.connected && [...this.available.keys()].every((s) => Date.now() - (this.checkpoints.get(s)?.state.lastTime ?? 0) < 3 * MINUTE)) {
         this.lastError = null;
         this.recordSuccessfulScan();
       }
@@ -343,6 +360,7 @@ export class SignalService {
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
     if (this.startupTimer) clearTimeout(this.startupTimer);
     this.socket?.terminate();
+    await this.heartbeatInFlight?.catch(() => undefined);
     if (wasRunning && this.ownedLease && !this.observeOnly) {
       await this.app('stop', { instance_id: this.instance }).catch((e) => this.fail(e));
       this.ownedLease = false;

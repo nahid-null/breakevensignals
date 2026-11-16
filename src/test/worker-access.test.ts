@@ -24,6 +24,7 @@ vi.mock('../../engine-worker/binance', async (importOriginal) => {
 type AppCall = { action: string; data: Record<string, unknown> };
 const calls: AppCall[] = [];
 let service: SignalService | null = null;
+const exchange = { symbols: [{ symbol: 'NEARUSDT', status: 'TRADING', filters: [{ filterType: 'PRICE_FILTER', tickSize: '0.001' }] }] };
 
 beforeEach(() => {
   vi.useFakeTimers(); vi.setSystemTime(1_800_000_000_000); calls.length = 0;
