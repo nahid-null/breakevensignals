@@ -27,7 +27,7 @@ export function targetMove(s: Pick<RobotSettings, 'fee_pct' | 'maker_fee_pct'>, 
   return (1 + r + t) / (1 - m) - 1;
 }
 /** Widest structural stop accepted: keeps risk proportionate to the fixed 10% target and well inside 50x liquidation. */
-/** Structural constants chosen on Nov 3-12 2026 replays (best profit factor of six variants) and checked once on unseen Nov 12-16; still unprofitable. */
+/** Structural constants: best profit factor of six variants on Nov 3-12 2026 replays. All variants lost money, and the one unseen Nov 12-16 check lost too. No proven edge. */
 export const TUNING = { maxStopMult: 3.5, earlyExit: false, profitLockAt: 6 };
 export const maxStopFraction = (s: Pick<RobotSettings, 'fee_pct' | 'maker_fee_pct'>) => Math.min(0.009, TUNING.maxStopMult * targetMove(s));
 export const MIN_STOP_FRACTION = 0.0012;
