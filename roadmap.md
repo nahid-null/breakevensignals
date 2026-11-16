@@ -3,7 +3,7 @@
 ## Railway Binance access investigation (2026-11-16)
 - [x] Inspect public Futures endpoints, startup failures, hosting configuration and dashboard status: sandbox requests return 200; isolated 451 fails before heartbeat; 13 targeted tests pass; preview/published retain STOPPED status and four genuine SHORT positions. Official current regional permission remains unverified; official archives are historical-only and live provider candidates exceed the $0 budget.
 - [x] Prepare a safe proposal and read-only Railway verification procedure; no production code, hosting settings, strategy, history or Telegram changes.
-- [x] Implement approved restriction-aware health/logging and Railway-compatible presentation; 88 tests pass, isolated real 20-feed Binance reconnect/disk restart passes, restricted desktop/current/phone checks have no overflow/runtime errors, latest build OK; chat.md updated. No production deployment or provider change.
+- [x] Implement approved restriction-aware health/logging and Railway-compatible presentation; 89 tests pass, including concurrent heartbeat serialization; isolated real 20-feed Binance reconnect/disk restart passes, restricted desktop/current/phone checks have no overflow/runtime errors, latest build OK; chat.md updated. No production deployment or provider change.
 - [ ] Verify permitted market access and genuine deployed scanning — needs Railway's chosen region/public 451 response, Binance eligibility confirmation and access to real hosted results; no verified free equivalent live replacement.
 
 ## Safe setup reference request (2026-11-16)
