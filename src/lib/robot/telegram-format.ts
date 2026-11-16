@@ -3,7 +3,7 @@ import type { robotOpenSchema, robotUpdateSchema } from './protocol';
 
 type Open = z.infer<typeof robotOpenSchema>;
 type Update = z.infer<typeof robotUpdateSchema>;
-export const SETUP_LABEL: Record<string, string> = { SWEEP_RECLAIM: 'Liquidity sweep + reclaim', TREND_PULLBACK: 'Trend pullback continuation',
+export const SETUP_LABEL: Record<string, string> = { SMC_SWEEP_MSS: 'Smart Money: sweep + structure shift + FVG/OB', SWEEP_RECLAIM: 'Liquidity sweep + reclaim', TREND_PULLBACK: 'Trend pullback continuation',
   EMA_RETEST: 'EMA retest + momentum', VWAP_RECLAIM: 'VWAP reclaim / rejection', SR_REJECTION: 'Support/resistance rejection',
   BREAKOUT_RETEST: 'Confirmed breakout retest', PULLBACK_RECLAIM: 'Trend pullback reclaim' };
 const REASON: Record<string, string> = {

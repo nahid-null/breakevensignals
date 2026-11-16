@@ -116,8 +116,11 @@ export class RobotService {
   /** Load the latest durable settings, account and positions. The database is the source of truth. */
   private async refresh() {
     if (this.observeOnly || !this.ownsLease()) return;
-    const r = await this.app<{ settings: Row; account: Row; open: Row[] }>('robot-state', {});
+    const r = await this.app<{ settings: Row; account: Row; open: Row[]; closed?: Row[] }>('robot-state', {});
     this.core.settings = settingsFromRow(r.settings);
+    // Recent closed results feed the optional daily-loss and loss-streak pauses (both off unless switched on).
+    this.core.history = (r.closed ?? []).flatMap((row) => row.closed_at ? [{ closedAt: Date.parse(String(row.closed_at)), pnl: num(row.realized_pnl) }] : [])
+      .sort((a, b) => a.closedAt - b.closedAt);
     if (Array.isArray(r.settings.symbols) && r.settings.symbols.length === 40) this.configuredSymbols = r.settings.symbols.map(String);
     const durable = new Map(r.open.map((row) => [String(row.id), row]));
     // Keep local positions with unsaved changes; drop any closed elsewhere (for example by STOP ALL).
@@ -312,7 +315,12 @@ export class RobotService {
         this.committed.set(u.id, u.version); this.balance += u.pnl_delta;
         const rest = (this.pendingFills.get(u.id) ?? []).slice(sent.get(u.id) ?? 0);
         if (rest.length) this.pendingFills.set(u.id, rest); else { this.pendingFills.delete(u.id); this.notify.delete(u.id); }
-        if (u.status === 'CLOSED') { closed = true; this.committed.delete(u.id); this.core.open = this.core.open.filter((p) => p.id !== u.id); }
+        if (u.status === 'CLOSED') {
+          closed = true; this.committed.delete(u.id);
+          const done = this.core.open.find((p) => p.id === u.id);
+          if (done) this.core.history.push({ closedAt: done.closedAt ?? Date.now(), pnl: done.realized });
+          this.core.open = this.core.open.filter((p) => p.id !== u.id);
+        }
       }
       if (r.conflicts?.length) {
         this.core.open = this.core.open.filter((p) => !r.conflicts!.includes(p.id));
