@@ -47,7 +47,7 @@ export class SignalService {
   }
   private async heartbeat(status?: string) {
     // Serialize state reports so a late STARTING response cannot overwrite a restriction.
-    if (this.heartbeatInFlight) await this.heartbeatInFlight;
+    while (this.heartbeatInFlight) await this.heartbeatInFlight;
     if (!this.running) return;
     const pending = this.sendHeartbeat(status);
     this.heartbeatInFlight = pending;

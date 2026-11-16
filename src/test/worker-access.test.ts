@@ -134,4 +134,29 @@ describe('restriction-aware worker lifecycle (isolated transport)', () => {
     expect(binanceFetch).not.toHaveBeenCalled();
     expect(service.snapshot().process_alive).toBe(false);
   });
+  it('serializes simultaneous restricted and timed heartbeats behind a slow open report', async () => {
+    if (!service) throw new Error('Missing service');
+    await service.start();
+    let active = 0;
+    let maximum = 0;
+    const releases: (() => void)[] = [];
+    vi.stubGlobal('fetch', vi.fn(async () => {
+      active++; maximum = Math.max(maximum, active);
+      await new Promise<void>((resolve) => releases.push(resolve));
+      active--;
+      return Response.json({ acquired: true });
+    }));
+    const socket = sockets[0]; if (!socket) throw new Error('Missing socket');
+    socket.emit('open');
+    socket.emit('unexpected-response', {}, { statusCode: 451, resume: vi.fn() });
+    await vi.advanceTimersByTimeAsync(20_000);
+    for (let i = 0; i < 8; i++) {
+      releases.shift()?.();
+      await vi.advanceTimersByTimeAsync(0);
+    }
+    expect(maximum).toBe(1);
+    expect(active).toBe(0);
+    expect(service.snapshot().market_paused).toBe(true);
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json({ acquired: true, stopped: true })));
+  });
 });
