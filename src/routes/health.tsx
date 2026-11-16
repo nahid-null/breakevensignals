@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { fmtTime, useSettings, useStatuses, useTelegramLogs, useMarkets, useStats } from "@/lib/data";
 import { formatUptime } from '@/lib/engine/health';
-import { SYMBOLS } from '@/lib/config';
+import { ROBOT_SYMBOLS } from '@/lib/robot/config';
 import { StatusBadge } from "@/components/terminal/StatusBadge";
 import { contractFeedStatus } from '@/lib/engine/market-policy';
 
