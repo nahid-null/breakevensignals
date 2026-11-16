@@ -277,7 +277,7 @@ export class SignalService {
       }
       ws.terminate();
     });
-    if (typeof Bun === 'undefined') ws.on('unexpected-response', (_request, response) => {
+    if (!('Bun' in globalThis)) ws.on('unexpected-response', (_request, response) => {
       if (this.socket !== ws || !this.running || this.marketPaused) { response.resume(); return; }
       const status = response.statusCode;
       if (status === 451 || status === 418) {

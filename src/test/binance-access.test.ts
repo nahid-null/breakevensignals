@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { binanceFetch, BinanceRequestError } from '../../engine-worker/binance';
+import { binanceFetch, BinanceRequestError, checkWebSocketAccess } from '../../engine-worker/binance';
 
 afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); });
 
@@ -68,5 +68,12 @@ describe('public Binance request failure classification', () => {
     controller.abort();
     expect(await result).toMatchObject({ name: 'AbortError' });
     expect(transport).toHaveBeenCalledTimes(1);
+  });
+  it.each([451, 418])('classifies native WebSocket upgrade rejection HTTP %s on the same host without retries', async (status) => {
+    const transport = vi.fn(async () => new Response('restricted', { status }));
+    vi.stubGlobal('fetch', transport);
+    await expect(checkWebSocketAccess('nearusdt@kline_1m', new AbortController().signal)).rejects.toMatchObject({ status, pausesMarket: true });
+    expect(transport).toHaveBeenCalledTimes(1);
+    expect(transport.mock.calls[0]?.[0]).toBe('https://fstream.binance.com/market/stream?streams=nearusdt@kline_1m');
   });
 });
