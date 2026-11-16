@@ -92,6 +92,20 @@
       "when": 1794834372608,
       "tag": "0012_simulator_follow_telegram_switches",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1794841188010,
+      "tag": "0013_paper_trading_robot",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1794843101470,
+      "tag": "0014_signal_stats_exclude_paper_robot",
+      "breakpoints": true
     }
   ]
 }

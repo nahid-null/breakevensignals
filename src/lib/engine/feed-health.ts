@@ -1,5 +1,5 @@
-import { z } from 'zod';
 import { SYMBOLS } from '../config';
+import { z } from 'zod';
 
 export const MESSAGE_MAX_AGE_MS = 60_000;
 export const SCAN_MAX_AGE_MS = 180_000;

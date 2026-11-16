@@ -1,4 +1,5 @@
 import { SignalService } from './service';
+import { RobotService } from './robot-service';
 import { localHealthResponse } from './local-health';
 import { cloudHealthResponse, keepAwakeUrl, KEEP_AWAKE_INTERVAL_MS } from './cloud-health';
 
@@ -11,6 +12,9 @@ const kind = process.env['ENGINE_HOST_KIND'] ?? (process.env['RENDER'] || proces
 const hostKind = kind === 'windows_pc' || kind === 'hosted' || kind === 'temporary' ? kind : 'unknown';
 const runtimeMode = observe || process.env['ENGINE_RUNTIME_MODE'] === 'temporary' ? 'temporary' : 'production';
 const service = new SignalService((url ?? '').replace(/\/$/, ''), secret ?? '', observe, runtimeMode, hostKind);
+// The paper robot runs alongside the signal engine under the same lease; it never places exchange orders.
+const robot = new RobotService((url ?? '').replace(/\/$/, ''), secret ?? '', () => service.instance, () => service.leaseOwned,
+  () => service.marketAccessPaused, observe || process.env['ROBOT_ENABLED'] === 'false');
 const healthSecret = process.env['LOCAL_HEALTH_SECRET'] ?? '';
 // Worker scripts run on Bun, outside SSR. Cloud web services bind their assigned PORT.
 const cloudPort = hostKind === 'hosted' ? Number(process.env['PORT'] ?? 0) : 0;
@@ -27,6 +31,7 @@ async function shutdown(code: number) {
   if (stopping) return;
   stopping = true;
   local?.stop(true);
+  await robot.stop();
   await service.stop();
   process.exit(code);
 }
@@ -42,5 +47,6 @@ if (parentId) setInterval(() => { void (async () => {
   } catch { /* Parent outage is checked against a deadline, not assumed healthy. */ }
   if (Date.now() - parentLastSeen > 45_000) await shutdown(1);
 })(); }, 15_000);
+void robot.start();
 try { await service.start(); }
 catch (error) { console.error(error instanceof Error ? error.message : 'Worker startup failed'); await shutdown(1); }
