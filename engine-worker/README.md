@@ -57,7 +57,7 @@ The dashboard expires heartbeat-based status after 90 seconds. RUNNING also requ
 The Docker container itself cannot be validated here without a Docker daemon. Local recovery evidence is not a Railway network test, proof of permitted access or deployed 24/7 uptime.
 
 ## Validated feed monitoring
-The worker loads the installed `ws` package instead of Bun's incomplete native substitution, retaining HTTP 451/418 handshake classification. Candle streams use Binance's documented `/market/stream` path on the same host; there is no fallback host or restriction bypass.
+The worker keeps Bun's functioning native socket and inspects the same-path HTTP upgrade on connection errors, retaining HTTP 451/418 classification before reconnecting. It does not register Bun's unsupported rejection callback. Candle streams use Binance's documented `/market/stream` path on the same host; there is no fallback host or restriction bypass.
 
 Socket-open is connection evidence only. Validated messages require the configured symbol, one-minute OHLCV, a current provider event time and a lawful closed-candle time. Per-feed telemetry keeps last valid reception, provider event, closed candle and successfully committed live candle separately. RUNNING requires all available feeds to have current valid messages and recent closed/live-committed candles, initialization complete, no recovery and fresh REST health. Legacy workers with no validated telemetry remain unverified.
 

@@ -2,7 +2,7 @@ import WebSocket from './websocket';
 import { SYMBOLS, INDICATORS, type Symbol } from "../src/lib/config";
 import { initialState, ENGINE_VERSION, MINUTE, PARAMETERS, validateCandle, type EngineState, type Candle, type Analysis, type Signal } from "../src/lib/engine/model";
 import { processCandle } from "../src/lib/engine/scalper";
-import { BINANCE_WS, BinanceRequestError, binanceFetch, history, delay, backoff } from "./binance";
+import { BINANCE_WS, BinanceRequestError, binanceFetch, checkWebSocketAccess, history, delay, backoff } from "./binance";
 import { feedHasLiveEvidence, MESSAGE_MAX_AGE_MS, type FeedHealth } from '../src/lib/engine/feed-health';
 
 type Market = { symbol: Symbol; price: number | null; trend: string; status: string; last_candle_at: string | null;
@@ -23,6 +23,7 @@ export class SignalService {
   private connected = false;
   private lastMessage = 0;
   private socketOpenedAt = 0;
+  private checkingSocketAccess = false;
   private feedMessages = new Map<Symbol, FeedHealth['feeds'][number]>();
   private recoverySymbol: Symbol | null = null;
   private failures = 0;
@@ -266,8 +267,17 @@ export class SignalService {
         void this.drain();
       } catch (e) { this.fail(e); }
     });
-    ws.on('error', () => { if (this.socket === ws && !this.marketPaused) this.lastError = 'Binance WebSocket connection error'; ws.terminate(); });
-    ws.on('unexpected-response', (_request, response) => {
+    ws.on('error', () => {
+      if (this.socket === ws && !this.marketPaused) {
+        this.lastError = 'Binance WebSocket connection error';
+        if (!this.checkingSocketAccess) {
+          this.checkingSocketAccess = true;
+          void checkWebSocketAccess(streams, this.marketAbort.signal).catch((error) => this.fail(error)).finally(() => { this.checkingSocketAccess = false; });
+        }
+      }
+      ws.terminate();
+    });
+    if (typeof Bun === 'undefined') ws.on('unexpected-response', (_request, response) => {
       if (this.socket !== ws || !this.running || this.marketPaused) { response.resume(); return; }
       const status = response.statusCode;
       if (status === 451 || status === 418) {
@@ -285,7 +295,15 @@ export class SignalService {
       this.feedMessages.clear(); this.lastMessage = 0;
       for (const s of this.available.keys()) this.recovery.add(s);
       if (this.socket === ws) this.socket = null;
-      if (this.running && !this.marketPaused) { const wait = backoff(this.failures++); console.log(`WebSocket disconnected; reconnect in ${wait}ms`); this.reconnectTimer = setTimeout(() => this.connect(), wait); }
+      if (this.running && !this.marketPaused) {
+        const wait = backoff(this.failures++); console.log(`WebSocket disconnected; reconnect in ${wait}ms`);
+        const reconnect = () => {
+          if (!this.running || this.marketPaused) return;
+          if (this.checkingSocketAccess) { this.reconnectTimer = setTimeout(reconnect, 500); return; }
+          this.connect();
+        };
+        this.reconnectTimer = setTimeout(reconnect, wait);
+      }
     });
   }
   private async accept(symbol: Symbol, c: Candle, mode: 'live' | 'recovery') {

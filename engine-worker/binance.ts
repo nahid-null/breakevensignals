@@ -86,6 +86,20 @@ export async function history(symbol: string, start?: number, end?: number, sign
   return rows.map(restCandle).filter((c) => c.time + MINUTE <= now).sort((a, b) => a.time - b.time);
 }
 
+export async function checkWebSocketAccess(streams: string, signal: AbortSignal): Promise<void> {
+  const response = await fetch(`${BINANCE_WS.replace('wss:', 'https:')}${streams}`, {
+    headers: { connection: 'Upgrade', upgrade: 'websocket', 'sec-websocket-version': '13',
+      'sec-websocket-key': btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(16)))) },
+    signal: AbortSignal.any([signal, AbortSignal.timeout(15_000)]),
+  });
+  await response.body?.cancel().catch(() => undefined);
+  if (response.status === 451 || response.status === 418) throw new BinanceRequestError(
+    response.status === 451 ? 'restricted' : 'banned', response.status, '/market/stream',
+    'Binance rejected the candle connection. Resolve permitted access before restarting.');
+  if (response.status !== 101) throw new BinanceRequestError(response.status >= 500 ? 'provider' : 'request',
+    response.status, '/market/stream', 'Binance did not accept the candle connection.');
+}
+
 export function backoff(attempt: number, random = Math.random()): number {
   return Math.min(30_000, 1000 * 2 ** Math.min(attempt, 5)) + Math.round(random * 1000);
 }

@@ -26,7 +26,10 @@ const candles = () => Array.from({ length: 300 }, (_, i) => ({ time: Math.floor(
   open: 100, high: 101, low: 99, close: 100, volume: 10 }));
 async function start() {
   vi.useFakeTimers(); vi.setSystemTime(Date.parse('2026-11-16T09:20:00Z'));
-  vi.mocked(history).mockResolvedValue(candles());
+  vi.mocked(history).mockImplementation(async (_symbol, first, end) => {
+    const now = Math.floor((end ?? Date.now()) / MINUTE) * MINUTE;
+    return first === undefined ? candles() : Array.from({ length: Math.max(0, (now - first) / MINUTE) }, (_, i) => ({ time: first + i * MINUTE, open: 100, high: 101, low: 99, close: 100, volume: 10 }));
+  });
   vi.stubGlobal('fetch', vi.fn(async () => { throw new Error('Observation must not write'); }));
   service = new SignalService('', '', true);
   await service.start();
@@ -52,7 +55,7 @@ describe('validated live feed and startup monitoring', () => {
     const first = scanner.snapshot().counts[0]?.lastTime;
     if (first === undefined || first === null) throw new Error('No checkpoint');
     socket.emit('message', JSON.stringify({ data: { s: 'NEARUSDT', E: Date.now(), k: { t: first + MINUTE, o: '100', h: '101', l: '99', c: '100', v: '10', x: false } } }));
-    await vi.advanceTimersByTimeAsync(0);
+    await vi.advanceTimersByTimeAsync(10_000);
     expect(scanner.snapshot().running).toBe(false);
     vi.setSystemTime(first + 2 * MINUTE + 1000);
     socket.emit('message', JSON.stringify({ data: { s: 'NEARUSDT', E: Date.now(), k: { t: first + MINUTE, o: '100', h: '101', l: '99', c: '100', v: '10', x: true } } }));
