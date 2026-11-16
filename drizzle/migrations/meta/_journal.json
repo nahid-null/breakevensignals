@@ -113,6 +113,13 @@
       "when": 1794844050445,
       "tag": "0015_robot_starting_capital",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1794849234969,
+      "tag": "0016_paper_robot_fixed_50x_diagnostics",
+      "breakpoints": true
     }
   ]
 }
