@@ -138,7 +138,8 @@ export class RobotCore {
     const opened = openPosition({ id: signalId(c), symbol: c.symbol, direction: c.direction, setup: c.setup, score: c.score, tier: c.tier, stop: c.stop, liquidity: c.liquidity },
       fill, rules, now, this.settings);
     if ('rejected' in opened) return fail(opened.rejected);
-    const { available } = allocationLimits(balance, exposure(this.open), this.settings);
+    // The cap is checked against the balance after the entry fee, so combined margin never exceeds 70% at any moment.
+    const { available } = allocationLimits(balance - opened.position.entryFee, exposure(this.open), this.settings);
     if (opened.position.margin > available + 1e-9) return fail('Margin budget full (70% cap)');
     if (fill.partial) this.counters.orders_partial++;
     this.queue.delete(`${c.symbol}|${c.direction}`);
