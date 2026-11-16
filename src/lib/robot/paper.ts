@@ -164,11 +164,15 @@ export function managePosition(p: Position, bar: Bar, st: SymbolState, s: RobotS
   trackExcursion(p, long ? bar.high : bar.low, s);
   const roi = netRoi(p, bar.close, s);
   // Lock profit once the trade has done most of the work: stop tightened to +2% net ROI.
-  if (TUNING.profitLockAt > 0 && roi >= TUNING.profitLockAt) { const lock = lockPrice(p, s, 2); if ((lock - p.stop) * sign > 0 && (bar.close - lock) * sign > 0) { p.stop = lock; p.version++; } }
+  const beAt = s.breakeven_trigger_roi_pct > 0 ? s.breakeven_trigger_roi_pct : TUNING.profitLockAt;
+  if (beAt > 0 && roi >= beAt) { const lock = lockPrice(p, s, 2); if ((lock - p.stop) * sign > 0 && (bar.close - lock) * sign > 0) { p.stop = lock; p.version++; } }
   const age = at - p.openedAt;
   let reason: ExitReason | null = null;
   const hist = st.m5.macd.hist ?? 0; const prevHist = st.m5.prevHist ?? hist; const e9m1 = st.m1.ema9.value ?? bar.close;
-  if (roi >= 4 && (bar.close - e9m1) * sign < 0 && (hist - prevHist) * sign < 0) reason = 'PROFIT_EXIT';
+  // SMC entries: a 1m close through the far side of the entry zone means the structure failed; exit instead of waiting for the stop.
+  const z = p.audit; const far = z?.zone_low !== undefined && z.zone_high !== undefined ? (long ? z.zone_low : z.zone_high) : null;
+  if (far !== null && (bar.close - far) * sign < 0) reason = 'EARLY_EXIT';
+  else if (roi >= 4 && (bar.close - e9m1) * sign < 0 && (hist - prevHist) * sign < 0) reason = 'PROFIT_EXIT';
   else if (TUNING.earlyExit && st.signalClosed && roi < 0) {
     const sb = st.m5.last(); const e21 = st.m5.ema21.value;
     if (sb && e21 !== null && (sb.close - e21) * sign < 0 && hist * sign < 0 && (hist - prevHist) * sign < 0) reason = 'EARLY_EXIT';
