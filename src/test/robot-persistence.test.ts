@@ -112,4 +112,14 @@ describe('paper robot persistence (isolated PostgreSQL, no production rows)', ()
     await db.query('select robot_commit_audited($1::jsonb)',[JSON.stringify(p)]);
     expect(await one("select count(*)::int n from robot_positions where id='audit-open'")).toEqual({ n: 1 });
   });
+  it('stores fresh owner release and all decisions atomically, idempotently and only with the owning lease',async()=>{
+    const runtime={strategy:'LIQUIDITY_SWEEP_V1',source_hash:'a'.repeat(64),git_commit:null,host_kind:'hosted',runtime_mode:'production',started_at:'2026-11-16T12:00:00Z'};
+    const decisions=['LONG','SHORT'].map((direction)=>({event_id:`audit-${direction}`,symbol:'NEARUSDT',direction,source_hash:'a'.repeat(64),candle_time:'2026-11-16T12:01:00Z',phase:'EVALUATION',decision:'REJECTED',reason:'No recent meaningful liquidity sweep',score:null,evidence:null}));
+    const p={instance_id:instance,runtime,decisions};
+    await db.query('select robot_commit_verified($1::jsonb)',[JSON.stringify(p)]);
+    await db.query('select robot_commit_verified($1::jsonb)',[JSON.stringify(p)]);
+    expect(await one('select count(*)::int n from robot_decisions')).toEqual({n:2});
+    expect(await one('select strategy,source_hash from robot_runtime')).toEqual({strategy:'LIQUIDITY_SWEEP_V1',source_hash:'a'.repeat(64)});
+    await expect(db.query('select robot_commit_verified($1::jsonb)',[JSON.stringify({...p,instance_id:'33333333-3333-4333-8333-333333333333'})])).rejects.toThrow(/lease/);
+  });
 });
