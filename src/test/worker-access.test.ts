@@ -17,14 +17,13 @@ vi.mock('ws', () => ({ default: class {
 vi.mock('../../engine-worker/binance', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../engine-worker/binance')>();
   return { ...actual, delay: async () => {}, binanceFetch: vi.fn(), history: async () => Array.from({ length: 300 }, (_, i) => ({
-    time: Date.now() - (300 - i) * MINUTE, open: 100, high: 100.5, low: 99.5, close: 100, volume: 10,
+    time: Math.floor(Date.now() / MINUTE) * MINUTE - (300 - i) * MINUTE, open: 100, high: 100.5, low: 99.5, close: 100, volume: 10,
   })) };
 });
 
 type AppCall = { action: string; data: Record<string, unknown> };
 const calls: AppCall[] = [];
 let service: SignalService | null = null;
-const exchange = { symbols: [{ symbol: 'NEARUSDT', status: 'TRADING', filters: [{ filterType: 'PRICE_FILTER', tickSize: '0.001' }] }] };
 
 beforeEach(() => {
   vi.useFakeTimers(); vi.setSystemTime(1_800_000_000_000); calls.length = 0;
@@ -35,7 +34,7 @@ beforeEach(() => {
     calls.push(input);
     if (input.action === 'state') return Response.json({ checkpoints: [] });
     if (input.action === 'market-state') return Response.json({ markets: [] });
-    if (input.action === 'commit') return Response.json({ conflict: false, revision: Number(input.data.expected_revision) + 1 });
+    if (input.action === 'commit') return Response.json({ conflict: false, revision: Number(input.data['expected_revision']) + 1 });
     return Response.json({ acquired: true, stopped: true });
   }));
   service = new SignalService('https://isolated.invalid', 'isolated-key', false, 'production', 'hosted');
@@ -48,13 +47,13 @@ describe('restriction-aware worker lifecycle (isolated transport)', () => {
     vi.mocked(binanceFetch).mockRejectedValue(new BinanceRequestError('restricted', 451, '/fapi/v1/exchangeInfo', 'Restricted location'));
     await service.start();
     expect(calls[0]?.action).toBe('heartbeat');
-    expect(calls[0]?.data.status).toBe('STARTING');
+    expect(calls[0]?.data['status']).toBe('STARTING');
     expect(service.snapshot()).toMatchObject({ process_alive: true, running: false, market_paused: true, connected: false });
-    const restricted = calls.find((c) => c.action === 'heartbeat' && c.data.status === 'ERROR');
-    expect(restricted?.data.error).toContain('BINANCE_ACCESS_RESTRICTED: HTTP 451');
-    expect(restricted?.data.binance_connected).toBe(false);
-    expect(restricted?.data.websocket_connected).toBe(false);
-    const publicHealth = engineHealth({ status: 'ERROR', error: String(restricted?.data.error), host_kind: 'hosted', runtime_mode: 'production',
+    const restricted = calls.find((c) => c.action === 'heartbeat' && c.data['status'] === 'ERROR');
+    expect(restricted?.data['error']).toContain('BINANCE_ACCESS_RESTRICTED: HTTP 451');
+    expect(restricted?.data['binance_connected']).toBe(false);
+    expect(restricted?.data['websocket_connected']).toBe(false);
+    const publicHealth = engineHealth({ status: 'ERROR', error: String(restricted?.data['error']), host_kind: 'hosted', runtime_mode: 'production',
       last_heartbeat_at: new Date().toISOString(), binance_connected: false, websocket_connected: false }, true);
     expect(publicHealth).toMatchObject({ cloud: 'ONLINE', scanner: 'ERROR', binance: 'ACCESS RESTRICTED', nextScanAt: null });
     await vi.advanceTimersByTimeAsync(120_000);
