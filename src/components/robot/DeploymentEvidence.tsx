@@ -34,7 +34,7 @@ export function DeploymentEvidence() {
     </div>
     <div className="space-y-3 border-t border-border pt-4"><h4 className="text-sm font-semibold">Actual hosted liquidity-sweep decision receipts</h4>
       {decisions.isError?<p className="text-short">Decision receipts could not be read.</p>:!(decisions.data??[]).length?<p className="text-sm text-muted-foreground">No corrected-worker decision receipts have arrived. Deployment and first new paper execution remain unverified.</p>:<div className="max-h-96 overflow-auto"><table className="w-full min-w-[900px] text-xs"><thead className="text-left text-muted-foreground"><tr>{['Candle close','Coin','Side','Stage','Decision','Score','Exact reason','Signal price'].map((h)=><th key={h} className="p-2">{h}</th>)}</tr></thead><tbody>{decisions.data?.map((d)=>{
-        const e=d.evidence; const price=typeof e==='object'&&e!==null&&!Array.isArray(e)&&'signal_price' in e&&typeof e.signal_price==='number'?e.signal_price:null;
+        const e=d.evidence; const price=typeof e==='object'&&e!==null&&!Array.isArray(e)&&'signal_price' in e&&typeof e['signal_price']==='number'?e['signal_price']:null;
         return <tr key={d.event_id} className="border-b border-border/50"><td className="p-2 font-mono">{fmtTime(d.candle_time)}</td><td className="p-2">{d.symbol}</td><td className={d.direction==='LONG'?'p-2 text-long':'p-2 text-short'}>{d.direction}</td><td className="p-2">{d.phase}</td><td className="p-2">{d.decision}</td><td className="p-2">{d.score??'—'}</td><td className="p-2 text-muted-foreground">{d.reason}</td><td className="p-2 font-mono">{px(price)}</td></tr>;
       })}</tbody></table></div>}
     </div>
