@@ -24,6 +24,8 @@ export const useRobotPositions = () => useQuery({ queryKey: ['robot_positions'],
 export const useRobotMarkets = () => useQuery({ queryKey: ['robot_market'], refetchInterval: 10_000, queryFn: () => must<RobotMarket[]>(supabase.from('robot_market').select('*').order('symbol')) });
 export const useRobotSignals = () => useQuery({ queryKey: ['robot_signals'], queryFn: () => must<RobotSignal[]>(supabase.from('robot_signals').select('*').order('created_at', { ascending: false }).limit(100)) });
 export const useRobotScanner = () => useQuery({ queryKey: ['robot_scanner'], refetchInterval: 10_000, queryFn: () => must<RobotScanner | null>(supabase.from('robot_scanner').select('*').eq('id', 1).maybeSingle()) });
+export const useRobotRuntime = () => useQuery({ queryKey:['robot_runtime'],refetchInterval:10_000,queryFn:()=>must<T['robot_runtime']['Row']|null>(supabase.from('robot_runtime').select('*').eq('id',1).maybeSingle()) });
+export const useRobotDecisions = () => useQuery({ queryKey:['robot_decisions'],refetchInterval:10_000,queryFn:()=>must<T['robot_decisions']['Row'][]>(supabase.from('robot_decisions').select('*').order('received_at',{ascending:false}).limit(240)) });
 export const useRobotBacktests = () => useQuery({ queryKey: ['robot_backtests'], queryFn: () => must<RobotBacktest[]>(supabase.from('robot_backtests').select('*').order('created_at', { ascending: false }).limit(10)) });
 
 const asClosed = (p: RobotPosition) => ({ direction: p.direction, netPnl: Number(p.realized_pnl), exitReason: p.exit_reason ?? '', closedAt: Date.parse(p.closed_at ?? p.updated_at), riskUsdt: Number(p.risk_usdt) });

@@ -386,6 +386,51 @@ export type Database = {
         }
         Relationships: []
       }
+      robot_decisions: {
+        Row: {
+          candle_time: string
+          decision: string
+          direction: string
+          event_id: string
+          evidence: Json | null
+          phase: string
+          reason: string
+          received_at: string
+          score: number | null
+          source_hash: string
+          strategy: string
+          symbol: string
+        }
+        Insert: {
+          candle_time: string
+          decision: string
+          direction: string
+          event_id: string
+          evidence?: Json | null
+          phase: string
+          reason: string
+          received_at?: string
+          score?: number | null
+          source_hash: string
+          strategy: string
+          symbol: string
+        }
+        Update: {
+          candle_time?: string
+          decision?: string
+          direction?: string
+          event_id?: string
+          evidence?: Json | null
+          phase?: string
+          reason?: string
+          received_at?: string
+          score?: number | null
+          source_hash?: string
+          strategy?: string
+          symbol?: string
+        }
+        Relationships: []
+      }
       robot_market: {
         Row: {
           best_direction: string | null
@@ -590,6 +635,42 @@ export type Database = {
           unrealized_pnl?: number
           updated_at?: string
           version?: number
+        }
+        Relationships: []
+      }
+      robot_runtime: {
+        Row: {
+          git_commit: string | null
+          host_kind: string
+          id: number
+          instance_id: string
+          reported_at: string
+          runtime_mode: string
+          source_hash: string
+          started_at: string
+          strategy: string
+        }
+        Insert: {
+          git_commit?: string | null
+          host_kind: string
+          id: number
+          instance_id: string
+          reported_at?: string
+          runtime_mode: string
+          source_hash: string
+          started_at: string
+          strategy: string
+        }
+        Update: {
+          git_commit?: string | null
+          host_kind?: string
+          id?: number
+          instance_id?: string
+          reported_at?: string
+          runtime_mode?: string
+          source_hash?: string
+          started_at?: string
+          strategy?: string
         }
         Relationships: []
       }
@@ -1142,6 +1223,7 @@ export type Database = {
       robot_add_counts: { Args: { a: Json; b: Json }; Returns: Json }
       robot_commit: { Args: { p: Json }; Returns: Json }
       robot_commit_audited: { Args: { p: Json }; Returns: Json }
+      robot_commit_verified: { Args: { p: Json }; Returns: Json }
       robot_correct_initial_balance: {
         Args: { p_start: number }
         Returns: number

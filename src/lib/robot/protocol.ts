@@ -85,6 +85,11 @@ export const robotCommitSchema = z.object({
   opens: z.array(robotOpenSchema).max(5).default([]),
   signals: z.array(robotSignalSchema).max(120).default([]),
   scanner: robotScannerSchema.optional(),
+  runtime: z.object({ strategy:z.literal('LIQUIDITY_SWEEP_V1'), source_hash:z.string().regex(/^[a-f0-9]{64}$/), git_commit:z.string().regex(/^[a-f0-9]{7,40}$/).nullable(),
+    host_kind:z.enum(['hosted','temporary','unknown']), runtime_mode:z.enum(['production','temporary']), started_at:time }).strict().optional(),
+  decisions:z.array(z.object({ event_id:z.string().max(200),symbol,direction,source_hash:z.string().regex(/^[a-f0-9]{64}$/),candle_time:time,
+    phase:z.enum(['EVALUATION','EXECUTION']),decision:z.enum(['QUALIFIED','TAKEN','SKIPPED','REJECTED']),reason:z.string().min(1).max(2000),score,
+    evidence:entryAudit.nullable() }).strict()).max(240).default([]),
 }).strict();
 export type RobotCommit = z.infer<typeof robotCommitSchema>;
 export type RobotCommitResult = { paused: boolean; applied?: string[]; conflicts?: string[]; opened?: string[]; rejected?: { id: string; reason: string }[] };

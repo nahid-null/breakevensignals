@@ -1,0 +1,18 @@
+{
+  "id": "fefeda32-cd8b-4450-bf0a-abedf1ed6f22",
+  "prevId": "68dc3d75-0eab-4da0-abef-a5e6f062eae5",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {},
+  "enums": {},
+  "schemas": {},
+  "views": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

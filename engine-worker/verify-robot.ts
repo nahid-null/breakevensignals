@@ -30,7 +30,7 @@ const server = createServer(async (req,res) => {
     } else if(p.action==='robot-commit') {
       const d=robotCommitSchema.parse(p.data);
       const payload={...d,opens:d.opens.map((o)=>({...o,message:robotOpenMessage(o)})),updates:d.updates.map(({fills,notify,...u})=>({...u,messages:notify?robotFillMessages({...u,fills,notify}):[]}))};
-      result=(await db.query<{r:unknown}>('select robot_commit_audited($1::jsonb) r',[JSON.stringify(payload)])).rows[0]?.r;
+      result=(await db.query<{r:unknown}>('select robot_commit_verified($1::jsonb) r',[JSON.stringify(payload)])).rows[0]?.r;
     } else throw new Error('Unexpected isolated request');
     res.writeHead(200,{'content-type':'application/json'}).end(JSON.stringify(result));
   } catch(e){console.error('Isolated API:',e instanceof Error?e.message:'error');res.writeHead(500).end();}
@@ -46,7 +46,9 @@ try {
   const positions=(await db.query('select * from robot_positions order by opened_at')).rows;
   const signals=(await db.query('select symbol,direction,setup,decision,reason,candle_time from robot_signals order by candle_time')).rows;
   const messages=(await db.query('select message,delivery_status from telegram_logs')).rows;
+  const runtime=(await db.query('select * from robot_runtime')).rows;
+  const decisions=(await db.query('select * from robot_decisions order by candle_time,symbol,direction')).rows;
   await mkdir('/tmp/entry-audit',{recursive:true});
-  await writeFile('/tmp/entry-audit/live-paper.json',JSON.stringify({observed_at:new Date().toISOString(),scope:'Real Binance; isolated in-memory PostgreSQL; no hosted writes; Telegram messages recorded locally only, NEVER sent',markets,scanner,positions,signals,messages},null,2));
+  await writeFile('/tmp/entry-audit/live-paper.json',JSON.stringify({observed_at:new Date().toISOString(),scope:'Real Binance; isolated in-memory PostgreSQL; no hosted writes; Telegram messages recorded locally only, NEVER sent',markets,scanner,positions,signals,messages,runtime,decisions},null,2));
   console.log(JSON.stringify({coins:markets.length,live:markets.filter((m)=>m.status==='LIVE').length,positions:positions.length,signals:signals.length,telegram_sent:0}));
 } finally {await worker.stop();clearInterval(timer);await new Promise<void>((resolve)=>server.close(()=>resolve()));await db.close();}

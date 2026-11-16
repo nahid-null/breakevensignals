@@ -59,11 +59,12 @@ export const Route = createFileRoute("/api/public/engine")({
         const data = robotCommitSchema.parse(base.data.data);
         const p = {
           instance_id: data.instance_id, markets: data.markets, signals: data.signals, ...(data.scanner ? { scanner: data.scanner } : {}),
+          ...(data.runtime ? {runtime:data.runtime} : {}), decisions:data.decisions,
           opens: data.opens.map((o) => ({ ...o, message: robotOpenMessage(o) })),
           // Recovery fills after a restart are applied but never announced as live events.
           updates: data.updates.map(({ fills, notify, ...u }) => ({ ...u, messages: notify ? robotFillMessages({ ...u, fills, notify }) : [] })),
         };
-        const { data: result, error } = await supabaseAdmin.rpc('robot_commit_audited', { p: p as unknown as Json });
+        const { data: result, error } = await supabaseAdmin.rpc('robot_commit_verified', { p: p as unknown as Json });
         if (error) throw error;
         return Response.json(result);
       }

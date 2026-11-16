@@ -12,6 +12,8 @@ import type { DepthBook, Fill, Position } from '../src/lib/robot/paper';
 import { DEFAULT_RULES, rulesFromFilters } from '../src/lib/robot/risk';
 import type { BookContext, Candidate } from '../src/lib/robot/strategy';
 import type { RobotCommit, RobotCommitResult } from '../src/lib/robot/protocol';
+import { sourceFingerprint } from './release-fingerprint';
+import { ROBOT_STRATEGY_VERSION } from '../src/lib/robot/release-files';
 
 type RowKey = 'id' | 'symbol' | 'direction' | 'status' | 'setup' | 'score' | 'leverage' | 'band' | 'entry_price' | 'quantity' | 'quantity_open' | 'margin' | 'notional' | 'stop_loss' | 'initial_stop' | 'tp1' | 'liquidation_price' | 'risk_usdt' | 'entry_fee' | 'fees' | 'funding' | 'realized_pnl' | 'opened_at' | 'last_candle_time' | 'version' | 'liquidity' | 'last_price' | 'unrealized_pnl' | 'tick_size' | 'requested_quantity' | 'fill_status' | 'balance';
 type Row = { [K in RowKey]?: unknown } & Record<string, unknown>;
@@ -67,6 +69,8 @@ export class RobotService {
   private readonly abort = new AbortController();
   private unavailable: string[] = [];
   private configuredSymbols: string[] = [...ROBOT_SYMBOLS];
+  private readonly startedAt = Date.now();
+  private readonly hash = sourceFingerprint();
 
   constructor(private readonly appUrl: string, private readonly secret: string, private readonly instance: () => string,
     private readonly ownsLease: () => boolean, private readonly marketPaused: () => boolean, private readonly observeOnly = false) {}
@@ -202,7 +206,8 @@ export class RobotService {
         this.core.confirmOpen(res, q.c, ok, r.rejected?.find((x) => x.id === res.position.id)?.reason);
         if (ok) {
           this.committed.set(res.position.id, 1); this.balance += res.fill.pnl;
-          console.log(JSON.stringify({ event: 'robot_paper_open', id: res.position.id, leverage: res.position.leverage, margin: Number(res.position.margin.toFixed(4)), trigger }));
+          console.log(JSON.stringify({ event: 'robot_paper_open', id: res.position.id, strategy:ROBOT_STRATEGY_VERSION,source_hash:this.hash,
+            leverage: res.position.leverage, margin: Number(res.position.margin.toFixed(4)), entry_audit:res.position.audit, trigger }));
         }
       }
     } catch (e) { this.fail(e); }
@@ -276,7 +281,19 @@ export class RobotService {
     this.flushing = true;
     const counts = this.core.takeCounters();
     const rawSignals = this.core.takeSignals(100);
+    const rawDecisions = this.core.takeDecisions(120);
     const signals = this.signalRows(rawSignals);
+    const reportedCommit = process.env['RAILWAY_GIT_COMMIT_SHA'];
+    const commit = reportedCommit && /^[a-f0-9]{7,40}$/.test(reportedCommit) ? reportedCommit : null;
+    const mode = process.env['ENGINE_RUNTIME_MODE'] === 'temporary' ? 'temporary' : 'production';
+    const host = process.env['RAILWAY_ENVIRONMENT_ID'] || process.env['ENGINE_HOST_KIND'] === 'hosted' ? 'hosted' : process.env['ENGINE_HOST_KIND'] === 'temporary' ? 'temporary' : 'unknown';
+    const runtime: NonNullable<RobotCommit['runtime']> = {strategy:ROBOT_STRATEGY_VERSION,source_hash:this.hash,git_commit:commit,host_kind:host,runtime_mode:mode,started_at:iso(this.startedAt)};
+    const decisions: RobotCommit['decisions'] = rawDecisions.map((d)=>({event_id:`${this.hash.slice(0,12)}-${d.symbol}-${d.direction}-${d.time}-evaluation`,symbol:d.symbol,
+      direction:d.direction,source_hash:this.hash,candle_time:iso(d.time+MINUTE),phase:'EVALUATION',decision:d.decision,reason:d.reason.slice(0,2000),score:d.score,evidence:d.audit??null}));
+    for (const s of rawSignals) if (s.decision === 'TAKEN' || s.reason?.startsWith('Execution:') || s.reason?.startsWith('Database guard:') || s.reason?.startsWith('Expired:')) {
+      decisions.push({event_id:`${this.hash.slice(0,12)}-${s.id}-${s.decision}`,symbol:s.candidate.symbol,direction:s.candidate.direction,source_hash:this.hash,
+        candle_time:iso(s.candidate.time+MINUTE),phase:'EXECUTION',decision:s.decision,reason:s.reason??s.candidate.liquidity,score:s.candidate.score,evidence:s.candidate.audit??null});
+    }
     try {
       const updates: RobotCommit['updates'] = []; const sent = new Map<string, number>();
       for (const p of this.core.open) {
@@ -287,8 +304,8 @@ export class RobotService {
         sent.set(p.id, fills.length);
         updates.push(this.updateRow(p, expected, fills));
       }
-      const r = await this.app<RobotCommitResult>('robot-commit', { instance_id: this.instance(), markets: this.marketRows(), updates, signals, scanner: this.scanner(counts) });
-      if (r.paused) { this.core.counters = addCounters(this.core.counters, counts); this.core.signals.unshift(...rawSignals); return; }
+      const r = await this.app<RobotCommitResult>('robot-commit', { instance_id: this.instance(), markets: this.marketRows(), updates, signals, scanner: this.scanner(counts),runtime,decisions });
+      if (r.paused) { this.core.counters = addCounters(this.core.counters, counts); this.core.signals.unshift(...rawSignals); this.core.decisions.unshift(...rawDecisions); return; }
       let closed = false;
       for (const u of updates) {
         if (!r.applied?.includes(u.id)) continue;
@@ -305,6 +322,7 @@ export class RobotService {
       if (closed) void this.fillQueue('position closed');
     } catch (e) {
       this.core.counters = addCounters(this.core.counters, counts); this.core.signals.unshift(...rawSignals);
+      this.core.decisions.unshift(...rawDecisions);
       throw e;
     } finally { this.flushing = false; }
   }
