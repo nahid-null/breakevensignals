@@ -17,7 +17,7 @@ beforeAll(async () => {
   db = new PGlite();
   await db.exec('CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role;');
   // Test copy only: the isolated database has no realtime service or publication.
-  for (const name of ['0000_migration.sql','0002_independent_signal_engine.sql','0003_engine_event_provenance_and_statistics.sql','0004_fix_engine_checkpoint_time_comparison.sql','0005_engine_runtime_identity_and_graceful_stop.sql','0006_windows_pc_engine_telemetry.sql','0007_durable_successful_candle_scans.sql','0008_guard_restricted_market_writes.sql','0009_validated_candle_feed_health.sql','0010_mtf_trend_filter.sql']) {
+  for (const name of ['0000_migration.sql','0002_independent_signal_engine.sql','0003_engine_event_provenance_and_statistics.sql','0004_fix_engine_checkpoint_time_comparison.sql','0005_engine_runtime_identity_and_graceful_stop.sql','0006_windows_pc_engine_telemetry.sql','0007_durable_successful_candle_scans.sql','0008_guard_restricted_market_writes.sql','0009_validated_candle_feed_health.sql','0010_mtf_trend_filter.sql','0011_simulator_trading.sql']) {
     const sql = (await readFile(new URL(`../../drizzle/migrations/${name}`, import.meta.url), 'utf8')).replace(/^ALTER PUBLICATION.*$/gm, '');
     await db.exec(sql);
   }
