@@ -12,6 +12,9 @@ import { DEFAULT_RULES, type SymbolRules } from '../src/lib/robot/risk';
 import type { Position } from '../src/lib/robot/paper';
 
 const [dir = '/tmp/diag/bars', infoPath = '/tmp/diag/exchangeInfo.json', outPath = '/tmp/diag/result.json', startArg = '20'] = process.argv.slice(2);
+import { TUNING } from '../src/lib/robot/strategy';
+Object.assign(TUNING, JSON.parse(process.env['ROBOT_TUNING'] ?? '{}'));
+const FROM = Number(process.env['BT_FROM'] ?? 0); const TO = Number(process.env['BT_TO'] ?? Infinity);
 const s = { ...DEFAULT_SETTINGS, ...JSON.parse(process.env['ROBOT_SETTINGS'] ?? '{}') };
 const START = Number(startArg);
 type F = { filterType: string; tickSize?: string; stepSize?: string; minQty?: string; maxQty?: string; notional?: string };
@@ -43,7 +46,9 @@ const track = (p: Position) => {
     margin: (p.qty * p.entry) / p.leverage });
   lastCloseAt = p.closedAt!;
 };
+end = Math.min(end, TO);
 for (let t = start; t <= end; t += MINUTE) {
+  const live = t >= FROM;
   for (const [sym, rows] of data) {
     const i = cursor.get(sym)!; const r = rows[i];
     if (!r || r[0] !== t) continue; cursor.set(sym, i + 1);
@@ -60,7 +65,7 @@ for (let t = start; t <= end; t += MINUTE) {
         maxOpen = Math.max(maxOpen, core.open.length);
       }
     }
-    const { fills } = core.onBar(sym, bar, true);
+    const { fills } = core.onBar(sym, bar, live);
     for (const { position: p, fill } of fills) { balance += fill.pnl; if (p.status === 'CLOSED') track(p); }
     core.open = core.open.filter((p) => p.status === 'OPEN');
   }

@@ -1,7 +1,7 @@
 /** Simulated execution and position management. Real market data, simulated orders only. */
 import { PAPER_LEVERAGE, TARGET_NET_ROI_PCT, type RobotSettings } from './config';
 import { MINUTE, type Bar, type SymbolState } from './series';
-import type { Direction, Setup } from './strategy';
+import { TUNING, type Direction, type Setup } from './strategy';
 import { liquidationPrice, roundTick, type SymbolRules } from './risk';
 
 export type ExitReason = 'TAKE_PROFIT' | 'STOP_LOSS' | 'BREAKEVEN_STOP' | 'EARLY_EXIT' | 'PROFIT_EXIT' | 'TIME_EXIT' | 'LIQUIDATION' | 'EMERGENCY_STOP';
@@ -149,12 +149,12 @@ export function managePosition(p: Position, bar: Bar, st: SymbolState, s: RobotS
   }
   const roi = netRoi(p, bar.close, s);
   // Lock profit once the trade has done most of the work: stop tightened to +2% net ROI.
-  if (roi >= 6) { const lock = lockPrice(p, s, 2); if ((lock - p.stop) * sign > 0 && (bar.close - lock) * sign > 0) { p.stop = lock; p.version++; } }
+  if (TUNING.profitLockAt > 0 && roi >= TUNING.profitLockAt) { const lock = lockPrice(p, s, 2); if ((lock - p.stop) * sign > 0 && (bar.close - lock) * sign > 0) { p.stop = lock; p.version++; } }
   const age = at - p.openedAt;
   let reason: ExitReason | null = null;
   const hist = st.m5.macd.hist ?? 0; const prevHist = st.m5.prevHist ?? hist; const e9m1 = st.m1.ema9.value ?? bar.close;
   if (roi >= 4 && (bar.close - e9m1) * sign < 0 && (hist - prevHist) * sign < 0) reason = 'PROFIT_EXIT';
-  else if (st.signalClosed && roi < 0) {
+  else if (TUNING.earlyExit && st.signalClosed && roi < 0) {
     const sb = st.m5.last(); const e21 = st.m5.ema21.value;
     if (sb && e21 !== null && (sb.close - e21) * sign < 0 && hist * sign < 0 && (hist - prevHist) * sign < 0) reason = 'EARLY_EXIT';
   }
