@@ -71,6 +71,13 @@
       "when": 1794820941231,
       "tag": "0009_validated_candle_feed_health",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1794828724490,
+      "tag": "0010_mtf_trend_filter",
+      "breakpoints": true
     }
   ]
 }

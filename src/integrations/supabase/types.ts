@@ -238,6 +238,7 @@ export type Database = {
           error: string | null
           last_candle_at: string | null
           long_score: number
+          mtf_trend: Json | null
           price: number | null
           short_score: number
           status: string
@@ -250,6 +251,7 @@ export type Database = {
           error?: string | null
           last_candle_at?: string | null
           long_score?: number
+          mtf_trend?: Json | null
           price?: number | null
           short_score?: number
           status?: string
@@ -262,6 +264,7 @@ export type Database = {
           error?: string | null
           last_candle_at?: string | null
           long_score?: number
+          mtf_trend?: Json | null
           price?: number | null
           short_score?: number
           status?: string
