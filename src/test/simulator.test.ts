@@ -88,7 +88,7 @@ describe('simulator trading (isolated PostgreSQL)', () => {
     await candle([ev('stop_loss_hit', 't1', { stop_loss: 97, exit_price: 97, net_result_r: -1 })], 96.9, 100);
     const t = await trade('t1');
     expect(t!.exit_reason).toBe('LIQUIDATED');
-    expect(await balance()).toBeCloseTo(1000 - 800 - 40, 8); // margin and entry fee lost
+    expect(await balance()).toBeCloseTo(1000 - 800 - 20, 8); // margin and the 20 entry fee lost
   });
 
   it('ignores signals that were not trend-approved, recovery signals, and a paused simulator', async () => {
