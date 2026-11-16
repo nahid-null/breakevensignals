@@ -8,7 +8,7 @@ import expected from '@/lib/robot/expected-release.json';
 
 const hash='a'.repeat(64); const at=Date.parse('2026-11-16T18:00:00Z');
 const runtime={source_hash:hash,strategy:'SMC_V1',reported_at:new Date(at).toISOString(),started_at:new Date(at-60000).toISOString(),host_kind:'hosted',runtime_mode:'production',git_commit:null};
-const trade=(source='LIVE_BINANCE')=>({direction:'LONG',status:'CLOSED',setup:'SWEEP_RECLAIM',entry_audit:{strategy:'LIQUIDITY_SWEEP_V1',source},realized_pnl:0.1,closed_at:new Date(at).toISOString(),updated_at:new Date(at).toISOString(),risk_usdt:0.2,mae_roi_pct:-8,mfe_roi_pct:10});
+const trade=(source='LIVE_BINANCE')=>({direction:'LONG',status:'CLOSED',setup:'SMC_SWEEP_MSS',entry_audit:{strategy:'SMC_V1',source},realized_pnl:0.1,closed_at:new Date(at).toISOString(),updated_at:new Date(at).toISOString(),risk_usdt:0.2,mae_roi_pct:-8,mfe_roi_pct:10});
 describe('deployment evidence and 30-trade paper validation',()=>{
   it('requires a fresh matching hosted source fingerprint, not a socket or old trade',()=>{
     expect(deploymentState(null,hash,at).status).toBe('UNVERIFIED');
@@ -20,7 +20,7 @@ describe('deployment evidence and 30-trade paper validation',()=>{
   it('requires at least30 completed genuine new-strategy trades and excludes replays and legacy entries',()=>{
     expect(REQUIRED_PAPER_TRADES).toBe(30);
     const rows=Array.from({length:29},()=>trade());
-    const insufficient=sweepPerformance([...rows,trade('CANDLE_REPLAY'),{...trade(),setup:'TREND_PULLBACK'},{...trade(),status:'OPEN'}],20);
+    const insufficient=sweepPerformance([...rows,trade('CANDLE_REPLAY'),{...trade(),setup:'TREND_PULLBACK'},{...trade(),setup:'SWEEP_RECLAIM',entry_audit:{strategy:'LIQUIDITY_SWEEP_V1',source:'LIVE_BINANCE'}},{...trade(),status:'OPEN'}],20);
     expect(insufficient.completed).toBe(29);expect(insufficient.sufficient).toBe(false);expect(insufficient.remaining).toBe(1);
     expect(sweepPerformance([...rows,trade()],20).sufficient).toBe(true);
     expect(sweepPerformance([...rows,trade()],20).all.netPnl).toBeCloseTo(3,9);
