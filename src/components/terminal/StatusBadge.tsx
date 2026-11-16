@@ -14,6 +14,7 @@ const tone: Record<string, string> = {
   BREAKEVEN: "text-breakeven border-breakeven/40 bg-breakeven/10",
   "TAKE PROFIT HIT": "text-long border-long/40 bg-long/10",
   "STOP LOSS HIT": "text-short border-short/40 bg-short/10",
+  LIQUIDATED: "text-short border-short/40 bg-short/10",
   OFFLINE: "text-short border-short/40 bg-short/10",
   DISCONNECTED: "text-short border-short/40 bg-short/10",
   'ACCESS RESTRICTED': 'text-short border-short/40 bg-short/10',
