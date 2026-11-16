@@ -58,11 +58,11 @@ function Health() {
           <Row label="Coins with saved candle commits">{h?.recoveredSymbols ?? '—'} / {h?.engine?.available_symbols ?? '—'}</Row>
           <Row label="Next scan · expected candle close">{fmtTime(h?.nextScanAt, tz)}</Row>
           <Row label="Successful candle scans">{h?.successfulScans ?? '—'}</Row>
-          <Row label="Total coins scanned">{h?.scannedSymbols ?? '—'} / {SYMBOLS.length}</Row>
+          <Row label="Total coins scanned">{h?.scannedSymbols ?? '—'} / {ROBOT_SYMBOLS.length}</Row>
           <Row label="Last heartbeat">{fmtTime(h?.engine?.last_heartbeat_at, tz)}</Row>
           <Row label="Last confirmed candle">{fmtTime(h?.lastCandleAt, tz)}</Row>
           <Row label="Last generated signal">{fmtTime(h?.lastSignalAt, tz)}</Row>
-          <Row label="Available / configured coins">{h?.engine?.available_symbols ?? '—'} / {SYMBOLS.length}</Row>
+          <Row label="Available / configured coins">{h?.engine?.available_symbols ?? '—'} / {ROBOT_SYMBOLS.length}</Row>
           <Row label="Active positions">{h?.activePositions ?? '—'}</Row>
           <Row label="Active LONG signals">{stats?.activeLong ?? '—'}</Row>
           <Row label="Active SHORT signals">{stats?.activeShort ?? '—'}</Row>
