@@ -42,6 +42,7 @@ describe('atomic persistence (isolated PostgreSQL, no production rows)', () => {
     const commit = (symbol: string, trade: string, aligned: boolean | undefined) => db.query('select commit_engine_candle($1::jsonb)', [JSON.stringify({
       instance_id: instance, symbol, expected_revision: 0, mode: 'live', checkpoint: { symbol, lastTime: 60000 }, market: market(symbol),
       events: [{ ...p('entry_confirmed', trade), symbol, telegram_message: 'NORMAL SIGNAL', ...(aligned === undefined ? {} : { trend_aligned: aligned }) }] })]);
+    await db.query('select engine_heartbeat($1::jsonb)', [JSON.stringify({ instance_id: instance, status: 'RUNNING', websocket_connected: true, binance_connected: true, available_symbols: 20, error: null })]);
     const logs = async (trade: string) => (await db.query<{ n: number }>('select count(*)::int n from telegram_logs where trade_id=$1', [trade])).rows[0]?.n;
     await commit('FILUSDT', 'trend-approved', true);
     await commit('TIAUSDT', 'trend-unknown', undefined);
