@@ -128,7 +128,7 @@ export class RobotService {
       if (!chunk.length) break;
       bars.unshift(...chunk.filter((b) => !bars.length || b.time < bars[0]!.time));
       end = chunk[0]!.time - 1;
-      if (chunk.length < 1500) break;
+      if (chunk.length < 1000) break; // Less than a full page means no older history.
     }
     for (const b of bars) this.step(symbol, b, false);
     this.warm.add(symbol);
