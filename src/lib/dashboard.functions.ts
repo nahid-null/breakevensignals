@@ -10,9 +10,9 @@ async function db() {
   const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
   return supabaseAdmin;
 }
-function must<R>(r: { data: R | null; error: { message: string } | null }): R {
+function must<R>(r: { data: R; error: { message: string } | null }): R {
   if (r.error) throw new Error(r.error.message);
-  return r.data as R;
+  return r.data;
 }
 const get = createServerFn({ method: 'GET' });
 
