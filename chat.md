@@ -129,3 +129,10 @@
 - Remaining for user: Publish → "Invite only" → add people → publish. Until republished, the live site runs old code and its data panels will fail to load. Money controls are only protected once the site is Invite only.
 - 18:36:18 UTC: Paper Robot EMERGENCY STOP was triggered (robot paused, 4 legacy positions closed: POL, BNB, BTC, APT). Not caused by agent checks (agent browser runs only navigated, at 18:41). Origin unknown: no server log; the STOP ALL button was still open to anyone on the public site. Left stopped; user must press Resume. New-strategy trades cannot accumulate while stopped.
 - Sweep: worker API requires shared key (timing-safe); legacy webhook returns 410; worker /healthz returns only "ok"; no direct browser DB reads remain. All 10 control/read server functions rely on the site being Invite only.
+
+## 2026-11-16 19:30 UTC — prompt-20 SMC_V1 Paper Robot upgrade
+- Robot live entries replaced by SMC_V1 (`src/lib/robot/smc.ts`): mandatory sweep then later MSS/CHoCH close, unfilled FVG/OB, OTE 62–79%, rejection close, 15m bias, score weights 20/20/15/10/15/10/5/5. Old Pine signals and Simulator untouched; 50x, +10% net, 70% cap unchanged.
+- New settings: risk per trade %, OTE band, break-even trigger, daily-loss and loss-streak switches (OFF by default). Worker now loads recent closed results for those pauses.
+- Reward check at signal now matches execution (0.2% net move vs stop+costs).
+- Replay (40 coins, $20): Nov 3–11 1 trade −$0.09; Nov 12–16 0 trades. Too few to judge. Main blocker: +10% at 50x = 0.2% move vs structural stops → reward/risk rule rejects most setups.
+- Tests 196 passed; build OK. Expected fingerprint bdaa7c7c… — Railway must be redeployed after publish. Robot still on STOP ALL; not resumed.
