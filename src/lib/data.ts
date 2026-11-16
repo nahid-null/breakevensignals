@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import * as D from "./dashboard.functions";
 import type { Database } from "@/integrations/supabase/types";
 import { getSystemHealth } from "./ops.functions";
 import type { TerminalStats } from './engine/stats';
@@ -12,80 +12,61 @@ export type TelegramLog = Database["public"]["Tables"]["telegram_logs"]["Row"];
 export type Settings = Database["public"]["Tables"]["app_settings"]["Row"];
 export type MarketState = Database["public"]["Tables"]["market_state"]["Row"];
 
-const TABLES = ["active_positions", "signal_events", "telegram_logs", "app_settings", "market_state", "engine_health",
-  "robot_positions", "robot_signals", "robot_account", "robot_settings"] as const;
+const KEYS = ["active_positions", "signal_events", "telegram_logs", "app_settings", "market_state", "health", "terminal_statistics",
+  "robot_positions", "robot_signals", "robot_account", "robot_settings", "sim_account", "sim_trades"] as const;
 
-/** Subscribe once (in the shell) and refresh every query when backend data changes. */
+/** Refresh every dashboard query when the tab becomes visible again or the connection returns (queries also poll). */
 export function useRealtimeSync() {
   const qc = useQueryClient();
   useEffect(() => {
-    const channel = supabase.channel(`terminal-${Math.random().toString(36).slice(2)}`);
-    for (const table of TABLES) {
-      channel.on("postgres_changes", { event: "*", schema: "public", table }, () => {
-         void qc.invalidateQueries({ queryKey: [table] });
-         if (table !== 'market_state' && !table.startsWith('robot_')) void qc.invalidateQueries({ queryKey: ["health"] });
-         if (table !== 'market_state' && table !== 'engine_health' && !table.startsWith('robot_')) void qc.invalidateQueries({ queryKey: ['terminal_statistics'] });
-      });
-    }
-    channel.subscribe();
     const refresh = () => {
       if (document.visibilityState === 'hidden') return;
-      for (const table of TABLES) void qc.invalidateQueries({ queryKey: [table] });
-      void qc.invalidateQueries({ queryKey: ['health'] });
-      void qc.invalidateQueries({ queryKey: ['terminal_statistics'] });
+      for (const key of KEYS) void qc.invalidateQueries({ queryKey: [key] });
     };
     document.addEventListener('visibilitychange', refresh);
     window.addEventListener('online', refresh);
     return () => {
       document.removeEventListener('visibilitychange', refresh);
       window.removeEventListener('online', refresh);
-      void supabase.removeChannel(channel);
     };
   }, [qc]);
-}
-
-async function must<T>(p: PromiseLike<{ data: T | null; error: { message: string } | null }>): Promise<T> {
-  const { data, error } = await p;
-  if (error) throw new Error(error.message);
-  return data as T;
 }
 
 export const usePositions = () =>
   useQuery({
     queryKey: ["active_positions"],
-    queryFn: () => must<Position[]>(supabase.from("active_positions").select("*").order("entry_timestamp", { ascending: false }).limit(1000)),
+    queryFn: () => D.readPositions() as Promise<Position[]>,
+    refetchInterval: 10000,
   });
 
 export const useEvents = () =>
   useQuery({
     queryKey: ["signal_events"],
-    queryFn: () => must<SignalEvent[]>(supabase.from("signal_events").select("*").order("timestamp", { ascending: false }).limit(1000)),
+    queryFn: () => D.readEvents() as Promise<SignalEvent[]>,
+    refetchInterval: 10000,
   });
 
 export const useTelegramLogs = () =>
   useQuery({
     queryKey: ["telegram_logs"],
-    queryFn: () => must<TelegramLog[]>(supabase.from("telegram_logs").select("*").order("created_at", { ascending: false }).limit(500)),
+    queryFn: () => D.readTelegramLogs() as Promise<TelegramLog[]>,
     refetchInterval: 15000,
   });
 
 export const useSettings = () =>
   useQuery({
     queryKey: ["app_settings"],
-    queryFn: () => must<Settings>(supabase.from("app_settings").select("*").eq("id", 1).single()),
+    queryFn: () => D.readSettings() as Promise<Settings>,
+    refetchInterval: 30000,
   });
 
 export const useHealth = () =>
   useQuery({ queryKey: ["health"], queryFn: () => getSystemHealth(), refetchInterval: 15000 });
 
 export const useMarkets = () => useQuery({ queryKey: ['market_state'], queryFn: () =>
-  must<MarketState[]>(supabase.from('market_state').select('*')), refetchInterval: 15000 });
+  D.readMarkets() as Promise<MarketState[]>, refetchInterval: 15000 });
 
-export const useStats = () => useQuery({ queryKey: ['terminal_statistics'], queryFn: async () => {
-  const { data, error } = await supabase.rpc('terminal_statistics');
-  if (error) throw error;
-  return data as unknown as TerminalStats;
-}, refetchInterval: 15000 });
+export const useStats = () => useQuery({ queryKey: ['terminal_statistics'], queryFn: () => D.readStats(), refetchInterval: 15000 });
 
 export type Status = "ONLINE" | "OFFLINE" | "CONNECTED" | "DISCONNECTED" | "ACCESS RESTRICTED" | "IP BANNED" | "NOT CONFIGURED" | "ERROR" | "WAITING" | "MANUAL VERIFICATION REQUIRED";
 

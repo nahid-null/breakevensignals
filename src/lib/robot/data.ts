@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import * as R from '../dashboard.functions';
 import type { Database } from '@/integrations/supabase/types';
 import { computeMetrics, type Metrics } from './metrics';
 
@@ -12,21 +12,16 @@ export type RobotSettingsRow = T['robot_settings']['Row'];
 export type RobotBacktest = T['robot_backtests']['Row'];
 export type RobotScanner = T['robot_scanner']['Row'];
 
-async function must<R>(p: PromiseLike<{ data: R | null; error: { message: string } | null }>): Promise<R> {
-  const { data, error } = await p;
-  if (error) throw new Error(error.message);
-  return data as R;
-}
 
-export const useRobotAccount = () => useQuery({ queryKey: ['robot_account'], queryFn: () => must<RobotAccount>(supabase.from('robot_account').select('*').eq('id', 1).single()) });
-export const useRobotSettings = () => useQuery({ queryKey: ['robot_settings'], queryFn: () => must<RobotSettingsRow>(supabase.from('robot_settings').select('*').eq('id', 1).single()) });
-export const useRobotPositions = () => useQuery({ queryKey: ['robot_positions'], queryFn: () => must<RobotPosition[]>(supabase.from('robot_positions').select('*').order('opened_at', { ascending: false }).limit(1000)) });
-export const useRobotMarkets = () => useQuery({ queryKey: ['robot_market'], refetchInterval: 10_000, queryFn: () => must<RobotMarket[]>(supabase.from('robot_market').select('*').order('symbol')) });
-export const useRobotSignals = () => useQuery({ queryKey: ['robot_signals'], queryFn: () => must<RobotSignal[]>(supabase.from('robot_signals').select('*').order('created_at', { ascending: false }).limit(100)) });
-export const useRobotScanner = () => useQuery({ queryKey: ['robot_scanner'], refetchInterval: 10_000, queryFn: () => must<RobotScanner | null>(supabase.from('robot_scanner').select('*').eq('id', 1).maybeSingle()) });
-export const useRobotRuntime = () => useQuery({ queryKey:['robot_runtime'],refetchInterval:10_000,queryFn:()=>must<T['robot_runtime']['Row']|null>(supabase.from('robot_runtime').select('*').eq('id',1).maybeSingle()) });
-export const useRobotDecisions = () => useQuery({ queryKey:['robot_decisions'],refetchInterval:10_000,queryFn:()=>must<T['robot_decisions']['Row'][]>(supabase.from('robot_decisions').select('*').order('received_at',{ascending:false}).limit(240)) });
-export const useRobotBacktests = () => useQuery({ queryKey: ['robot_backtests'], queryFn: () => must<RobotBacktest[]>(supabase.from('robot_backtests').select('*').order('created_at', { ascending: false }).limit(10)) });
+export const useRobotAccount = () => useQuery({ queryKey: ['robot_account'], refetchInterval: 10_000, queryFn: () => R.readRobotAccount() as Promise<RobotAccount> });
+export const useRobotSettings = () => useQuery({ queryKey: ['robot_settings'], refetchInterval: 10_000, queryFn: () => R.readRobotSettings() as Promise<RobotSettingsRow> });
+export const useRobotPositions = () => useQuery({ queryKey: ['robot_positions'], refetchInterval: 10_000, queryFn: () => R.readRobotPositions() as Promise<RobotPosition[]> });
+export const useRobotMarkets = () => useQuery({ queryKey: ['robot_market'], refetchInterval: 10_000, queryFn: () => R.readRobotMarkets() as Promise<RobotMarket[]> });
+export const useRobotSignals = () => useQuery({ queryKey: ['robot_signals'], refetchInterval: 10_000, queryFn: () => R.readRobotSignals() as Promise<RobotSignal[]> });
+export const useRobotScanner = () => useQuery({ queryKey: ['robot_scanner'], refetchInterval: 10_000, queryFn: () => R.readRobotScanner() as Promise<RobotScanner | null> });
+export const useRobotRuntime = () => useQuery({ queryKey:['robot_runtime'],refetchInterval:10_000,queryFn:()=>R.readRobotRuntime() as Promise<T['robot_runtime']['Row']|null> });
+export const useRobotDecisions = () => useQuery({ queryKey:['robot_decisions'],refetchInterval:10_000,queryFn:()=>R.readRobotDecisions() as Promise<T['robot_decisions']['Row'][]> });
+export const useRobotBacktests = () => useQuery({ queryKey: ['robot_backtests'], queryFn: () => R.readRobotBacktests() as Promise<RobotBacktest[]> });
 
 const asClosed = (p: RobotPosition) => ({ direction: p.direction, netPnl: Number(p.realized_pnl), exitReason: p.exit_reason ?? '', closedAt: Date.parse(p.closed_at ?? p.updated_at), riskUsdt: Number(p.risk_usdt) });
 export function robotStats(positions: RobotPosition[], startBalance: number): { all: Metrics; long: Metrics; short: Metrics } {
