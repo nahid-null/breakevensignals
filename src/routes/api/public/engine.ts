@@ -58,7 +58,7 @@ export const Route = createFileRoute("/api/public/engine")({
       if (base.data.action === 'robot-commit') {
         const data = robotCommitSchema.parse(base.data.data);
         const p = {
-          instance_id: data.instance_id, markets: data.markets, signals: data.signals,
+          instance_id: data.instance_id, markets: data.markets, signals: data.signals, scanner: data.scanner ?? null,
           opens: data.opens.map((o) => ({ ...o, message: robotOpenMessage(o) })),
           // Recovery fills after a restart are applied but never announced as live events.
           updates: data.updates.map(({ fills, notify, ...u }) => ({ ...u, messages: notify ? robotFillMessages({ ...u, fills, notify }) : [] })),
