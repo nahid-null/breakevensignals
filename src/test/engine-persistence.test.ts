@@ -2,6 +2,7 @@
 import { PGlite } from '@electric-sql/pglite';
 import { readFile } from 'node:fs/promises';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { engineHealth } from '@/lib/engine/health';
 
 let db: PGlite;
 const instance = '11111111-1111-4111-8111-111111111111';
@@ -48,6 +49,18 @@ describe('atomic persistence (isolated PostgreSQL, no production rows)', () => {
     expect((await db.query<{ acquired: boolean }>('select engine_heartbeat($1::jsonb) acquired', [JSON.stringify(heartbeat)])).rows[0]?.acquired).toBe(true);
     expect((await db.query<{ acquired: boolean }>('select engine_heartbeat($1::jsonb) acquired', [JSON.stringify({ ...heartbeat, instance_id: '22222222-2222-4222-8222-222222222222', uptime_seconds: 999 })])).rows[0]?.acquired).toBe(false);
     expect((await db.query('select host_kind,uptime_seconds::int,scanned_symbols from engine_health')).rows[0]).toEqual({ host_kind: 'windows_pc', uptime_seconds: 120, scanned_symbols: 20 });
+  });
+  it('persists a restricted hosted heartbeat through the existing schema without candle or notification writes', async () => {
+    const heartbeat = { instance_id: instance, status: 'ERROR', websocket_connected: false, binance_connected: false,
+      available_symbols: 0, error: 'BINANCE_ACCESS_RESTRICTED: HTTP 451 /fapi/v1/exchangeInfo — Restricted location',
+      host_kind: 'hosted', runtime_mode: 'production', uptime_seconds: 12 };
+    const count = async () => (await db.query('select (select count(*)::int from engine_checkpoints) checkpoints, (select count(*)::int from signal_events) events, (select count(*)::int from telegram_logs) notifications')).rows[0];
+    const before = await count();
+    expect((await db.query<{ acquired: boolean }>('select engine_heartbeat($1::jsonb) acquired', [JSON.stringify(heartbeat)])).rows[0]?.acquired).toBe(true);
+    const saved = (await db.query<{ status: string; error: string; host_kind: string; runtime_mode: string; last_heartbeat_at: Date; binance_connected: boolean; websocket_connected: boolean }>('select * from engine_health')).rows[0];
+    if (!saved) throw new Error('Missing durable health');
+    expect(engineHealth({ ...saved, last_heartbeat_at: saved.last_heartbeat_at.toISOString() }, true)).toMatchObject({ cloud: 'ONLINE', scanner: 'ERROR', binance: 'ACCESS RESTRICTED', websocket: 'DISCONNECTED', nextScanAt: null });
+    expect(await count()).toEqual(before);
   });
   for (const mode of ['warmup','recovery'] as const) {
     it(`${mode}: stores provenance and checkpoint together without sending historical notifications`, async () => {

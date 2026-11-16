@@ -193,8 +193,10 @@ export class SignalService {
     this.timers.push(setInterval(() => {
       if (!this.running || this.marketPaused) return;
       if (this.socket && Date.now() - this.lastMessage > 60_000) this.socket.terminate();
-      void this.drain();
-      if (!this.observeOnly) void this.app('deliveries', { instance_id: this.instance }).catch((e) => this.fail(e));
+      void (async () => {
+        await this.drain();
+        if (this.running && !this.marketPaused && !this.observeOnly) await this.app('deliveries', { instance_id: this.instance });
+      })().catch((e) => this.fail(e));
     }, 10_000));
     this.timers.push(setInterval(() => {
       if (this.observeOnly || this.marketPaused || !this.connected || this.draining) return;
