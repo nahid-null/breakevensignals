@@ -1,10 +1,11 @@
 # Independent Crypto Signal Terminal
 
 ## Deployed Railway monitoring investigation (prompt-8, 2026-11-16)
-- [ ] Observe hosted heartbeats and per-symbol durable candle/count changes over time; verify published dashboard distinguishes connection from current data and identify any recorded 451.
-- [ ] Check Telegram delivery without trading fixtures and investigate Bun message/reconnect warning in isolation; preserve trading rules and deployment settings.
-- [ ] Record evidence, monitoring limitations and the next user check in chat.md.
+- [x] Observe actual hosted heartbeat (20-second progress) and serial durable recovery: 3632 commits across four symbols by 09:06:49; published UI correctly shows CLOUD ONLINE / WEBSOCKET CONNECTED / SCANNER RECOVERING and stale feeds. No current complete scan or recorded 451; REST label expires during recovery because successful history does not refresh REST health.
+- [x] Verify one explicitly labelled non-trading Telegram TEST via published Settings: message 11 SENT and read back; settings unchanged, no fixture signals. Bun 1.3.10 isolated messages/reconnect pass but unsupported unexpected-response loses HTTP rejection status. Real sandbox Bun/Node probes both connect with no frames during observation, not Railway proof. 37 targeted tests pass; build OK; app/worker unchanged.
+- [x] Record evidence, monitoring limitations and the next user check in chat.md.
 - [ ] Inspect the running Railway container's private market-message telemetry and deployment revision — needs access to Railway or a redacted user-provided result; do not expose keys.
+- [ ] Verify completed catch-up followed by fresh per-symbol live prices/candles and genuine breakeven delivery — needs the deployed worker to complete recovery and actual live results; do not fabricate signals or restart it as a substitute.
 
 ## Restriction flow sweep (2026-11-16)
 - [x] Read all seven screens, shared header/monitor/setup/details, scanner startup/history/recovery/live/reconnect/price/delivery/shutdown paths, alert send/retry/test functions, health reads and all current database functions.
