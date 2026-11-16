@@ -11,13 +11,13 @@ import { delay } from './binance';
 const directory = await mkdtemp(join(tmpdir(), 'worker-verification-'));
 let db = new PGlite(join(directory, 'db'));
 await db.exec('CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role;');
-for (const migration of ['0000_migration.sql', '0002_independent_signal_engine.sql', '0003_engine_event_provenance_and_statistics.sql', '0004_fix_engine_checkpoint_time_comparison.sql', '0005_engine_runtime_identity_and_graceful_stop.sql', '0006_windows_pc_engine_telemetry.sql']) {
+for (const migration of ['0000_migration.sql', '0002_independent_signal_engine.sql', '0003_engine_event_provenance_and_statistics.sql', '0004_fix_engine_checkpoint_time_comparison.sql', '0005_engine_runtime_identity_and_graceful_stop.sql', '0006_windows_pc_engine_telemetry.sql', '0007_durable_successful_candle_scans.sql']) {
   const sql = (await readFile(new URL(`../drizzle/migrations/${migration}`, import.meta.url), 'utf8')).replace(/^ALTER PUBLICATION.*$/gm, '');
   await db.exec(sql);
 }
 const report = { scope: 'Temporary real Binance worker verification with isolated disk PostgreSQL; NOT deployed production',
   directory, startedAt: new Date().toISOString(), initialContracts: 0, reconnectPassed: false, candleAdvancePassed: false,
-  restoredCheckpoints: 0, restartPassed: false, isolatedPendingNotifications: 0, productionWrites: 0, completedAt: '' };
+  restoredCheckpoints: 0, restartPassed: false, successfulCandleScans: 0, scanCountRestored: false, isolatedPendingNotifications: 0, productionWrites: 0, completedAt: '' };
 const server = Bun.serve({ hostname: '127.0.0.1', port: 0, async fetch(request) {
   if (request.headers.get('authorization') !== 'Bearer isolated-verification-key') return new Response('Unauthorized', { status: 401 });
   try {
@@ -71,10 +71,14 @@ try {
   if (!report.reconnectPassed || !report.candleAdvancePassed) throw new Error('Real reconnection/candle advance failed');
   await service.stop(); service = null;
   const before = (await db.query<{ symbol: string; revision: number; state: { lastTime: number } }>('select symbol,revision,state from engine_checkpoints')).rows;
+  report.successfulCandleScans = (await db.query<{ n: number }>('select sum(successful_scans)::int n from market_state')).rows[0]?.n ?? 0;
+  if (report.successfulCandleScans < first.available) throw new Error('Successful scan counters did not advance');
   await db.close();
   db = new PGlite(join(directory, 'db'));
   const restored = (await db.query<{ symbol: string; revision: number; state: { lastTime: number } }>('select symbol,revision,state from engine_checkpoints')).rows;
   if (JSON.stringify(before) !== JSON.stringify(restored)) throw new Error('Disk persistence mismatch');
+  report.scanCountRestored = (await db.query<{ n: number }>('select sum(successful_scans)::int n from market_state')).rows[0]?.n === report.successfulCandleScans;
+  if (!report.scanCountRestored) throw new Error('Scan counter disk persistence mismatch');
   report.restoredCheckpoints = restored.length;
   service = new SignalService(url, 'isolated-verification-key', false, 'temporary');
   await service.start();

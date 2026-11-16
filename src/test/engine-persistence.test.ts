@@ -16,7 +16,7 @@ beforeAll(async () => {
   db = new PGlite();
   await db.exec('CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role;');
   // Test copy only: the isolated database has no realtime service or publication.
-  for (const name of ['0000_migration.sql','0002_independent_signal_engine.sql','0003_engine_event_provenance_and_statistics.sql','0004_fix_engine_checkpoint_time_comparison.sql','0005_engine_runtime_identity_and_graceful_stop.sql','0006_windows_pc_engine_telemetry.sql']) {
+  for (const name of ['0000_migration.sql','0002_independent_signal_engine.sql','0003_engine_event_provenance_and_statistics.sql','0004_fix_engine_checkpoint_time_comparison.sql','0005_engine_runtime_identity_and_graceful_stop.sql','0006_windows_pc_engine_telemetry.sql','0007_durable_successful_candle_scans.sql']) {
     const sql = (await readFile(new URL(`../../drizzle/migrations/${name}`, import.meta.url), 'utf8')).replace(/^ALTER PUBLICATION.*$/gm, '');
     await db.exec(sql);
   }
@@ -67,7 +67,24 @@ describe('atomic persistence (isolated PostgreSQL, no production rows)', () => {
       market: {}, events: [{ ...p('take_profit_hit','nonexistent'), symbol: 'XRPUSDT', exit_price: 101.5, net_result_r: 1.3994 }] };
     await expect(db.query('select commit_engine_candle($1::jsonb)',[JSON.stringify(payload)])).rejects.toThrow('Engine state mismatch');
     expect((await db.query<{ n: number }>("select count(*)::int n from engine_checkpoints where symbol='XRPUSDT'")).rows[0]?.n).toBe(0);
+    expect((await db.query<{ n: number }>("select count(*)::int n from market_state where symbol='XRPUSDT' and successful_scans>0")).rows[0]?.n).toBe(0);
     expect((await db.query<{ n: number }>("select count(*)::int n from signal_events where trade_id='nonexistent'")).rows[0]?.n).toBe(0);
+  });
+  it('counts saved live/recovery candles, never warmup, duplicate requests or health reads', async () => {
+    const payload = { instance_id: instance, symbol: 'LTCUSDT', expected_revision: 0, mode: 'warmup',
+      checkpoint: { symbol: 'LTCUSDT', lastTime: 60000 },
+      market: { symbol: 'LTCUSDT', price: 100, trend: 'SIDEWAYS', status: 'RECOVERING', last_candle_at: '2026-11-15T12:00:00Z', long_score: 0, short_score: 0, error: null }, events: [] };
+    const count = async () => (await db.query<{ n: number }>("select successful_scans::int n from market_state where symbol='LTCUSDT'")).rows[0]?.n;
+    await db.query('select commit_engine_candle($1::jsonb)', [JSON.stringify(payload)]);
+    expect(await count()).toBe(0);
+    const live = { ...payload, mode: 'live', expected_revision: 1, checkpoint: { ...payload.checkpoint, lastTime: 120000 } };
+    await db.query('select commit_engine_candle($1::jsonb)', [JSON.stringify(live)]);
+    await db.query('select commit_engine_candle($1::jsonb)', [JSON.stringify(live)]);
+    expect(await count()).toBe(1);
+    await db.query('select commit_engine_candle($1::jsonb)', [JSON.stringify({ ...live, mode: 'recovery', expected_revision: 2, checkpoint: { ...live.checkpoint, lastTime: 180000 } })]);
+    expect(await count()).toBe(2);
+    await db.query('select * from engine_health');
+    expect(await count()).toBe(2);
   });
   it('atomically claims a Telegram log only once and blocks sent-message retries', async () => {
     const row = (await db.query<{ id: string }>("select id from telegram_logs where trade_id='fixture-trade'")).rows[0];
@@ -87,6 +104,6 @@ describe('atomic persistence (isolated PostgreSQL, no production rows)', () => {
     expect((await db.query<{ stopped: boolean }>('select stop_engine($1) stopped', ['22222222-2222-4222-8222-222222222222'])).rows[0]?.stopped).toBe(false);
     expect((await db.query<{ stopped: boolean }>('select stop_engine($1) stopped', [instance])).rows[0]?.stopped).toBe(true);
     expect((await db.query<{ status: string; websocket_connected: boolean }>('select status,websocket_connected from engine_health')).rows[0]).toMatchObject({ status: 'STOPPED', websocket_connected: false });
-    expect((await db.query<{ n: number }>('select count(*)::int n from engine_checkpoints')).rows[0]?.n).toBe(2);
+    expect((await db.query<{ n: number }>('select count(*)::int n from engine_checkpoints')).rows[0]?.n).toBe(3);
   });
 });
