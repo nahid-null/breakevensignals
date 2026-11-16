@@ -66,7 +66,7 @@ export function managePosition(p: Position, bar: Bar, st: SymbolState, s: RobotS
   if (!p.tp1Done && (long ? bar.high >= p.tp1 : bar.low <= p.tp1)) {
     const half = p.tp2 === p.tp1 ? p.qtyOpen : p.qtyOpen / 2;
     fills.push(exit(p, p.tp1, half, s, at, p.tp2 === p.tp1 ? 'TAKE_PROFIT' : 'TP1'));
-    if (p.status === 'CLOSED') return done();
+    if ((p.status as Position['status']) === 'CLOSED') return done();
     p.tp1Done = true;
     const be = p.entry * (1 + sign * 2 * (s.fee_pct / 100 + slip(s)));
     p.stop = long ? Math.max(p.stop, be) : Math.min(p.stop, be);
