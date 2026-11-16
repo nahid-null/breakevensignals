@@ -22,7 +22,7 @@ export function evaluate(st: SymbolState, direction: Direction, s: RobotSettings
   const reject = (why: string): Evaluation => ({ candidate: null, rejected: why, direction });
   if (!st.ready()) return reject('Warming up');
   const long = direction === 'LONG'; const sign = long ? 1 : -1;
-  const m1 = st.m1; const bar = m1.last()!; const prev = m1.last(1)!;
+  const m1 = st.m1; const bar = m1.last()!;
   const atr = m1.atr.value!; const price = bar.close; const atrPct = (atr / price) * 100;
   const ema9 = m1.ema9.value!; const ema21 = m1.ema21.value!; const vwap = m1.vwap.value!;
   const rsi = m1.rsi.value ?? 50; const hist = m1.macd.hist ?? 0;
@@ -52,7 +52,7 @@ export function evaluate(st: SymbolState, direction: Direction, s: RobotSettings
     if (bar.time - l.sweptAt > SWEEP_LOOKBACK_MIN * 60_000 || l.sweptAt === bar.time) continue;
     const depth = (l.price - l.sweepExtreme) * sign;
     if (depth < 0.05 * atr || depth > 1.5 * atr) continue;
-    const reclaimed = long ? bar.close > l.price && prev.close <= Math.max(l.price, prev.close) : bar.close < l.price;
+    const reclaimed = (bar.close - l.price) * sign > 0;
     if (!reclaimed) continue;
     if (!swept || l.touches > swept.touches || l.tf > swept.tf) { swept = l; sweepExtreme = l.sweepExtreme; }
   }
