@@ -20,7 +20,7 @@ export const Route = createFileRoute("/")({
   component: Dashboard,
 });
 
-function Tile({ label, value, tone, hint }: { label: string; value: string | number; tone?: string; hint?: string }) {
+function Tile({ label, value, tone, hint }: { label: string; value: string | number; tone?: string | undefined; hint?: string | undefined }) {
   return (
     <div className="border border-border bg-card/40 px-4 py-3">
       <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</div>

@@ -29,7 +29,7 @@ export const Route = createFileRoute("/simulator")({
 const REASON: Record<string, string> = { TAKE_PROFIT: 'TAKE PROFIT HIT', STOP_LOSS: 'STOP LOSS HIT', BREAKEVEN: 'BREAKEVEN', LIQUIDATED: 'LIQUIDATED' };
 const pnlTone = (n: number | null | undefined) => (Number(n) > 0 ? 'text-long' : Number(n) < 0 ? 'text-short' : 'text-muted-foreground');
 
-function Tile({ label, value, tone, hint }: { label: string; value: string; tone?: string; hint?: string }) {
+function Tile({ label, value, tone, hint }: { label: string; value: string; tone?: string | undefined; hint?: string | undefined }) {
   return (
     <div className="border border-border bg-card/40 px-4 py-3">
       <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</div>
