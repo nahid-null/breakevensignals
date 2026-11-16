@@ -20,7 +20,7 @@ async function must<R>(p: PromiseLike<{ data: R | null; error: { message: string
 export const useRobotAccount = () => useQuery({ queryKey: ['robot_account'], queryFn: () => must<RobotAccount>(supabase.from('robot_account').select('*').eq('id', 1).single()) });
 export const useRobotSettings = () => useQuery({ queryKey: ['robot_settings'], queryFn: () => must<RobotSettingsRow>(supabase.from('robot_settings').select('*').eq('id', 1).single()) });
 export const useRobotPositions = () => useQuery({ queryKey: ['robot_positions'], queryFn: () => must<RobotPosition[]>(supabase.from('robot_positions').select('*').order('opened_at', { ascending: false }).limit(1000)) });
-export const useRobotMarkets = () => useQuery({ queryKey: ['robot_market'], queryFn: () => must<RobotMarket[]>(supabase.from('robot_market').select('*').order('symbol')) });
+export const useRobotMarkets = () => useQuery({ queryKey: ['robot_market'], refetchInterval: 10_000, queryFn: () => must<RobotMarket[]>(supabase.from('robot_market').select('*').order('symbol')) });
 export const useRobotSignals = () => useQuery({ queryKey: ['robot_signals'], queryFn: () => must<RobotSignal[]>(supabase.from('robot_signals').select('*').order('created_at', { ascending: false }).limit(100)) });
 export const useRobotBacktests = () => useQuery({ queryKey: ['robot_backtests'], queryFn: () => must<RobotBacktest[]>(supabase.from('robot_backtests').select('*').order('created_at', { ascending: false }).limit(10)) });
 

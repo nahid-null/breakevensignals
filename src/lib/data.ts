@@ -13,7 +13,7 @@ export type Settings = Database["public"]["Tables"]["app_settings"]["Row"];
 export type MarketState = Database["public"]["Tables"]["market_state"]["Row"];
 
 const TABLES = ["active_positions", "signal_events", "telegram_logs", "app_settings", "market_state", "engine_health",
-  "robot_positions", "robot_market", "robot_signals", "robot_account", "robot_settings"] as const;
+  "robot_positions", "robot_signals", "robot_account", "robot_settings"] as const;
 
 /** Subscribe once (in the shell) and refresh every query when backend data changes. */
 export function useRealtimeSync() {
