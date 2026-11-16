@@ -92,7 +92,7 @@ function RobotPage() {
         <Tile label="Total P&L" value={signed(stats.all.netPnl)} tone={tone(stats.all.netPnl)} hint={`${stats.all.trades} closed · win ${pct(stats.all.winRate)}`} />
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-[1fr_2fr]">
+      <section className="grid gap-4 lg:grid-cols-[1fr_2fr] [&>*]:min-w-0">
         <div className="space-y-3 border border-border bg-card/40 p-4">
           <h2 className="text-xs uppercase tracking-widest text-muted-foreground">Add paper balance</h2>
           <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); void deposit(); }}>
@@ -140,7 +140,7 @@ function RobotPage() {
         <MetricsTable rows={[{ label: 'All', m: stats.all }, { label: 'Long', m: stats.long }, { label: 'Short', m: stats.short }]} />
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-[1fr_2fr]">
+      <section className="grid gap-4 lg:grid-cols-[1fr_2fr] [&>*]:min-w-0">
         <div className="border border-border bg-card/40">
           <h2 className="border-b border-border px-4 py-2 text-xs uppercase tracking-widest text-muted-foreground">Daily P&L</h2>
           {days.length === 0 ? <p className="p-4 text-sm text-muted-foreground">No closed trades yet.</p> : (

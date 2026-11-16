@@ -44,7 +44,7 @@ function Backtest() {
         <h2 className="border-b border-border px-4 py-2 text-xs uppercase tracking-widest text-muted-foreground">Unseen test month ({s.holdout.period})</h2>
         <MetricsTable rows={[{ label: 'All', m: s.holdout.all }, { label: 'Long', m: s.holdout.long }, { label: 'Short', m: s.holdout.short }]} />
       </section>}
-      <section className="grid gap-4 lg:grid-cols-2">
+      <section className="grid gap-4 lg:grid-cols-2 [&>*]:min-w-0">
         <div className="border border-border bg-card/40">
           <h2 className="border-b border-border px-4 py-2 text-xs uppercase tracking-widest text-muted-foreground">By month</h2>
           <MetricsTable rows={Object.entries(s.monthly).map(([k, m]) => ({ label: k, m }))} />
