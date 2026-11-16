@@ -35,9 +35,15 @@ export type RobotSettings = {
   min_score: number; high_score: number;
   max_concurrent: number; max_same_direction: number; max_allocation_pct: number; max_leverage: number;
   max_hold_minutes: number; fee_pct: number; maker_fee_pct: number; slippage_bps: number; max_spread_bps: number; min_quote_volume_musd: number;
+  entry_max_age_ms: number; quote_max_age_ms: number; max_entry_drift_atr: number;
+  min_sweep_atr: number; max_sweep_atr: number; min_rejection_wick: number; min_volume_ratio: number;
+  min_reward_risk: number; max_candle_atr: number; sweep_max_age_minutes: number;
 };
 export const DEFAULT_SETTINGS: RobotSettings = {
   enabled: true, emergency_stop: false, min_score: 75, high_score: 85,
   max_concurrent: 5, max_same_direction: 5, max_allocation_pct: 70, max_leverage: PAPER_LEVERAGE,
   max_hold_minutes: 90, fee_pct: 0.05, maker_fee_pct: 0.02, slippage_bps: 2, max_spread_bps: 8, min_quote_volume_musd: 5,
+  entry_max_age_ms: 30_000, quote_max_age_ms: 5000, max_entry_drift_atr: 0.2,
+  min_sweep_atr: 0.05, max_sweep_atr: 1.5, min_rejection_wick: 0.35, min_volume_ratio: 0.8,
+  min_reward_risk: 0.75, max_candle_atr: 1.5, sweep_max_age_minutes: 20,
 };

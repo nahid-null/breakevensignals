@@ -5,6 +5,8 @@
  */
 import { MINUTE, type Level, type SymbolState } from './series';
 import { PAPER_LEVERAGE, TARGET_NET_ROI_PCT, type RobotSettings } from './config';
+import type { EntryAudit } from './entry-audit';
+import { evaluateSweep } from './liquidity-sweep';
 
 export type Direction = 'LONG' | 'SHORT';
 export const SETUPS = ['SWEEP_RECLAIM', 'TREND_PULLBACK', 'EMA_RETEST', 'VWAP_RECLAIM', 'SR_REJECTION', 'BREAKOUT_RETEST'] as const;
@@ -13,7 +15,7 @@ export type Setup = (typeof SETUPS)[number] | 'PULLBACK_RECLAIM';
 export type ScoreParts = { trend: number; structure: number; setup: number; trigger: number; momentum: number; volume: number; execution: number };
 export type Candidate = {
   symbol: string; direction: Direction; time: number; setup: Setup; score: number; tier: 'STRONG' | 'QUALIFIED' | 'WEAK'; parts: ScoreParts;
-  entry: number; stop: number; tp: number; atr: number; atrPct: number; stopPct: number; tpPct: number; liquidity: string;
+  entry: number; stop: number; tp: number; atr: number; atrPct: number; stopPct: number; tpPct: number; liquidity: string; audit?: EntryAudit;
 };
 export type Evaluation = { candidate: Candidate | null; rejected: string | null; direction: Direction };
 /** Book data is only available live. Backtests pass null and get neutral points; never fabricated. */
@@ -34,7 +36,8 @@ export const MIN_STOP_FRACTION = 0.0012;
 
 type Family = { setup: Setup; quality: number; stopRef: number; label: string };
 
-export function evaluate(st: SymbolState, direction: Direction, s: RobotSettings, book: BookContext): Evaluation {
+/** Archived evaluator for old/new comparisons only; live entries are exclusively confirmed liquidity sweeps. */
+export function evaluateLegacy(st: SymbolState, direction: Direction, s: RobotSettings, book: BookContext): Evaluation {
   const reject = (why: string, candidate: Candidate | null = null): Evaluation => ({ candidate, rejected: why, direction });
   if (!st.ready()) return reject('Warming up indicators');
   const long = direction === 'LONG'; const sign = long ? 1 : -1;
@@ -160,3 +163,5 @@ export function evaluate(st: SymbolState, direction: Direction, s: RobotSettings
   if (score < s.min_score) return reject(`Score ${score} below ${s.min_score}`, candidate);
   return { candidate, rejected: null, direction };
 }
+
+export const evaluate = evaluateSweep;

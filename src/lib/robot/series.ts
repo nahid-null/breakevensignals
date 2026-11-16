@@ -54,7 +54,7 @@ export class Timeframe {
 
 /** A liquidity pool: resting stops are assumed beyond an unswept swing high (buy-side) or low (sell-side). */
 export type Level = { side: 'high' | 'low'; price: number; tf: number; time: number; touches: number;
-  sweptAt: number | null; sweepExtreme: number | null; sweepBar: Bar | null };
+  sweptAt: number | null; sweepExtreme: number | null; sweepBar: Bar | null; touchTimes?: number[] };
 
 export class SymbolState {
   m1 = new Timeframe(1); m5 = new Timeframe(5); m15 = new Timeframe(15); m60 = new Timeframe(60);
@@ -63,6 +63,7 @@ export class SymbolState {
   levels: Level[] = [];
   lastTime: number | null = null; count = 0;
   private buckets: { 5: Bar | null; 15: Bar | null; 60: Bar | null } = { 5: null, 15: null, 60: null };
+  private bucketCounts = new Map<number, number>();
   private qv: number[] = []; quoteVolume24h = 0;
   constructor(readonly symbol: string, public tickSize: number) {}
 
@@ -78,10 +79,14 @@ export class SymbolState {
       const span = tf.minutes * MINUTE; const start = Math.floor(c.time / span) * span;
       const key = tf.minutes as 5 | 15 | 60;
       let bucket = this.buckets[key];
-      if (bucket && bucket.time !== start) { this.addPivots(tf, tf.update(bucket)); bucket = null; }
+      if (bucket && bucket.time !== start) { bucket = null; this.bucketCounts.set(key, 0); }
+      this.bucketCounts.set(key, (this.bucketCounts.get(key) ?? 0) + 1);
       bucket = bucket ? { ...bucket, high: Math.max(bucket.high, c.high), low: Math.min(bucket.low, c.low), close: c.close, volume: bucket.volume + c.volume }
         : { time: start, open: c.open, high: c.high, low: c.low, close: c.close, volume: c.volume };
-      if (c.time + MINUTE === start + span) { this.addPivots(tf, tf.update(bucket)); bucket = null; if (tf.minutes === 5) this.signalClosed = true; }
+      if (c.time + MINUTE === start + span) {
+        if (this.bucketCounts.get(key) === tf.minutes) { this.addPivots(tf, tf.update(bucket)); if (tf.minutes === 5) this.signalClosed = true; }
+        bucket = null; this.bucketCounts.set(key, 0);
+      }
       this.buckets[key] = bucket;
     }
     return true;
@@ -104,8 +109,14 @@ export class SymbolState {
     const add = (side: 'high' | 'low', b: Bar) => {
       const price = side === 'high' ? b.high : b.low;
       const twin = this.levels.find((l) => l.side === side && l.sweptAt === null && Math.abs(l.price - price) <= Math.max(atr * 0.15, this.tickSize));
-      if (twin) { twin.touches++; twin.tf = Math.max(twin.tf, tf.minutes); twin.price = side === 'high' ? Math.max(twin.price, price) : Math.min(twin.price, price); return; }
-      this.levels.push({ side, price, tf: tf.minutes, time: b.time, touches: 1, sweptAt: null, sweepExtreme: null, sweepBar: null });
+      if (twin) {
+        const times = twin.touchTimes ?? [twin.time];
+        // A higher-timeframe confirmation of the same minute is not a second independent touch.
+        const sameSwing = times.some((t) => Math.abs(t - b.time) < Math.max(twin.tf, tf.minutes) * MINUTE);
+        if (!sameSwing) { times.push(b.time); twin.touches++; }
+        twin.touchTimes = times; twin.tf = Math.max(twin.tf, tf.minutes); twin.price = side === 'high' ? Math.max(twin.price, price) : Math.min(twin.price, price); return;
+      }
+      this.levels.push({ side, price, tf: tf.minutes, time: b.time, touches: 1, sweptAt: null, sweepExtreme: null, sweepBar: null, touchTimes: [b.time] });
     };
     for (const b of p.highs) add('high', b);
     for (const b of p.lows) add('low', b);
