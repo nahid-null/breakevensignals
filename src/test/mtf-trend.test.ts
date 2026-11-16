@@ -47,24 +47,28 @@ describe('15M/5M/1M trend filter', () => {
   });
 
   it('blocks LONG and SHORT entries while trends are mixed, and allows the matching side when aligned', () => {
-    const run = (mtf: MtfState) => {
-      const s = initialState('NEARUSDT', 0.0001);
-      let entries: string[] = [];
-      for (let i = 0; i < 400; i++) {
-        s.mtf = structuredClone(mtf);
-        const c = minute(i, 100 + Math.sin(i / 7) * 1.5);
-        entries = entries.concat(processCandle(s, { ...c, high: c.close * 1.002, low: c.close * 0.998, volume: 10 + (i % 5) * 4 }).signals.filter((x) => x.event === 'entry_confirmed').map((x) => x.direction));
-      }
-      return entries;
+    const entries = (direction: 'LONG' | 'SHORT', mtf: MtfState | undefined) => {
+      const s = initialState('NEARUSDT', 0.001);
+      const flat = (i: number): Candle => { const close = 100 + Math.sin(i) * 0.2; return { time: i * MINUTE, open: close, high: close + 0.5, low: close - 0.5, close, volume: 100 }; };
+      for (let i = 0; i < 60; i++) processCandle(s, flat(i), false);
+      if (mtf) s.mtf = structuredClone(mtf);
+      const close = direction === 'LONG' ? 101 : 99;
+      const c = { time: 60 * MINUTE, open: 100, close, high: direction === 'LONG' ? 101.1 : 100.1, low: direction === 'LONG' ? 99.9 : 98.9, volume: 500 };
+      return processCandle(s, c).signals.filter((x) => x.event === 'entry_confirmed');
     };
-    const unfiltered = (() => { const s = initialState('NEARUSDT', 0.0001); const out: string[] = [];
-      for (let i = 0; i < 400; i++) { const c = minute(i, 100 + Math.sin(i / 7) * 1.5); out.push(...processCandle(s, { ...c, high: c.close * 1.002, low: c.close * 0.998, volume: 10 + (i % 5) * 4 }).signals.filter((x) => x.event === 'entry_confirmed').map((x) => x.direction)); }
-      return out; })();
-    expect(unfiltered).toContain('LONG'); expect(unfiltered).toContain('SHORT');
-    expect(run(fixed(1, -1, 1))).toEqual([]);
-    expect(run(fixed(0, 0, 0))).toEqual([]);
-    const bull = run(fixed(1, 1, 1)); expect(bull.length).toBeGreaterThan(0); expect(bull.every((d) => d === 'LONG')).toBe(true);
-    const bear = run(fixed(-1, -1, -1)); expect(bear.length).toBeGreaterThan(0); expect(bear.every((d) => d === 'SHORT')).toBe(true);
+    for (const direction of ['LONG', 'SHORT'] as const) {
+      const v = direction === 'LONG' ? 1 : -1;
+      expect(entries(direction, undefined)).toHaveLength(1); // original scalper setup exists
+      expect(entries(direction, fixed(1, -1, 1))).toEqual([]);
+      expect(entries(direction, fixed(-1, 1, -1))).toEqual([]);
+      expect(entries(direction, fixed(0, 0, 0))).toEqual([]);
+      expect(entries(direction, fixed(-v as 1 | -1, -v as 1 | -1, -v as 1 | -1))).toEqual([]);
+      const ok = entries(direction, fixed(v, v, v));
+      expect(ok).toHaveLength(1);
+      expect(ok[0]?.direction).toBe(direction);
+      expect(ok[0]?.trend_aligned).toBe(true);
+      expect(ok[0]?.mtf_trend).toEqual({ m15: v, m5: v, m1: v });
+    }
   });
 
   it('labels entries NORMAL SIGNAL and breakeven BREAKEVEN with the approving trend', () => {
