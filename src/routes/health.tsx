@@ -49,6 +49,8 @@ function Health() {
           <Row label="Service hosting">{h?.engine?.runtime_mode === 'temporary' ? 'TEMPORARY VERIFICATION' : h?.engine?.host_kind === 'windows_pc' ? 'WINDOWS PC' : h?.engine?.host_kind === 'hosted' ? 'HOSTED' : 'NOT CONFIRMED'}</Row>
           <Row label="Engine uptime · last reported">{formatUptime(h?.uptimeSeconds)}</Row>
           <Row label="Last successful scan">{fmtTime(h?.lastScanAt, tz)}</Row>
+          <Row label="Next scan · expected candle close">{fmtTime(h?.nextScanAt, tz)}</Row>
+          <Row label="Successful candle scans">{h?.successfulScans ?? '—'}</Row>
           <Row label="Total coins scanned">{h?.scannedSymbols ?? '—'} / {SYMBOLS.length}</Row>
           <Row label="Last heartbeat">{fmtTime(h?.engine?.last_heartbeat_at, tz)}</Row>
           <Row label="Last confirmed candle">{fmtTime(h?.lastCandleAt, tz)}</Row>
@@ -64,9 +66,9 @@ function Health() {
           <h2 className="mb-2 text-xs uppercase tracking-widest text-muted-foreground">Telegram</h2>
           <Row label="Bot configuration"><StatusBadge value={h ? (h.botConfigured ? "CONNECTED" : "NOT CONFIGURED") : "WAITING"} /></Row>
           <Row label="Target chat"><StatusBadge value={h ? (h.chatConfigured ? "CONNECTED" : "NOT CONFIGURED") : "WAITING"} /></Row>
-          <Row label="Telegram API status"><StatusBadge value={s.telegram} /></Row>
-          <Row label="Last successful delivery">{fmtTime(lastSent?.created_at, tz)}</Row>
-          <Row label="Last failed delivery">{fmtTime(lastFailed?.created_at, tz)}</Row>
+          <Row label="Latest Telegram delivery status"><StatusBadge value={s.telegram} /></Row>
+          <Row label="Last successful delivery">{fmtTime(h?.lastTelegramAt ?? lastSent?.updated_at, tz)}</Row>
+          <Row label="Last failed delivery">{fmtTime(lastFailed?.updated_at, tz)}</Row>
         </section>
       </div>
       {h?.engine?.error && <p className="border-l-2 border-short bg-short/10 p-3 text-sm text-short">{h.engine.error}</p>}

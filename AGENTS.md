@@ -44,3 +44,5 @@ use the editor.
 - Run the Windows worker under a boot-triggered SYSTEM task and a Bun child supervisor with an exclusive loopback port; keep the existing database writer lease as cross-host protection.
 - PC telemetry is outbound through the authenticated engine API; optional tunnels expose only a separately authenticated read-only loopback health endpoint, never database keys or write controls.
 - Derive public PC connectivity from production Windows identity plus a fresh server-received heartbeat; uptime is last reported and scan time is the slowest durable configured feed, never a poll timestamp.
+- Count successful per-symbol closed-candle commits atomically in market state, excluding warmup; never count browser polls or duplicate revisions as scans.
+- Derive RUNNING and the next expected candle close only from fresh heartbeats, connected feeds and recent durable scan progress so a heartbeat cannot hide a stalled scanner.
