@@ -20,6 +20,8 @@ export interface TimeframeTrend {
   tr: Average; plusDM: Average; minusDM: Average; adx: Average; plusDI: number | null; minusDI: number | null;
   window: { high: number; low: number }[]; pivotHighs: number[]; pivotLows: number[];
   trend: TrendValue | null;
+  /** f_trend() bull/bear scores and ADX at the last closed bar; absent until the next close after upgrade. */
+  bullScore?: number | null; bearScore?: number | null; adxValue?: number | null;
 }
 export interface MtfState { m15: TimeframeTrend; m5: TimeframeTrend; m1: TimeframeTrend }
 export interface MtfSnapshot { m15: TrendValue | null; m5: TrendValue | null; m1: TrendValue | null }
@@ -87,6 +89,7 @@ export function closeBar(s: TimeframeTrend, c: Candle): TrendValue {
     + (full && lt(h0!, h1!) && lt(l0!, l1!) ? T.wStructure : 0)
     + (di && gt(s.minusDI!, s.plusDI!) && strong ? T.wDI : 0)
     + (lt(c.close, e20) && lt(c.close, e50) ? T.wPrice : 0);
+  s.bullScore = bull; s.bearScore = bear; s.adxValue = adx;
   s.trend = strong && bull >= T.minScore && bull > bear ? 1 : strong && bear >= T.minScore && bear > bull ? -1 : 0;
   return s.trend;
 }
@@ -108,6 +111,18 @@ export function alignment(s: MtfSnapshot): TrendValue {
   if (s.m15 === 1 && s.m5 === 1 && s.m1 === 1) return 1;
   if (s.m15 === -1 && s.m5 === -1 && s.m1 === -1) return -1;
   return 0;
+}
+/** Highest possible f_trend score (alignment + slope + structure + DI + price). */
+export const MAX_TREND_SCORE = 7;
+/** Simulator-only strength rule chosen by the user: full score on all three timeframes plus ADX >= 25. */
+export const STRONG_ADX = 25;
+export type SignalStrength = 'STRONG' | 'NORMAL';
+export function signalStrength(m: MtfState, direction: 'LONG' | 'SHORT'): SignalStrength {
+  const ok = (t: TimeframeTrend) => {
+    const score = direction === 'LONG' ? t.bullScore : t.bearScore;
+    return score === MAX_TREND_SCORE && t.adxValue != null && ge(t.adxValue, STRONG_ADX);
+  };
+  return ok(m.m15) && ok(m.m5) && ok(m.m1) ? 'STRONG' : 'NORMAL';
 }
 export function updateMtf(m: MtfState, c: Candle) { addMinute(m.m15, c); addMinute(m.m5, c); addMinute(m.m1, c); }
 

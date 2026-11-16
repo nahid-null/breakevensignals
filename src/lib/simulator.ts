@@ -1,0 +1,43 @@
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
+
+export type SimAccount = Database['public']['Tables']['sim_account']['Row'];
+export type SimTrade = Database['public']['Tables']['sim_trades']['Row'];
+/** Rules applied by the database when a live, trend-approved signal arrives. Display only. */
+export const SIM_RULES = { marginShare: 0.8, strongLeverage: 50, normalLeverage: 20, feePercent: 0.05, strongAdx: 25 } as const;
+
+export const useSimAccount = () => useQuery({ queryKey: ['sim_account'], refetchInterval: 15000, queryFn: async () => {
+  const { data, error } = await supabase.from('sim_account').select('*').eq('id', 1).maybeSingle();
+  if (error) throw new Error(error.message);
+  return data;
+} });
+export const useSimTrades = () => useQuery({ queryKey: ['sim_trades'], refetchInterval: 15000, queryFn: async () => {
+  const { data, error } = await supabase.from('sim_trades').select('*').order('opened_at', { ascending: false }).limit(500);
+  if (error) throw new Error(error.message);
+  return data ?? [];
+} });
+
+/** Unrealized profit/loss at the given price, after the entry fee and an estimated exit fee. */
+export function unrealizedPnl(t: Pick<SimTrade, 'direction' | 'quantity' | 'entry_price' | 'entry_fee' | 'margin'>, price: number) {
+  const gross = Math.max(Number(t.quantity) * (price - Number(t.entry_price)) * (t.direction === 'LONG' ? 1 : -1), -Number(t.margin));
+  return gross - Number(t.entry_fee) - Number(t.quantity) * price * (SIM_RULES.feePercent / 100);
+}
+
+/** Sum of closed-trade results whose close falls on the same calendar day as `now` in `timeZone`. */
+export function todayPnl(trades: Pick<SimTrade, 'closed_at' | 'pnl' | 'status'>[], now: Date, timeZone: string) {
+  const day = (d: Date) => new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+  const today = day(now);
+  return trades.filter((t) => t.status === 'CLOSED' && t.closed_at && day(new Date(t.closed_at)) === today).reduce((s, t) => s + Number(t.pnl ?? 0), 0);
+}
+
+export function simSummary(trades: Pick<SimTrade, 'status' | 'pnl'>[]) {
+  const closed = trades.filter((t) => t.status === 'CLOSED');
+  const wins = closed.filter((t) => Number(t.pnl) > 0).length;
+  return { closed: closed.length, wins, losses: closed.length - wins, winRate: closed.length ? (wins / closed.length) * 100 : null,
+    totalPnl: closed.reduce((s, t) => s + Number(t.pnl ?? 0), 0) };
+}
+
+export const fmtUsd = (n: number | null | undefined) => n === null || n === undefined || !Number.isFinite(Number(n)) ? '—'
+  : `${Number(n) < 0 ? '-' : ''}$${Math.abs(Number(n)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+export const fmtSignedUsd = (n: number | null | undefined) => n === null || n === undefined ? '—' : `${Number(n) > 0 ? '+' : ''}${fmtUsd(n)}`;
