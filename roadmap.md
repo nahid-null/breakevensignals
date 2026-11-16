@@ -1,12 +1,13 @@
 # Independent Crypto Signal Terminal
 
 ## Railway crash and paper starting balance (prompt-15, 2026-11-16)
-- [ ] Include all robot runtime dependencies in the Docker image and verify the packaged worker starts without the missing-module crash.
-- [ ] Change the robot starting balance to 10 USDT with an additive, tested change that preserves existing account and trade history.
-- [ ] Verify the website and explain the Railway redeployment step; hosted startup requires access to the user's Railway deployment.
+- [x] Reproduce the missing-module crash from the old Docker COPY set, include src/lib/robot, and verify the packaged main with Railway's exact Bun 1.3.10: health 200, safe isolated 451 pause, owning shutdown, no production signals.
+- [x] Set new-account defaults and unused initial allocation to 10 USDT through a guarded audited correction; preserved 10 USDT deposit gives 20 USDT current balance, deposit receipt unchanged, no robot trades erased. All 160 tests pass.
+- [x] Verify actual balance read-back, robot confirmation/cancel, original Simulator, desktop/602px/390px pages without runtime errors or overflow; website build OK. Explain updated-source deployment, not restart of the broken image.
+- [ ] Verify actual Railway container startup after publishing website and deploying updated source — no Railway connection available; user deployment required. No uptime guarantee or production live-scan claim.
 
 ## Paper trading robot (prompt-14, 2026-11-16)
-- [x] Runs alongside existing signals, Telegram and Simulator (unchanged); own paper account (1,000 USDT start), 40 coins (20 existing available + 20 top-volume; WILD unavailable).
+- [x] Runs alongside existing signals, Telegram and Simulator (unchanged); own paper account (10 USDT start, corrected by prompt-15), 40 coins (20 existing available + 20 top-volume; WILD unavailable).
 - [x] Independent liquidity-sweep / pullback strategy on 5m with 15m/1h trend, 0-100 score (75 trade, 85 high quality), risk-based sizing, dynamic leverage max 50x, 70% total margin cap, TP1 half + breakeven, early/time exits, daily loss limit, loss-streak pause, correlation limit.
 - [x] 3-month backtest (Aug-Oct 2026, fees + slippage, October unseen): 127 trades, net -13.11 USDT, PF 0.95 — no proven edge; saved and shown on Robot Backtest page.
 - [x] Database-guarded commits, STOP ALL, resume, deposits, settings; PAPER ROBOT Telegram receipts on open, TP1 and close; 18 new tests, 153 total pass.
