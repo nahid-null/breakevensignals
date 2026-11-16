@@ -28,7 +28,7 @@ async function candle(events: unknown[], low = 99.5, high = 100.5, symbol = 'NEA
     events })]);
 }
 const balance = async () => Number((await db.query<{ b: string }>('select balance b from sim_account')).rows[0]?.b);
-const trade = async (id: string) => (await db.query<Record<string, string>>('select * from sim_trades where trade_id=$1', [id])).rows[0];
+const trade = async (id: string) => (await db.query<{ margin: string; leverage: number; notional: string; entry_fee: string; pnl: string; exit_reason: string; liquidation_price: string }>('select * from sim_trades where trade_id=$1', [id])).rows[0];
 
 describe('simulator trading (isolated PostgreSQL)', () => {
   beforeEach(migrate, 30000);
