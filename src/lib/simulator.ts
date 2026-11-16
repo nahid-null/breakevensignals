@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { readSimAccount, readSimTrades } from './dashboard.functions';
 import type { Database } from '@/integrations/supabase/types';
 
 export type SimAccount = Database['public']['Tables']['sim_account']['Row'];
@@ -7,16 +7,8 @@ export type SimTrade = Database['public']['Tables']['sim_trades']['Row'];
 /** Rules applied by the database when a live, trend-approved signal arrives. Display only. */
 export const SIM_RULES = { marginShare: 0.8, strongLeverage: 50, normalLeverage: 20, feePercent: 0.05, strongAdx: 25 } as const;
 
-export const useSimAccount = () => useQuery({ queryKey: ['sim_account'], refetchInterval: 15000, queryFn: async () => {
-  const { data, error } = await supabase.from('sim_account').select('*').eq('id', 1).maybeSingle();
-  if (error) throw new Error(error.message);
-  return data;
-} });
-export const useSimTrades = () => useQuery({ queryKey: ['sim_trades'], refetchInterval: 15000, queryFn: async () => {
-  const { data, error } = await supabase.from('sim_trades').select('*').order('opened_at', { ascending: false }).limit(500);
-  if (error) throw new Error(error.message);
-  return data ?? [];
-} });
+export const useSimAccount = () => useQuery({ queryKey: ['sim_account'], refetchInterval: 15000, queryFn: () => readSimAccount() as Promise<SimAccount | null> });
+export const useSimTrades = () => useQuery({ queryKey: ['sim_trades'], refetchInterval: 15000, queryFn: () => readSimTrades() as Promise<SimTrade[]> });
 
 /** Unrealized profit/loss at the given price, after the entry fee and an estimated exit fee. */
 export function unrealizedPnl(t: Pick<SimTrade, 'direction' | 'quantity' | 'entry_price' | 'entry_fee' | 'margin'>, price: number) {
