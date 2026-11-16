@@ -1,5 +1,14 @@
 # Independent Crypto Signal Terminal
 
+## Paper robot rebuild (prompt-16, 2026-11-16)
+- [x] Exactly 50x on every paper trade (code, message check and database guard); take profit at 10% net ROI on margin after fees/funding; 70% combined margin cap split across up to 5 slots (max 10).
+- [x] Removed daily loss limit, loss-streak pause and daily trade cap from paper mode; queue refills a slot as soon as a trade closes.
+- [x] Six setup families with weighted 0-100 score; separate LONG/SHORT score and reason per coin; scanner diagnostics (evaluated, candidates, rejections with reasons, orders submitted/filled/partial/rejected, queue).
+- [x] Realistic simulated fills: live order-book walk, partial fills, Binance tick/step/min-notional rules, maker TP / taker stop fees, slippage, live funding.
+- [x] Two-week replay through the same pipeline: not profitable (full -19.29 of 20 USDT, PF 0.40; unseen Nov 12-16 -19.29, PF 0.52). Saved to Robot Backtest page.
+- [ ] Publish website, then redeploy Railway worker so the rebuilt robot runs — needs the user.
+- [ ] Real-money execution — not built; only after paper results show an edge and the user explicitly approves.
+
 ## Railway crash and paper starting balance (prompt-15, 2026-11-16)
 - [x] Reproduce the missing-module crash from the old Docker COPY set, include src/lib/robot, and verify the packaged main with Railway's exact Bun 1.3.10: health 200, safe isolated 451 pause, owning shutdown, no production signals.
 - [x] Set new-account defaults and unused initial allocation to 10 USDT through a guarded audited correction; preserved 10 USDT deposit gives 20 USDT current balance, deposit receipt unchanged, no robot trades erased. All 160 tests pass.
