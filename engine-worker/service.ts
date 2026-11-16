@@ -62,7 +62,14 @@ export class SignalService {
       available_symbols: this.available.size, status: currentStatus, error: this.lastError, runtime_mode: this.runtimeMode,
       ...this.telemetry() });
     if (!this.running) return;
-    if (!r.acquired) { await this.stop(); throw new Error("Another engine instance owns the lease"); }
+    if (!r.acquired) {
+      this.running = false; this.connected = false;
+      for (const timer of this.timers) clearInterval(timer);
+      if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
+      if (this.startupTimer) clearTimeout(this.startupTimer);
+      this.socket?.terminate(); this.ownedLease = false;
+      throw new Error("Another engine instance owns the lease");
+    }
     this.ownedLease = true;
   }
   private market(symbol: Symbol, state: EngineState, c: Candle, a: Analysis | null, status: string): Market {
