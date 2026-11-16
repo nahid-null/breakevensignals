@@ -141,9 +141,8 @@ export function managePosition(p: Position, bar: Bar, st: SymbolState, s: RobotS
   if (p.status !== 'OPEN' || bar.time <= p.lastCandleTime) return [];
   const fills: Fill[] = []; const long = p.direction === 'LONG'; const sign = sgn(p.direction);
   const at = bar.time + MINUTE; p.lastCandleTime = bar.time;
-  // Candle fallback extrema are observed prices, not exact executable quotes; clamp at exits to avoid post-exit excursions.
+  // Conservative adverse bound before exits; never record the favorable wick after a stop-first exit.
   trackExcursion(p, long ? Math.max(bar.low, p.stop) : Math.min(bar.high, p.stop), s);
-  trackExcursion(p, long ? Math.min(bar.high, p.tp) : Math.max(bar.low, p.tp), s);
   // Funding settles on the open position at the funding timestamp (live data only).
   const f = st.funding;
   if (f && f.next > p.openedAt && f.next <= at && f.next > p.fundingApplied) {
@@ -159,8 +158,10 @@ export function managePosition(p: Position, bar: Bar, st: SymbolState, s: RobotS
   }
   if (long ? bar.high > p.tp : bar.low < p.tp) {
     const px = long ? Math.max(bar.open, p.tp) : Math.min(bar.open, p.tp);
+    trackExcursion(p, px, { ...s, fee_pct: s.maker_fee_pct, slippage_bps: 0 });
     fills.push(exit(p, px, px * p.qtyOpen * maker(s), at, 'TAKE_PROFIT')); return fills;
   }
+  trackExcursion(p, long ? bar.high : bar.low, s);
   const roi = netRoi(p, bar.close, s);
   // Lock profit once the trade has done most of the work: stop tightened to +2% net ROI.
   if (TUNING.profitLockAt > 0 && roi >= TUNING.profitLockAt) { const lock = lockPrice(p, s, 2); if ((lock - p.stop) * sign > 0 && (bar.close - lock) * sign > 0) { p.stop = lock; p.version++; } }
