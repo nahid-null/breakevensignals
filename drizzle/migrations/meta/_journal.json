@@ -85,6 +85,13 @@
       "when": 1794833971622,
       "tag": "0011_simulator_trading",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1794834372608,
+      "tag": "0012_simulator_follow_telegram_switches",
+      "breakpoints": true
     }
   ]
 }
