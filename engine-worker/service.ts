@@ -2,7 +2,7 @@ import WebSocket from "ws";
 import { SYMBOLS, INDICATORS, type Symbol } from "../src/lib/config";
 import { initialState, ENGINE_VERSION, MINUTE, PARAMETERS, validateCandle, type EngineState, type Candle, type Analysis, type Signal } from "../src/lib/engine/model";
 import { processCandle } from "../src/lib/engine/scalper";
-import { BINANCE_WS, binanceFetch, history, delay, backoff } from "./binance";
+import { BINANCE_WS, BinanceRequestError, binanceFetch, history, delay, backoff } from "./binance";
 
 type Market = { symbol: Symbol; price: number | null; trend: string; status: string; last_candle_at: string | null;
   long_score: number; short_score: number; error: string | null };
@@ -18,6 +18,7 @@ export class SignalService {
   private running = false;
   private draining = false;
   private initialized = false;
+  private marketPaused = false;
   private connected = false;
   private lastMessage = 0;
   private failures = 0;
@@ -27,6 +28,7 @@ export class SignalService {
   private nextRestProbe = 0;
   private ownedLease = false;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private startupTimer: ReturnType<typeof setTimeout> | null = null;
   private recovery = new Set<Symbol>();
   private timers: ReturnType<typeof setInterval>[] = [];
   private startedAt: number | null = null;
@@ -48,6 +50,7 @@ export class SignalService {
       websocket_connected: this.connected, binance_connected: Date.now() - this.lastRestAt < 90_000,
       available_symbols: this.available.size, status, error: this.lastError, runtime_mode: this.runtimeMode,
       ...this.telemetry() });
+    if (!this.running) return;
     if (!r.acquired) { await this.stop(); throw new Error("Another engine instance owns the lease"); }
     this.ownedLease = true;
   }
@@ -79,8 +82,34 @@ export class SignalService {
     }
   }
   async start() {
+    if (this.running) return;
     this.startedAt = Date.now();
+    this.running = true;
+    // Report cloud liveness and acquire ownership before contacting the market provider.
+    await this.heartbeat('STARTING');
+    this.timers.push(setInterval(() => { void this.heartbeat().catch((e) => this.fail(e)); }, 20_000));
+    await this.bootstrap();
+  }
+  private async bootstrap() {
+    if (!this.running || this.marketPaused) return;
+    try { await this.initializeMarkets(); }
+    catch (error) {
+      this.fail(error);
+      if (!this.running) return;
+      await this.heartbeat('ERROR');
+      if (this.marketPaused) return;
+      if (!(error instanceof BinanceRequestError)) throw error;
+      // Only transient provider failures may retry. A 451/418 stays paused until a lawful restart.
+      const wait = backoff(this.failures++);
+      this.startupTimer = setTimeout(() => {
+        this.startupTimer = null;
+        void this.bootstrap().catch((e) => this.fail(e));
+      }, wait);
+    }
+  }
+  private async initializeMarkets() {
     const info = await binanceFetch('/fapi/v1/exchangeInfo') as { symbols?: { symbol: string; status: string; filters: { filterType: string; tickSize?: string }[] }[] };
+    if (!this.running || this.marketPaused) return;
     this.lastRestAt = Date.now();
     for (const symbol of SYMBOLS) {
       const contract = info.symbols?.find((s) => s.symbol === symbol && s.status === 'TRADING');
@@ -89,8 +118,6 @@ export class SignalService {
       else this.markets.set(symbol, { symbol, price: null, trend: 'WAITING', status: 'UNAVAILABLE',
         last_candle_at: null, long_score: 0, short_score: 0, error: 'Not listed as a trading Binance USD-M Futures contract' });
     }
-    this.running = true;
-    await this.heartbeat('STARTING');
     if (!this.observeOnly) {
       const saved = await this.app<{ checkpoints: { symbol: Symbol; revision: number; state: EngineState }[] }>('state', {});
       const storedMarkets = await this.app<{ markets: Market[] }>('market-state', {});
@@ -103,10 +130,9 @@ export class SignalService {
       }
       for (const m of this.markets.values()) if (m.status === 'UNAVAILABLE') await this.app('market', { instance_id: this.instance, market: m });
     }
-    this.timers.push(setInterval(() => { void this.heartbeat().catch((e) => this.fail(e)); }, 20_000));
-    this.connect(); // Buffer incoming closed candles before REST warm-up.
+    if (!this.socket) this.connect(); // Buffer incoming closed candles before REST warm-up.
     for (const [symbol, tick] of this.available) {
-      if (!this.running) break;
+      if (!this.running || this.marketPaused) return;
       const saved = this.checkpoints.get(symbol);
       if (!saved) {
         const candles = await history(symbol);
@@ -138,34 +164,37 @@ export class SignalService {
       await this.recover(symbol, Date.now());
       await delay(100);
     }
+    if (!this.running || this.marketPaused) return;
     this.initialized = true;
     this.recordSuccessfulScan();
     this.timers.push(setInterval(() => {
-      if (!this.running) return;
+      if (!this.running || this.marketPaused) return;
       if (this.socket && Date.now() - this.lastMessage > 60_000) this.socket.terminate();
       void this.drain();
       if (!this.observeOnly) void this.app('deliveries', { instance_id: this.instance }).catch((e) => this.fail(e));
     }, 10_000));
     this.timers.push(setInterval(() => {
-      if (this.observeOnly || !this.connected || this.draining) return;
+      if (this.observeOnly || this.marketPaused || !this.connected || this.draining) return;
       void this.publishPrices().catch((e) => this.fail(e));
     }, 5000));
     await this.heartbeat();
     console.log(`Signal service started: ${this.available.size}/${SYMBOLS.length} available contracts. ${this.observeOnly ? 'OBSERVATION ONLY: no database writes or Telegram.' : 'Confirmed-candle live processing.'}`);
   }
   private connect() {
-    if (!this.running) return;
+    if (!this.running || this.marketPaused) return;
     this.reconnectTimer = null;
     const streams = [...this.available.keys()].map((s) => `${s.toLowerCase()}@kline_1m`).join('/');
     const ws = new WebSocket(`${BINANCE_WS}${streams}`);
     this.socket = ws;
     ws.on('open', () => {
+      if (!this.running || this.marketPaused || this.socket !== ws) { ws.terminate(); return; }
       this.connected = true; this.lastMessage = Date.now(); this.failures = 0;
       for (const s of this.available.keys()) this.recovery.add(s);
       console.log('Binance Futures WebSocket connected');
       void this.heartbeat().catch((e) => this.fail(e));
     });
     ws.on('message', (raw) => {
+      if (!this.running || this.marketPaused || this.socket !== ws) return;
       this.lastMessage = Date.now();
       try {
         const payload = JSON.parse(raw.toString()) as { data?: { s: string; k?: { t: number; o: string; h: string; l: string; c: string; v: string; x: boolean } } };
@@ -185,25 +214,38 @@ export class SignalService {
         void this.drain();
       } catch (e) { this.fail(e); }
     });
-    ws.on('error', () => { this.lastError = 'Binance WebSocket connection error'; ws.terminate(); });
+    ws.on('error', () => { if (!this.marketPaused) this.lastError = 'Binance WebSocket connection error'; ws.terminate(); });
+    ws.on('unexpected-response', (_request, response) => {
+      const status = response.statusCode;
+      if (status === 451 || status === 418) {
+        response.resume();
+        this.fail(new BinanceRequestError(status === 451 ? 'restricted' : 'banned', status, '/stream', 'Binance rejected the WebSocket connection. Resolve permitted access before restarting.'));
+      } else {
+        response.resume();
+        this.lastError = `Binance WebSocket rejected connection (HTTP ${status ?? 'unknown'})`;
+        ws.terminate();
+      }
+    });
     ws.on('close', () => {
       this.connected = false;
       for (const s of this.available.keys()) this.recovery.add(s);
-      if (this.running) { const wait = backoff(this.failures++); console.log(`WebSocket disconnected; reconnect in ${wait}ms`); this.reconnectTimer = setTimeout(() => this.connect(), wait); }
+      if (this.socket === ws) this.socket = null;
+      if (this.running && !this.marketPaused) { const wait = backoff(this.failures++); console.log(`WebSocket disconnected; reconnect in ${wait}ms`); this.reconnectTimer = setTimeout(() => this.connect(), wait); }
     });
   }
   private async accept(symbol: Symbol, c: Candle, mode: 'live' | 'recovery') {
+    if (this.marketPaused) return;
     const saved = this.checkpoints.get(symbol);
     if (!saved || c.time <= (saved.state.lastTime ?? -1)) return;
     const tentative = structuredClone(saved.state);
     const result = processCandle(tentative, c);
-    if (!this.running) return;
+    if (!this.running || this.marketPaused) return;
     await this.commit(symbol, tentative, this.market(symbol, tentative, c, result.analysis, mode === 'live' ? 'LIVE' : 'RECOVERING'), result.signals, mode);
   }
   private async recover(symbol: Symbol, until: number) {
     let saved = this.checkpoints.get(symbol);
     if (!saved || saved.state.lastTime === null) return;
-    while (this.running && saved.state.lastTime !== null && saved.state.lastTime + 2 * MINUTE <= until) {
+    while (this.running && !this.marketPaused && saved.state.lastTime !== null && saved.state.lastTime + 2 * MINUTE <= until) {
       const candles = await history(symbol, saved.state.lastTime + MINUTE, until);
       if (!candles.length) throw new Error(`${symbol}: missing candle recovery incomplete`);
       for (const c of candles) await this.accept(symbol, c, 'recovery');
@@ -214,7 +256,7 @@ export class SignalService {
     this.recovery.delete(symbol);
   }
   private async drain() {
-    if (this.draining || !this.running || !this.initialized) return;
+    if (this.draining || !this.running || this.marketPaused || !this.initialized) return;
     this.draining = true;
     try {
       if (Date.now() >= this.nextRestProbe) {
@@ -224,7 +266,7 @@ export class SignalService {
       }
       for (const symbol of [...this.recovery]) await this.recover(symbol, Date.now());
       for (const [symbol, q] of this.queues) {
-        if (!this.running) return;
+        if (!this.running || this.marketPaused) return;
         if (!this.checkpoints.has(symbol)) continue;
         for (const c of [...q]) {
           const saved = this.checkpoints.get(symbol);
@@ -245,13 +287,34 @@ export class SignalService {
     if (this.publishing) return;
     this.publishing = true;
     try { for (const market of this.markets.values()) {
-      if (!this.running) return;
+      if (!this.running || this.marketPaused) return;
       await this.app('market', { instance_id: this.instance, market });
     } } finally { this.publishing = false; }
   }
   private fail(e: unknown) {
+    // A later app/network error must not replace a known access restriction.
+    if (this.marketPaused) return;
     this.lastError = e instanceof Error ? e.message.slice(0, 500) : 'Signal processing error';
-    console.error(this.lastError);
+    if (e instanceof BinanceRequestError) {
+      this.lastRestAt = 0;
+      console.error(JSON.stringify({ event: 'binance_request_failed', code: e.kind, http_status: e.status,
+        endpoint: e.endpoint, checked_at: e.checkedAt, explanation: this.lastError }));
+      if (e.pausesMarket) {
+        this.marketPaused = true;
+        this.connected = false;
+        if (this.startupTimer) clearTimeout(this.startupTimer);
+        if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
+        this.startupTimer = null; this.reconnectTimer = null;
+        this.queues.clear();
+        const socket = this.socket;
+        this.socket = null;
+        socket?.terminate();
+        console.error('Market processing paused; health reporting remains active. Confirm lawful Binance access before restarting.');
+        if (this.running && !this.observeOnly) void this.heartbeat('ERROR').catch(() => {
+          console.error('Could not report paused market status to the app; check the website address and matching engine key.');
+        });
+      }
+    } else console.error(this.lastError);
   }
   private recordSuccessfulScan() {
     const times = [...this.available.keys()].map((s) => this.checkpoints.get(s)?.state.lastTime);
@@ -267,7 +330,8 @@ export class SignalService {
       last_scan_at: this.lastScanAt === null ? null : new Date(this.lastScanAt).toISOString() };
   }
   snapshot() { return { connected: this.connected, configured: SYMBOLS.length, available: this.available.size,
-    running: this.running, initialized: this.initialized, error: this.lastError, ...this.telemetry(),
+    running: this.running && this.initialized && !this.marketPaused, process_alive: this.running, market_paused: this.marketPaused,
+    initialized: this.initialized, error: this.lastError, ...this.telemetry(),
     receivedAt: this.lastMessage, markets: [...this.markets.values()], counts: [...this.checkpoints].map(([symbol, row]) => ({ symbol, candles: row.state.count, lastTime: row.state.lastTime })) }; }
   disconnectForTest() { this.socket?.terminate(); }
   async stop() {
@@ -275,6 +339,7 @@ export class SignalService {
     this.running = false; this.connected = false;
     for (const timer of this.timers) clearInterval(timer);
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
+    if (this.startupTimer) clearTimeout(this.startupTimer);
     this.socket?.terminate();
     if (wasRunning && this.ownedLease && !this.observeOnly) {
       await this.app('stop', { instance_id: this.instance }).catch((e) => this.fail(e));
