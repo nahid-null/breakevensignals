@@ -1,0 +1,223 @@
+{
+ "strategy": "SMC_V1",
+ "start_balance": 20,
+ "source": "Binance USD-M 1m candles, 40 coins, simulated fills",
+ "runs": {
+  "smc_insample": {
+   "label": "Development period \u00b7 Nov 3\u201311",
+   "from": "2026-11-03T00:00:00.000Z",
+   "to": "2026-11-12T00:01:00.000Z",
+   "evaluated": 1036880,
+   "qualified": 2,
+   "exec_failures": {
+    "Net reward too small at executable fill": 1
+   },
+   "all": {
+    "trades": 1,
+    "wins": 0,
+    "losses": 1,
+    "winRate": 0,
+    "netPnl": -0.089896955230006,
+    "grossProfit": 0,
+    "grossLoss": 0.089896955230006,
+    "profitFactor": 0,
+    "avgWin": 0,
+    "avgLoss": 0.089896955230006,
+    "expectancy": -0.089896955230006,
+    "expectancyR": -1.0018288072608674,
+    "maxDrawdown": 0.08989695523000663,
+    "maxDrawdownPct": 0.4494847761500331,
+    "stopLosses": 0,
+    "stopLossRate": 0,
+    "liquidations": 0,
+    "byReason": {
+     "EARLY_EXIT": 1
+    }
+   },
+   "long": {
+    "trades": 0,
+    "wins": 0,
+    "losses": 0,
+    "winRate": 0,
+    "netPnl": 0,
+    "grossProfit": 0,
+    "grossLoss": 0,
+    "profitFactor": 0,
+    "avgWin": 0,
+    "avgLoss": 0,
+    "expectancy": 0,
+    "expectancyR": 0,
+    "maxDrawdown": 0,
+    "maxDrawdownPct": 0,
+    "stopLosses": 0,
+    "stopLossRate": 0,
+    "liquidations": 0,
+    "byReason": {}
+   },
+   "short": {
+    "trades": 1,
+    "wins": 0,
+    "losses": 1,
+    "winRate": 0,
+    "netPnl": -0.089896955230006,
+    "grossProfit": 0,
+    "grossLoss": 0.089896955230006,
+    "profitFactor": 0,
+    "avgWin": 0,
+    "avgLoss": 0.089896955230006,
+    "expectancy": -0.089896955230006,
+    "expectancyR": -1.0018288072608674,
+    "maxDrawdown": 0.08989695523000663,
+    "maxDrawdownPct": 0.4494847761500331,
+    "stopLosses": 0,
+    "stopLossRate": 0,
+    "liquidations": 0,
+    "byReason": {
+     "EARLY_EXIT": 1
+    }
+   },
+   "end_balance": 19.910103044769993,
+   "entry_accuracy_pct": 0,
+   "total_fees": 0.04114068323,
+   "top_reasons": [
+    [
+     "No recent buy-side liquidity sweep",
+     381623
+    ],
+    [
+     "No recent sell-side liquidity sweep",
+     374803
+    ],
+    [
+     "Waiting for bullish MSS",
+     94487
+    ],
+    [
+     "Waiting for bearish MSS",
+     89750
+    ],
+    [
+     "Sweep too weak or too deep",
+     39130
+    ],
+    [
+     "Low rolling liquidity",
+     17010
+    ],
+    [
+     "Waiting for retracement into the FVG",
+     10920
+    ],
+    [
+     "Retracement outside the OTE band",
+     6924
+    ]
+   ]
+  },
+  "smc_oos": {
+   "label": "Unseen period \u00b7 Nov 12\u201316",
+   "from": "2026-11-12T00:00:00.000Z",
+   "to": "2026-11-16T17:06:00.000Z",
+   "evaluated": 542880,
+   "qualified": 0,
+   "exec_failures": {},
+   "all": {
+    "trades": 0,
+    "wins": 0,
+    "losses": 0,
+    "winRate": 0,
+    "netPnl": 0,
+    "grossProfit": 0,
+    "grossLoss": 0,
+    "profitFactor": 0,
+    "avgWin": 0,
+    "avgLoss": 0,
+    "expectancy": 0,
+    "expectancyR": 0,
+    "maxDrawdown": 0,
+    "maxDrawdownPct": 0,
+    "stopLosses": 0,
+    "stopLossRate": 0,
+    "liquidations": 0,
+    "byReason": {}
+   },
+   "long": {
+    "trades": 0,
+    "wins": 0,
+    "losses": 0,
+    "winRate": 0,
+    "netPnl": 0,
+    "grossProfit": 0,
+    "grossLoss": 0,
+    "profitFactor": 0,
+    "avgWin": 0,
+    "avgLoss": 0,
+    "expectancy": 0,
+    "expectancyR": 0,
+    "maxDrawdown": 0,
+    "maxDrawdownPct": 0,
+    "stopLosses": 0,
+    "stopLossRate": 0,
+    "liquidations": 0,
+    "byReason": {}
+   },
+   "short": {
+    "trades": 0,
+    "wins": 0,
+    "losses": 0,
+    "winRate": 0,
+    "netPnl": 0,
+    "grossProfit": 0,
+    "grossLoss": 0,
+    "profitFactor": 0,
+    "avgWin": 0,
+    "avgLoss": 0,
+    "expectancy": 0,
+    "expectancyR": 0,
+    "maxDrawdown": 0,
+    "maxDrawdownPct": 0,
+    "stopLosses": 0,
+    "stopLossRate": 0,
+    "liquidations": 0,
+    "byReason": {}
+   },
+   "end_balance": 20,
+   "entry_accuracy_pct": null,
+   "total_fees": 0,
+   "top_reasons": [
+    [
+     "No recent buy-side liquidity sweep",
+     203980
+    ],
+    [
+     "No recent sell-side liquidity sweep",
+     191714
+    ],
+    [
+     "Waiting for bullish MSS",
+     53551
+    ],
+    [
+     "Waiting for bearish MSS",
+     47196
+    ],
+    [
+     "Sweep too weak or too deep",
+     20643
+    ],
+    [
+     "Waiting for retracement into the FVG",
+     5785
+    ],
+    [
+     "Low rolling liquidity",
+     4474
+    ],
+    [
+     "Retracement outside the OTE band",
+     3715
+    ]
+   ]
+  }
+ }
+}
