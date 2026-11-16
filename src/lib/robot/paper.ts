@@ -72,20 +72,22 @@ export function managePosition(p: Position, bar: Bar, st: SymbolState, s: RobotS
     p.stop = long ? Math.max(p.stop, be) : Math.min(p.stop, be);
   }
   if (p.tp1Done && (long ? bar.high >= p.tp2 : bar.low <= p.tp2)) { fills.push(exit(p, p.tp2, p.qtyOpen, s, at, 'TAKE_PROFIT')); return done(); }
-  // 4. Close-based protection, never on ordinary intrabar noise.
-  const m1 = st.m1; const atr = m1.atr.value ?? 0; const close = bar.close;
-  const hist = m1.macd.hist ?? 0; const prevHist = m1.prevHist ?? hist;
-  const ema21 = m1.ema21.value ?? close; const ema9 = m1.ema9.value ?? close; const m5ema21 = st.m5.ema21.value ?? close;
-  const net = sign * (close - p.entry) * p.qtyOpen - fee(s, close, p.qtyOpen);
+  // 4. Close-based protection on 5m closes, never on ordinary 1m noise.
+  const net = sign * (bar.close - p.entry) * p.qtyOpen - fee(s, bar.close, p.qtyOpen);
   const age = at - p.openedAt;
   let reason: ExitReason | null = null;
-  const opposingSweep = st.levels.some((l) => l.sweptAt === bar.time && l.side === (long ? 'high' : 'low') && (close - l.price) * sign < 0);
-  if (!p.tp1Done && (close - ema21) * sign < 0 && hist * sign < 0 && (hist - prevHist) * sign < 0 && (close - m5ema21) * sign < 0) reason = 'EARLY_EXIT';
-  else if (opposingSweep && (net < 0 || p.tp1Done)) reason = p.tp1Done ? 'PROFIT_EXIT' : 'EARLY_EXIT';
-  else if (atr > 0 && bar.high - bar.low > 4 * atr && (close - bar.open) * sign < 0) reason = 'EARLY_EXIT';
-  else if (p.tp1Done && (close - ema9) * sign < 0 && (hist - prevHist) * sign < 0 && ((m1.rsi.value ?? 50) - (m1.prevRsi ?? 50)) * sign < 0) reason = 'PROFIT_EXIT';
-  else if (age >= s.max_hold_minutes * 60_000) reason = 'TIME_EXIT';
-  else if (!p.tp1Done && age >= s.max_hold_minutes * 0.6 * 60_000 && net <= 0) reason = 'TIME_EXIT';
-  if (reason) { fills.push(closeAtMarket(p, close, s, at, reason)); return done(); }
+  if (st.signalClosed) {
+    const sig = st.m5; const sb = sig.last()!; const atr = sig.atr.value ?? 0; const close = sb.close;
+    const hist = sig.macd.hist ?? 0; const prevHist = sig.prevHist ?? hist;
+    const ema21 = sig.ema21.value ?? close; const ema9 = sig.ema9.value ?? close;
+    const opposingSweep = st.levels.some((l) => l.tf >= 5 && l.sweptAt !== null && at - l.sweptAt <= 5 * 60_000 && l.side === (long ? 'high' : 'low') && (close - l.price) * sign < 0);
+    if (!p.tp1Done && (close - ema21) * sign < 0 && hist * sign < 0 && (hist - prevHist) * sign < 0 && st.m15.trend(false) !== sign) reason = 'EARLY_EXIT';
+    else if (opposingSweep && (net < 0 || p.tp1Done)) reason = p.tp1Done ? 'PROFIT_EXIT' : 'EARLY_EXIT';
+    else if (atr > 0 && sb.high - sb.low > 3.5 * atr && (close - sb.open) * sign < 0) reason = 'EARLY_EXIT';
+    else if (p.tp1Done && (close - ema9) * sign < 0 && (hist - prevHist) * sign < 0) reason = 'PROFIT_EXIT';
+  }
+  if (!reason && age >= s.max_hold_minutes * 60_000) reason = 'TIME_EXIT';
+  else if (!reason && !p.tp1Done && age >= s.max_hold_minutes * 0.6 * 60_000 && net <= 0) reason = 'TIME_EXIT';
+  if (reason) { fills.push(closeAtMarket(p, bar.close, s, at, reason)); return done(); }
   p.unrealized = net; return done();
 }

@@ -35,6 +35,6 @@ export type RobotSettings = {
 export const DEFAULT_SETTINGS: RobotSettings = {
   enabled: true, emergency_stop: false, min_score: 75, high_score: 85,
   risk_per_trade_pct: 0.5, max_concurrent: 3, max_same_direction: 2, max_allocation_pct: 70, max_leverage: 50,
-  daily_loss_limit_pct: 3, loss_streak_cooldown: 2, cooldown_minutes: 60, max_hold_minutes: 45,
+  daily_loss_limit_pct: 3, loss_streak_cooldown: 2, cooldown_minutes: 60, max_hold_minutes: 180,
   fee_pct: 0.05, slippage_bps: 2, max_spread_bps: 8, min_quote_volume_musd: 20,
 };

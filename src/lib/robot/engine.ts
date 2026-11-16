@@ -4,7 +4,7 @@ import { portfolioGate, type Account, type OpenExposure } from './risk';
 import type { Bar, SymbolState } from './series';
 import { evaluate, type BookContext, type Candidate, type Evaluation } from './strategy';
 
-export const WARMUP_BARS = 2500;
+export const WARMUP_BARS = 3300;
 const NO_BOOK: BookContext = { spreadBps: null, imbalance: null, depthUsd: null };
 
 /** Shared by the backtest and the live worker: update state on a closed bar, then manage that coin's positions. */
@@ -16,7 +16,7 @@ export function stepSymbol(st: SymbolState, bar: Bar, open: Position[], s: Robot
 }
 
 export function evaluateBoth(st: SymbolState, s: RobotSettings, book: BookContext = NO_BOOK): Evaluation[] {
-  if (st.count < WARMUP_BARS) return [];
+  if (st.count < WARMUP_BARS || !st.signalClosed) return [];
   return [evaluate(st, 'LONG', s, book), evaluate(st, 'SHORT', s, book)];
 }
 
