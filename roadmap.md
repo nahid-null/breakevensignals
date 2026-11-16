@@ -1,5 +1,11 @@
 # Independent Crypto Signal Terminal
 
+## Current deployed-status diagnosis (prompt-9, 2026-11-16)
+- [x] Investigate without application changes: hosted recovery advances; REST heartbeat expires during successful history; completed-scan timestamp awaits initialization; SYSTEM depends on RUNNING, not cloud/Telegram alone; WILD absent from listed trading contracts.
+- [x] Reproduce silent legacy candle connection against the same Binance host and verify the maintained SDK's market path: Node and Docker Bun 1.3.10 each receive zero frames on /stream and 26 valid frames on /market/stream during paired 18-second checks. This is sandbox evidence, not Railway live-feed certification.
+- [ ] Verify actual Railway live frames and apply the explained feed/health proposal — awaits user approval before any application changes and matching worker deployment; preserve signals/history/restriction enforcement.
+- [ ] Verify all 20 fresh durable feeds and genuine hosted breakeven delivery — depends on completed recovery, correct live feed and real deployed observations.
+
 ## Deployed Railway monitoring investigation (prompt-8, 2026-11-16)
 - [x] Observe actual hosted heartbeat (20-second progress) and serial durable recovery: 3632 commits across four symbols by 09:06:49; published UI correctly shows CLOUD ONLINE / WEBSOCKET CONNECTED / SCANNER RECOVERING and stale feeds. No current complete scan or recorded 451; REST label expires during recovery because successful history does not refresh REST health.
 - [x] Verify one explicitly labelled non-trading Telegram TEST via published Settings: message 11 SENT and read back; settings unchanged, no fixture signals. Bun 1.3.10 isolated messages/reconnect pass but unsupported unexpected-response loses HTTP rejection status. Real sandbox Bun/Node probes both connect with no frames during observation, not Railway proof. 37 targeted tests pass; build OK; app/worker unchanged.
