@@ -55,7 +55,7 @@ export const Route = createFileRoute("/api/public/engine")({
         const data = z.object({ market: marketSchema }).parse(base.data.data);
         const update = { price: data.market.price, updated_at: new Date().toISOString() };
         const { error } = data.market.status === 'UNAVAILABLE'
-          ? await supabaseAdmin.from('market_state').upsert({ ...data.market, ...update })
+          ? await supabaseAdmin.from('market_state').upsert({ ...data.market, mtf_trend: data.market.mtf_trend ?? null, ...update })
           : await supabaseAdmin.from('market_state').update(update).eq('symbol', data.market.symbol);
         if (error) throw error;
       } else {

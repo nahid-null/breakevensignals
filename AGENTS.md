@@ -53,3 +53,4 @@ use the editor.
 - Use shared per-feed freshness and saved-state notices across market screens, because a healthy global heartbeat cannot make an individual stale price or recorded trade live.
 - Use Binance's documented same-host market candle path; Bun's native socket hides rejection status, so inspect a same-path HTTP upgrade on errors and hold reconnects until restriction classification completes.
 - Keep bounded validated feed telemetry in owning heartbeats; show oldest saved recovery progress separately from a completed live scan, because startup commits are genuine but not live-message evidence.
+- Gate scalper entries with the native MTF trend detector in `src/lib/engine/mtf-trend.ts`, persisted in checkpoints and rebuilt from Binance 1m/5m/15m candles when missing; Telegram is queued in the database only for `trend_aligned` live events, so unknown trend state fails closed.

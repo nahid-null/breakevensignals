@@ -68,22 +68,24 @@ export async function binanceFetch(path: string, signal?: AbortSignal): Promise<
   throw lastFailure ?? new BinanceRequestError('provider', null, path, 'Market-data retry budget exhausted.');
 }
 
-export function restCandle(row: unknown): Candle {
+export function restCandle(row: unknown, span = MINUTE): Candle {
   if (!Array.isArray(row) || row.length < 7) throw new Error("Malformed Binance candle");
   const c = { time: Number(row[0]), open: Number(row[1]), high: Number(row[2]), low: Number(row[3]),
     close: Number(row[4]), volume: Number(row[5]) };
   validateCandle(c);
+  if (c.time % span !== 0) throw new Error('Malformed Binance candle interval');
   return c;
 }
 
-export async function history(symbol: string, start?: number, end?: number, signal?: AbortSignal): Promise<Candle[]> {
-  const params = new URLSearchParams({ symbol, interval: '1m', limit: '1500' });
+export async function history(symbol: string, start?: number, end?: number, signal?: AbortSignal, interval: '1m' | '5m' | '15m' = '1m'): Promise<Candle[]> {
+  const params = new URLSearchParams({ symbol, interval, limit: '1500' });
   if (start !== undefined) params.set('startTime', String(start));
   if (end !== undefined) params.set('endTime', String(end));
   const rows = await binanceFetch(`/fapi/v1/klines?${params}`, signal);
   if (!Array.isArray(rows)) throw new Error("Malformed Binance history");
   const now = end ?? Date.now();
-  return rows.map(restCandle).filter((c) => c.time + MINUTE <= now).sort((a, b) => a.time - b.time);
+  const span = interval === '15m' ? 15 * MINUTE : interval === '5m' ? 5 * MINUTE : MINUTE;
+  return rows.map((row) => restCandle(row, span)).filter((c) => c.time + span <= now).sort((a, b) => a.time - b.time);
 }
 
 export async function checkWebSocketAccess(streams: string, signal: AbortSignal): Promise<void> {

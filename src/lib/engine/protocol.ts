@@ -6,9 +6,18 @@ import { feedHealthSchema } from './feed-health';
 const finite = z.number().finite();
 const candleTime = z.number().int().nonnegative().refine((n) => n % MINUTE === 0);
 const average = z.object({ value: finite.nullable(), seed: z.array(finite).max(14) });
+const trendValue = z.union([z.literal(1), z.literal(-1), z.literal(0)]).nullable();
+const mtfSnapshot = z.object({ m15: trendValue, m5: trendValue, m1: trendValue });
+const bar = z.object({ time: candleTime, open: finite.positive(), high: finite.positive(), low: finite.positive(), close: finite.positive(), volume: finite.nonnegative() });
+const timeframe = z.object({ minutes: z.union([z.literal(15), z.literal(5), z.literal(1)]), bucket: bar.nullable(), previous: bar.nullable(),
+  ema20: finite.nullable(), ema50: finite.nullable(), emaHistory: z.array(z.tuple([finite, finite])).max(6),
+  tr: average, plusDM: average, minusDM: average, adx: average, plusDI: finite.nullable(), minusDI: finite.nullable(),
+  window: z.array(z.object({ high: finite.positive(), low: finite.positive() })).max(7),
+  pivotHighs: z.array(finite).max(2), pivotLows: z.array(finite).max(2), trend: trendValue });
+export const mtfSchema = z.object({ m15: timeframe, m5: timeframe, m1: timeframe });
 const trade = z.object({ id: z.string().min(3).max(200), direction: z.enum(['LONG','SHORT']),
   entry: finite.positive(), stop: finite.positive(), originalStop: finite.positive(), target: finite.positive(),
-  risk: finite.positive(), entryTime: candleTime, breakeven: z.boolean(), breakevenTime: candleTime.nullable() });
+  risk: finite.positive(), entryTime: candleTime, breakeven: z.boolean(), breakevenTime: candleTime.nullable(), entryTrend: mtfSnapshot.optional() });
 const side = z.object({ trade: trade.nullable(), lastExitTime: candleTime.nullable(), performance: z.object({
   total: z.number().int().nonnegative(), wins: z.number().int().nonnegative(), losses: z.number().int().nonnegative(),
   positiveNetR: finite, negativeNetR: finite, grossProfitR: finite, grossLossR: finite, netR: finite,
@@ -21,7 +30,7 @@ export const checkpointSchema = z.object({
     low: finite.positive(), close: finite.positive(), volume: finite.nonnegative() })).min(1).max(20),
   ema9: finite.nullable(), ema21: finite.nullable(), ema200: finite.nullable(), fast: finite.nullable(), slow: finite.nullable(),
   macdSignal: finite.nullable(), gain: average, loss: average, atr: average, rsi: finite.nullable(),
-  swingLow: finite.nullable(), swingHigh: finite.nullable(), long: side, short: side,
+  swingLow: finite.nullable(), swingHigh: finite.nullable(), long: side, short: side, mtf: mtfSchema.optional(),
 }).refine((s) => s.candles.at(-1)?.time === s.lastTime && (!s.long.trade || s.long.trade.direction === 'LONG') && (!s.short.trade || s.short.trade.direction === 'SHORT'), 'Invalid checkpoint');
 
 export const signalSchema = z.object({
@@ -30,6 +39,7 @@ export const signalSchema = z.object({
   entry_price: finite.positive(), stop_loss: finite.positive(), take_profit: finite.positive(),
   exit_price: finite.positive().optional(), fee_rate_percent: finite.min(0).max(5),
   timestamp: z.string().datetime(), net_result_r: finite.optional(),
+  trend_aligned: z.boolean().optional(), mtf_trend: mtfSnapshot.optional(),
 }).refine((e) => e.indicator === INDICATORS[e.direction] && e.event_id === `${e.trade_id}-${e.event}` &&
   (!['stop_loss_hit','take_profit_hit'].includes(e.event) || (e.exit_price !== undefined && e.net_result_r !== undefined)), 'Invalid signal identity or exit result');
 
@@ -43,6 +53,7 @@ export const marketSchema = z.object({
   status: z.enum(["LIVE", "RECOVERING", "WARMING UP", "UNAVAILABLE", "ERROR"]),
   last_candle_at: z.string().datetime().nullable(), long_score: z.number().min(0).max(100),
   short_score: z.number().min(0).max(100), error: z.string().max(500).nullable(),
+  mtf_trend: mtfSnapshot.nullable().optional(),
 });
 export const heartbeatSchema = z.object({
   instance_id: z.string().uuid(), websocket_connected: z.boolean(), binance_connected: z.boolean(),

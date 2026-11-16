@@ -1,4 +1,5 @@
 import type { Direction, EventType, Symbol } from "../config";
+import type { MtfState, MtfSnapshot } from "./mtf-trend";
 
 export const MINUTE = 60_000;
 export const ENGINE_VERSION = 1;
@@ -15,6 +16,8 @@ export interface Average { value: number | null; seed: number[] }
 export interface Trade {
   id: string; direction: Direction; entry: number; stop: number; originalStop: number;
   target: number; risk: number; entryTime: number; breakeven: boolean; breakevenTime: number | null;
+  /** 15M/5M/1M trend that approved the entry; absent for trades opened before the trend filter. */
+  entryTrend?: MtfSnapshot;
 }
 export interface Performance {
   total: number; wins: number; losses: number; positiveNetR: number; negativeNetR: number;
@@ -27,12 +30,15 @@ export interface EngineState {
   fast: number | null; slow: number | null; macdSignal: number | null;
   gain: Average; loss: Average; atr: Average; rsi: number | null;
   swingLow: number | null; swingHigh: number | null; long: SideState; short: SideState;
+  /** Multi-timeframe trend filter state. The live worker always sets it before processing. */
+  mtf?: MtfState;
 }
 export interface Signal {
   event_id: string; trade_id: string; event: EventType; symbol: Symbol; direction: Direction;
   indicator: string; timeframe: string; entry_price: number; stop_loss: number;
   take_profit: number; fee_rate_percent: number; timestamp: string;
   exit_price?: number; net_result_r?: number;
+  trend_aligned?: boolean; mtf_trend?: MtfSnapshot;
 }
 export interface Analysis {
   ema9: number; ema21: number; ema200: number; rsi: number | null; atr: number | null;
