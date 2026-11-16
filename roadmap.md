@@ -1,5 +1,11 @@
 # Independent Crypto Signal Terminal
 
+## Deployed Railway monitoring investigation (prompt-8, 2026-11-16)
+- [ ] Observe hosted heartbeats and per-symbol durable candle/count changes over time; verify published dashboard distinguishes connection from current data and identify any recorded 451.
+- [ ] Check Telegram delivery without trading fixtures and investigate Bun message/reconnect warning in isolation; preserve trading rules and deployment settings.
+- [ ] Record evidence, monitoring limitations and the next user check in chat.md.
+- [ ] Inspect the running Railway container's private market-message telemetry and deployment revision — needs access to Railway or a redacted user-provided result; do not expose keys.
+
 ## Restriction flow sweep (2026-11-16)
 - [x] Read all seven screens, shared header/monitor/setup/details, scanner startup/history/recovery/live/reconnect/price/delivery/shutdown paths, alert send/retry/test functions, health reads and all current database functions.
 - [x] Fix abort handling and stale-socket events, per-symbol saved-state labels, active ledger/history notices, setup ERROR and manual/background delivery pause; additive 0008 guards market writes and signal claims with existing lease serialization. Sent/closed records, permissions, preferences and calculations unchanged.
