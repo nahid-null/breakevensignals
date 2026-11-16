@@ -11,6 +11,16 @@ const setup = z.enum(SETUPS);
 const exitReason = z.enum(['TAKE_PROFIT', 'STOP_LOSS', 'BREAKEVEN_STOP', 'EARLY_EXIT', 'PROFIT_EXIT', 'TIME_EXIT', 'LIQUIDATION', 'EMERGENCY_STOP']);
 const note = z.string().max(160).nullable();
 const score = z.number().int().min(0).max(100).nullable();
+const entryAudit = z.object({
+  strategy: z.literal('LIQUIDITY_SWEEP_V1'), source: z.enum(['LIVE_BINANCE', 'CANDLE_REPLAY']), explanation: z.string().max(2000),
+  signal_open_at: money, signal_close_at: money, signal_price: price,
+  body_pct: money, lower_wick_pct: money, upper_wick_pct: money, volume: money, volume_ratio: money, atr: price,
+  pool_price: price, pool_time: money, pool_tf: money, pool_touches: money, sweep_at: money, sweep_extreme: price,
+  reclaim_at: money, confirmation_at: money, opposing_level: price.nullable(), reward_risk: money,
+  bid: price.optional(), ask: price.optional(), spread_bps: money.optional(), quote_received_at: money.optional(), fill_at: money.optional(), delay_ms: money.optional(),
+  fill_price: price.optional(), slippage_bps: money.optional(), signal_drift_bps: money.optional(), entry_fee: money.optional(), estimated_exit_fee: money.optional(),
+  initial_net_roi_pct: money.optional(), requested_quantity: money.optional(), filled_quantity: money.optional(), depth_levels: money.optional(),
+}).strict();
 
 export const robotMarketSchema = z.object({
   symbol, price: price.nullable(), spread_bps: z.number().finite().min(0).nullable(), depth_usd: z.number().finite().min(0).nullable(),
@@ -35,6 +45,7 @@ export const robotUpdateSchema = z.object({
   closed_at: time.nullable(), exit_price: price.nullable(), exit_reason: exitReason.nullable(), last_candle_time: z.number().int().min(0),
   pnl_delta: money, entry_price: price, leverage: z.literal(PAPER_LEVERAGE), opened_at: time,
   fills: z.array(robotFillSchema).max(5), notify: z.boolean(),
+  mae_roi_pct: money.nullable().optional(), mfe_roi_pct: money.nullable().optional(), funding_applied_at: z.number().int().min(0).optional(),
 }).strict();
 
 export const robotOpenSchema = z.object({
@@ -44,6 +55,8 @@ export const robotOpenSchema = z.object({
   stop_loss: price, tp1: price, tp2: price, liquidation_price: price, risk_usdt: z.number().finite().positive(),
   fees: z.number().finite().min(0), entry_fee: z.number().finite().min(0), realized_pnl: money, liquidity: z.string().max(160), opened_at: time,
   last_candle_time: z.number().int().min(0), balance_before: z.number().finite().min(0), target_roi_pct: z.number().finite().positive(), tick_size: price,
+  entry_audit: entryAudit.optional(), mae_roi_pct: money.nullable().optional(), mfe_roi_pct: money.nullable().optional(),
+  unrealized_pnl: money.optional(), net_roi_pct: money.optional(), funding_applied_at: z.number().int().min(0).optional(),
 }).strict().refine((o) => o.direction === 'LONG' ? o.stop_loss < o.entry_price && o.tp1 > o.entry_price : o.stop_loss > o.entry_price && o.tp1 < o.entry_price,
   { message: 'Stop and target must sit on the correct side of entry' })
   .refine((o) => Math.abs(o.notional / o.margin - PAPER_LEVERAGE) < 1e-6, { message: 'Notional must equal margin × 50' });

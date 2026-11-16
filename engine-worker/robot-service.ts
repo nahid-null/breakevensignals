@@ -25,10 +25,11 @@ export function positionFromRow(r: Row): Position {
   return { id: String(r.id), symbol: String(r.symbol), direction: r.direction as Position['direction'], status: r.status as Position['status'],
     setup: r.setup as Position['setup'], score: num(r.score), leverage: num(r.leverage), band: String(r.band), entry, qty, qtyOpen: num(r.quantity_open),
     margin: num(r.margin), notional: num(r.notional), stop: num(r.stop_loss), initialStop: num(r.initial_stop), tp: num(r.tp1), liquidation: num(r.liquidation_price),
-    riskUsdt: num(r.risk_usdt), entryFee: num(r.entry_fee ?? 0), fees: num(r.fees), funding: num(r.funding ?? 0), fundingApplied: 0, realized: num(r.realized_pnl),
+    riskUsdt: num(r.risk_usdt), entryFee: num(r.entry_fee ?? 0), fees: num(r.fees), funding: num(r.funding ?? 0), fundingApplied: num(r.funding_applied_at ?? 0), realized: num(r.realized_pnl),
     openedAt: Date.parse(String(r.opened_at)), closedAt: null, exitPrice: null, exitReason: null, lastCandleTime: num(r.last_candle_time), version: num(r.version),
     liquidity: String(r.liquidity ?? ''), lastPrice: num(r.last_price ?? entry), unrealized: num(r.unrealized_pnl), tick: num(r.tick_size) || DEFAULT_RULES.tickSize,
-    requestedQty: num(r.requested_quantity ?? qty), fillStatus: r.fill_status === 'PARTIAL' ? 'PARTIAL' : 'FILLED' };
+    requestedQty: num(r.requested_quantity ?? qty), fillStatus: r.fill_status === 'PARTIAL' ? 'PARTIAL' : 'FILLED',
+    audit: r.entry_audit as Position['audit'], maeRoi: r.mae_roi_pct == null ? undefined : num(r.mae_roi_pct), mfeRoi: r.mfe_roi_pct == null ? undefined : num(r.mfe_roi_pct) };
 }
 
 export function settingsFromRow(row: Row): RobotSettings {
@@ -86,7 +87,8 @@ export class RobotService {
     if (!this.running) return;
     try {
       const info = await binanceFetch('/fapi/v1/exchangeInfo', this.abort.signal) as { symbols?: { symbol: string; status: string; filters: Parameters<typeof rulesFromFilters>[0] }[] };
-      for (const symbol of ROBOT_SYMBOLS) {
+      await this.refresh();
+      for (const symbol of this.configuredSymbols) {
         const c = info.symbols?.find((s) => s.symbol === symbol && s.status === 'TRADING');
         if (c) this.core.addSymbol(symbol, rulesFromFilters(c.filters)); else this.unavailable.push(symbol);
       }
@@ -111,6 +113,7 @@ export class RobotService {
     if (this.observeOnly || !this.ownsLease()) return;
     const r = await this.app<{ settings: Row; account: Row; open: Row[] }>('robot-state', {});
     this.core.settings = settingsFromRow(r.settings);
+    if (Array.isArray(r.settings.symbols) && r.settings.symbols.length === 40) this.configuredSymbols = r.settings.symbols.map(String);
     const durable = new Map(r.open.map((row) => [String(row.id), row]));
     // Keep local positions with unsaved changes; drop any closed elsewhere (for example by STOP ALL).
     this.core.open = this.core.open.filter((p) => durable.has(p.id) || p.version > (this.committed.get(p.id) ?? 0));
@@ -176,7 +179,7 @@ export class RobotService {
     const bids = (d.bids ?? []).map(([p, q]) => [Number(p), Number(q)] as const).filter(([p, q]) => p > 0 && q > 0);
     const asks = (d.asks ?? []).map(([p, q]) => [Number(p), Number(q)] as const).filter(([p, q]) => p > 0 && q > 0);
     if (bids[0] && asks[0]) this.books.set(symbol, { bid: bids[0][0], ask: asks[0][0], bidQty: bids[0][1], askQty: asks[0][1], at: Date.now() });
-    return { bids, asks };
+    return { bids, asks, receivedAt: Date.now(), source: 'LIVE_BINANCE' };
   }
 
   /** Opportunity queue: open the best qualified setups while slots and margin remain. Runs after each minute and after every close. */
@@ -189,6 +192,7 @@ export class RobotService {
         const q = this.core.nextCandidate(Date.now(), this.balance);
         if (!q) break;
         const depth = await this.depth(q.c.symbol);
+        if (!this.active()) break;
         const res = this.core.execute(q, depth, this.balance, Date.now());
         if ('rejected' in res) continue;
         const r = await this.app<RobotCommitResult>('robot-commit', { instance_id: this.instance(), opens: [this.openRow(res, q.c)] });
@@ -211,6 +215,7 @@ export class RobotService {
       notional: p.notional, stop_loss: p.stop, tp1: p.tp, tp2: p.tp, liquidation_price: p.liquidation, risk_usdt: p.riskUsdt, fees: p.fees, entry_fee: p.entryFee,
       realized_pnl: r.fill.pnl, liquidity: p.liquidity.slice(0, 160), opened_at: iso(p.openedAt), last_candle_time: p.lastCandleTime,
       balance_before: Math.max(0, this.balance), target_roi_pct: TARGET_NET_ROI_PCT, tick_size: p.tick };
+    // Entry evidence accompanies the same atomic open; no later synthetic historical backfill.
   }
 
   private signalRows(raw: ReturnType<RobotCore['takeSignals']>): RobotCommit['signals'] {
