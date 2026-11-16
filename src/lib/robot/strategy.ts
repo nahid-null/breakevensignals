@@ -17,8 +17,8 @@ export type BookContext = { spreadBps: number | null; imbalance: number | null; 
 /** Signal bars are 5m; the 15m and 1h trends give context. Sweeps are tracked on 1m bars. */
 const SWEEP_LOOKBACK_MS = 15 * 60_000;
 /** Structural constants, adjustable only after backtesting. */
-export const TUNING = { stopBufferAtr: 0.3, minRiskAtr: 0.6, maxRiskAtr: 2.2, requireBothTrends: false, allowPullback: true,
-  tp1R: 1, tp2R: 2, minRr1: 0.7, confirmBars: 1 };
+export const TUNING = { stopBufferAtr: 0.5, minRiskAtr: 1.0, maxRiskAtr: 2.2, requireBothTrends: false, allowPullback: true,
+  tp1R: 1, tp2R: 2, minRr1: 0.7, confirmBars: 2 };
 export const roundTripCostPct = (s: RobotSettings) => 2 * (s.fee_pct + s.slippage_bps / 100);
 
 export function evaluate(st: SymbolState, direction: Direction, s: RobotSettings, book: BookContext): Evaluation {
