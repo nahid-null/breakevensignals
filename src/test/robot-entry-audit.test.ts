@@ -38,15 +38,17 @@ describe('liquidity sweep entries and execution accounting', () => {
     expect(result.level.price).toBe(100.2); expect(result.level.sweepExtreme).toBe(100.5);
   });
   it('never enters on a touch or a break without reclaim', () => {
-    const st = state('LONG'); st.levels[0].sweptAt = null;
+    const st = state('LONG'); const level = st.levels[0]; const bar = st.m1.bars[1];
+    if (!level || !bar) throw new Error('Missing test market state'); level.sweptAt = null;
     expect(confirmedSweep(st, 'LONG', s)).toEqual({ rejected: 'No recent meaningful liquidity sweep' });
-    st.levels[0].sweptAt = 0; st.m1.bars[1].close = 99.7;
+    level.sweptAt = 0; bar.close = 99.7;
     expect(confirmedSweep(st, 'LONG', s)).toEqual({ rejected: 'Swept level not reclaimed on two closes' });
   });
   it('rejects a weak sweep and insufficient current volume', () => {
-    const st = state('LONG'); st.levels[0].sweepExtreme = 99.79;
+    const st = state('LONG'); const level = st.levels[0]; const bar = st.m1.bars[1];
+    if (!level || !bar) throw new Error('Missing test market state'); level.sweepExtreme = 99.79;
     expect(confirmedSweep(st, 'LONG', s)).toEqual({ rejected: 'Sweep too weak or too deep' });
-    st.levels[0].sweepExtreme = 99.5; st.m1.bars[1].volume = 5;
+    level.sweepExtreme = 99.5; bar.volume = 5;
     expect(confirmedSweep(st, 'LONG', s)).toEqual({ rejected: 'Confirmation volume below threshold' });
   });
   it('rejects stale signals after30 seconds even if they remain in the older queue TTL', () => {
@@ -88,6 +90,6 @@ describe('liquidity sweep entries and execution accounting', () => {
     st.update(candle(3*MINUTE,100,101,99,100)); st.update(candle(4*MINUTE,100,101,99,100));
     expect(st.m5.bars).toHaveLength(0);
     for(let t=5;t<10;t++) st.update(candle(t*MINUTE,100,101,99,100));
-    expect(st.m5.bars).toHaveLength(1); expect(st.m5.bars[0].volume).toBe(500);
+    expect(st.m5.bars).toHaveLength(1); expect(st.m5.bars[0]?.volume).toBe(500);
   });
 });
