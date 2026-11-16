@@ -3,7 +3,7 @@
 ## Restriction flow sweep (2026-11-16)
 - [x] Read all seven screens, shared header/monitor/setup/details, scanner startup/history/recovery/live/reconnect/price/delivery/shutdown paths, alert send/retry/test functions, health reads and all current database functions.
 - [x] Fix abort handling and stale-socket events, per-symbol saved-state labels, active ledger/history notices, setup ERROR and manual/background delivery pause; additive 0008 guards market writes and signal claims with existing lease serialization. Sent/closed records, permissions, preferences and calculations unchanged.
-- [ ] Run isolated regressions and browser flows; update chat.md with coverage and remaining hosted-access blockers.
+- [x] Verify 103 tests, real isolated 20-feed reconnect/disk restart and all seven screens on desktop/phone; no overflow/runtime errors; build OK 08:39:27 UTC. chat.md updated; no real messages sent, hosted access/deployment/certification blockers retained.
 
 ## Railway Binance access investigation (2026-11-16)
 - [x] Inspect public Futures endpoints, startup failures, hosting configuration and dashboard status: sandbox requests return 200; isolated 451 fails before heartbeat; 13 targeted tests pass; preview/published retain STOPPED status and four genuine SHORT positions. Official current regional permission remains unverified; official archives are historical-only and live provider candidates exceed the $0 budget.
