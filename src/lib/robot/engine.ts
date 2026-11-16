@@ -24,6 +24,7 @@ export type SignalLog = { id: string; candidate: Candidate; decision: 'TAKEN' | 
 export type Queued = { c: Candidate; rank: number; expires: number; spreadBps: number | null; lastReason: string | null };
 export type Note = { long: string | null; short: string | null; longScore: number | null; shortScore: number | null };
 export type PositionFill = { position: Position; fill: Fill };
+export type CandleDecision = { symbol: string; direction: Direction; time: number; decision: 'QUALIFIED' | 'REJECTED'; reason: string; score: number | null; audit: Candidate['audit'] | null };
 
 const bump = (m: Record<string, number>, k: string) => { m[k] = (m[k] ?? 0) + 1; };
 /** Collapse score-specific reasons so the diagnostic table groups them. */
@@ -40,6 +41,7 @@ export class RobotCore {
   open: Position[] = [];
   counters = emptyCounters();
   signals: SignalLog[] = [];
+  decisions: CandleDecision[] = [];
   constructor(public settings: RobotSettings, private readonly legacyComparison = false) {}
 
   addSymbol(symbol: string, rules: SymbolRules = DEFAULT_RULES) {
@@ -60,6 +62,8 @@ export class RobotCore {
       note[key] = e.rejected ?? `Qualified ${e.candidate!.tier === 'STRONG' ? 'strong ' : ''}${e.candidate!.setup.replace(/_/g, ' ').toLowerCase()}`;
       note[`${key}Score`] = e.candidate?.score ?? null;
       if (!live) continue;
+      this.decisions.push({ symbol, direction: e.direction, time: bar.time, decision: e.rejected ? 'REJECTED' : 'QUALIFIED',
+        reason: e.rejected ?? e.candidate?.liquidity ?? 'Qualified sweep', score: e.candidate?.score ?? null, audit: e.candidate?.audit ?? null });
       this.counters.evaluated++;
       if (e.candidate) {
         if (e.direction === 'LONG') this.counters.long_candidates++; else this.counters.short_candidates++;
@@ -183,4 +187,5 @@ export class RobotCore {
 
   takeCounters(): Counters { const c = this.counters; this.counters = emptyCounters(); return c; }
   takeSignals(max = 100): SignalLog[] { return this.signals.splice(0, max); }
+  takeDecisions(max = 120): CandleDecision[] { return this.decisions.splice(0,max); }
 }
