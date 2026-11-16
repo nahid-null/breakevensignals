@@ -136,3 +136,4 @@
 - Reward check at signal now matches execution (0.2% net move vs stop+costs).
 - Replay (40 coins, $20): Nov 3–11 1 trade −$0.09; Nov 12–16 0 trades. Too few to judge. Main blocker: +10% at 50x = 0.2% move vs structural stops → reward/risk rule rejects most setups.
 - Tests 196 passed; build OK. Expected fingerprint bdaa7c7c… — Railway must be redeployed after publish. Robot still on STOP ALL; not resumed.
+- Sweep: database functions/constraints accept SMC_V1 trades and new settings; settings save writes all new fields; backtest page now labels its saved run as an older method; two settings the new method ignores are marked 'old method only'.
