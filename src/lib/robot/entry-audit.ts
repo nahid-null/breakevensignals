@@ -8,4 +8,9 @@ export type EntryAudit = {
   bid?: number; ask?: number; spread_bps?: number; quote_received_at?: number | undefined; fill_at?: number; delay_ms?: number;
   fill_price?: number; slippage_bps?: number; signal_drift_bps?: number; entry_fee?: number; estimated_exit_fee?: number;
   initial_net_roi_pct?: number; requested_quantity?: number; filled_quantity?: number; depth_levels?: number;
+  /** SMC_V1 evidence (absent on older entries). */
+  mss_kind?: 'MSS' | 'CHoCH'; mss_level?: number; mss_at?: number; zone_kind?: 'FVG' | 'OB' | 'FVG+OB'; zone_low?: number; zone_high?: number;
+  fvg_low?: number | null; fvg_high?: number | null; ob_low?: number | null; ob_high?: number | null; ote_depth?: number;
+  premium_discount?: 'DISCOUNT' | 'PREMIUM' | 'EQUILIBRIUM_OR_WRONG_SIDE'; htf_bias?: 'BULLISH' | 'BEARISH' | 'NEUTRAL'; displacement?: boolean;
+  score_parts?: Record<string, number>; risk_margin_cap?: number;
 };

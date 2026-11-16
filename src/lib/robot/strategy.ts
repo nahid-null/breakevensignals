@@ -6,13 +6,14 @@
 import { MINUTE, type Level, type SymbolState } from './series';
 import { PAPER_LEVERAGE, TARGET_NET_ROI_PCT, type RobotSettings } from './config';
 import type { EntryAudit } from './entry-audit';
-import { evaluateSweep } from './liquidity-sweep';
+import { evaluateSmc } from './smc';
 
 export type Direction = 'LONG' | 'SHORT';
-export const SETUPS = ['SWEEP_RECLAIM', 'TREND_PULLBACK', 'EMA_RETEST', 'VWAP_RECLAIM', 'SR_REJECTION', 'BREAKOUT_RETEST'] as const;
+export const SETUPS = ['SMC_SWEEP_MSS', 'SWEEP_RECLAIM', 'TREND_PULLBACK', 'EMA_RETEST', 'VWAP_RECLAIM', 'SR_REJECTION', 'BREAKOUT_RETEST'] as const;
 /** PULLBACK_RECLAIM is the retired family name kept only so old rows still read. */
 export type Setup = (typeof SETUPS)[number] | 'PULLBACK_RECLAIM';
-export type ScoreParts = { trend: number; structure: number; setup: number; trigger: number; momentum: number; volume: number; execution: number };
+/** Weighted score components; names depend on the evaluator that produced them. */
+export type ScoreParts = Record<string, number>;
 export type Candidate = {
   symbol: string; direction: Direction; time: number; setup: Setup; score: number; tier: 'STRONG' | 'QUALIFIED' | 'WEAK'; parts: ScoreParts;
   entry: number; stop: number; tp: number; atr: number; atrPct: number; stopPct: number; tpPct: number; liquidity: string; audit?: EntryAudit;
@@ -164,4 +165,5 @@ export function evaluateLegacy(st: SymbolState, direction: Direction, s: RobotSe
   return { candidate, rejected: null, direction };
 }
 
-export const evaluate = evaluateSweep;
+/** Live robot entries: SMC_V1 only (prompt-20). The previous sweep/reclaim and six-family evaluators are kept for replay comparison. */
+export const evaluate = evaluateSmc;
