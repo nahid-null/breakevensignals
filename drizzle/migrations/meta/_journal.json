@@ -50,6 +50,13 @@
       "when": 1794756160104,
       "tag": "0006_windows_pc_engine_telemetry",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794803963164,
+      "tag": "0007_durable_successful_candle_scans",
+      "breakpoints": true
     }
   ]
 }
