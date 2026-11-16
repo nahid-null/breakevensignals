@@ -46,3 +46,4 @@ use the editor.
 - Derive public cloud connectivity from production hosted identity plus a fresh server-received heartbeat; uptime is last reported and scan time is the slowest durable configured feed, never a poll timestamp.
 - Count successful per-symbol closed-candle commits atomically in market state, excluding warmup; never count browser polls or duplicate revisions as scans.
 - Derive RUNNING and the next expected candle close only from fresh heartbeats, connected feeds and recent durable scan progress so a heartbeat cannot hide a stalled scanner.
+- Keep the browser setup reference as a public/private discriminated list with no private value fields; copy only public values or key names because the dashboard is public and must never expose credentials.

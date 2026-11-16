@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useStatuses } from '@/lib/data';
 import { StatusBadge } from '@/components/terminal/StatusBadge';
+import { SetupReference } from '@/components/terminal/SetupReference';
 
 export const Route = createFileRoute('/setup')({ head: () => ({ meta: [
   { title: 'Engine Deployment — Crypto Signal Terminal' },
@@ -24,10 +25,11 @@ function Setup() {
         <li>Publish this website so the latest private engine key is live.</li>
         <li>Connect this project to GitHub from the Lovable GitHub button.</li>
         <li>Sign up at render.com, choose New, then Blueprint, and pick your GitHub repository. Render reads the included setup file and selects the Free plan.</li>
-        <li>When asked, enter ENGINE_APP_URL as https://breakevensignals.lovable.app and ENGINE_SHARED_SECRET as the private engine key you saved earlier.</li>
+        <li>Enter ENGINE_APP_URL and ENGINE_SHARED_SECRET using the setup reference below. The private engine key must match the one saved in Lovable.</li>
         <li>Click Apply. After the first deploy shows Live, this page and the dashboard show CLOUD ONLINE within two minutes.</li>
       </ol>
     </section>
+    <SetupReference configuration={health} />
     <section className="border-t border-border pt-5"><h2 className="mb-2 font-mono text-sm">SECURE CONNECTION</h2><p className="text-sm text-muted-foreground">The scanner sends updates over an encrypted connection using the private engine key. Its public address only answers "ok"; it exposes no trades, keys or controls.</p></section>
     <section className="border-t border-border pt-5"><h2 className="mb-2 font-mono text-sm">CONTRACT AVAILABILITY</h2><p className="text-sm text-muted-foreground">The last Binance availability check found 20 of your 21 contracts trading. WILDUSDT was unavailable and remains in the configured list without substituted data.</p></section>
   </div>;
