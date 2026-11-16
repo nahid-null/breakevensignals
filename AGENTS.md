@@ -45,9 +45,11 @@ use the editor.
 - Worker telemetry is outbound through the authenticated engine API; the public /healthz returns only liveness, and detailed health requires the separate health key, never database keys or write controls.
 - Derive public cloud connectivity from production hosted identity plus a fresh server-received heartbeat; uptime is last reported and scan time is the slowest durable configured feed, never a poll timestamp.
 - Count successful per-symbol closed-candle commits atomically in market state, excluding warmup; never count browser polls or duplicate revisions as scans.
-- Derive RUNNING and the next expected candle close only from fresh heartbeats, connected feeds and recent durable scan progress so a heartbeat cannot hide a stalled scanner.
+- Derive RUNNING and the next expected candle close from fresh heartbeats, validated per-feed messages and closed/live-committed candles for every available symbol; socket-open or REST recovery alone cannot certify live scanning.
 - Keep the browser setup reference as a public/private discriminated list with no private value fields; copy only public values or key names because the dashboard is public and must never expose credentials.
 - Acquire the owning lease and report heartbeat before market startup; keep health alive but halt market traffic on typed 451/418 errors until restart, because provider restrictions must not be hidden by a startup crash or bypassed by retry routing.
 - Share stable market-access error codes between worker and health projection using existing ERROR telemetry, because distinct public restriction status must remain compatible with the deployed heartbeat schema.
 - Enforce the recorded restriction at commit, price-update and signal-delivery boundaries as well as the worker; exempt explicitly labelled test deliveries, because concurrent or manual paths must not bypass the pause or alter sent history.
 - Use shared per-feed freshness and saved-state notices across market screens, because a healthy global heartbeat cannot make an individual stale price or recorded trade live.
+- Use Binance's documented same-host market candle path and the installed ws implementation in the separate Bun worker; the native substitution hides rejection HTTP status, so preserve typed restriction handling rather than guessing.
+- Keep bounded validated feed telemetry in owning heartbeats; show oldest saved recovery progress separately from a completed live scan, because startup commits are genuine but not live-message evidence.
