@@ -1,5 +1,12 @@
 # Independent Crypto Signal Terminal
 
+## Deployed Railway monitoring investigation (prompt-8, 2026-11-16)
+- [x] Observe actual hosted heartbeat (20-second progress) and serial durable recovery: 3632 commits across four symbols by 09:06:49; published UI correctly shows CLOUD ONLINE / WEBSOCKET CONNECTED / SCANNER RECOVERING and stale feeds. No current complete scan or recorded 451; REST label expires during recovery because successful history does not refresh REST health.
+- [x] Verify one explicitly labelled non-trading Telegram TEST via published Settings: message 11 SENT and read back; settings unchanged, no fixture signals. Bun 1.3.10 isolated messages/reconnect pass but unsupported unexpected-response loses HTTP rejection status. Real sandbox Bun/Node probes both connect with no frames during observation, not Railway proof. 37 targeted tests pass; build OK; app/worker unchanged.
+- [x] Record evidence, monitoring limitations and the next user check in chat.md.
+- [ ] Inspect the running Railway container's private market-message telemetry and deployment revision — needs access to Railway or a redacted user-provided result; do not expose keys.
+- [ ] Verify completed catch-up followed by fresh per-symbol live prices/candles and genuine breakeven delivery — needs the deployed worker to complete recovery and actual live results; do not fabricate signals or restart it as a substitute.
+
 ## Restriction flow sweep (2026-11-16)
 - [x] Read all seven screens, shared header/monitor/setup/details, scanner startup/history/recovery/live/reconnect/price/delivery/shutdown paths, alert send/retry/test functions, health reads and all current database functions.
 - [x] Fix abort handling and stale-socket events, per-symbol saved-state labels, active ledger/history notices, setup ERROR and manual/background delivery pause; additive 0008 guards market writes and signal claims with existing lease serialization. Sent/closed records, permissions, preferences and calculations unchanged.
@@ -20,14 +27,14 @@
 - [x] Remove PC connection from website and package; replace with cloud scanner status.
 - [x] Run scanner as a Render free web service with health check and self keep-awake; tested locally (65 tests, real Binance connect, /healthz ok, private health 401).
 - [x] Defer Render account/blueprint creation — superseded by the user's reported Railway Docker deployment; no account or subscription activated here.
-- [ ] Republish website so the live site has the current engine key — user decision.
+- [x] Verify republication and matching-key hosted communication — published 2026-11-16 08:52:05 UTC; actual Railway heartbeat and durable recovery accepted by the published engine API in prompt-8 investigation.
 
 ## Current zero-cost reliability request
 - [x] Inspect the reported mobile-hook error and actual scanner/Telegram state without modifying strategies — hook correctly imports React, quoted text absent, no matching error; live engine STOPPED.
 - [x] Improve truthful scan status, next candle schedule, durable scan counts and delivery timestamps; preserve layout and recovery protections.
 - [x] Verify isolated startup/repeated scanning/reconnect/restart/deduplication, dashboard refresh and one labelled Telegram test — 64 tests pass; real 20-feed Binance recovery, 31 durable candle scans and reopened counters/checkpoints; safe TEST ID 10 SENT.
 - [x] Explain browser/PC shutdown limits and zero-cost deployment blockers without activating infrastructure — current web hosting does not run the separate continuous worker; an eligible free always-on host is still required.
-- [ ] Verify deployed genuine signal/breakeven Telegram delivery and unattended uptime — needs lawful Binance access from the reported Railway deployment, updated website/worker with matching credentials, independent certification and real hosted results; production dashboard still STOPPED.
+- [ ] Verify deployed genuine signal/breakeven Telegram delivery and unattended uptime — matching-key hosted recovery and standalone TEST delivery verified; actual live all-feed scanning, lawful access, independent certification and genuine signal delivery remain unverified.
 
 - [x] Inspect current application, full LONG/SHORT Pine scripts, database and preferences.
 - [x] Check real Binance Futures availability for the existing 21 symbols.
@@ -40,7 +47,7 @@
 - [x] Add candidate Pine-language comparison using exact original uploads and 1500 identical real NEARUSDT candles; 44 tests pass, no production trading-rule changes.
 - [x] Correct comparison interpreter EMA/MACD startup, storage precision, extrema startup and float-comparison semantics; both intact originals match native results across 4500 real NEAR/LINK/WIF candles.
 - [ ] Certify exact TradingView outputs before deployment — local interpreter agreement passes, but independent TradingView exports on identical candles/start/inputs are still unavailable.
-- [ ] Verify permanent free cloud monitoring with the browser closed — needs evidence that the reported Railway deployment meets the $0 budget, lawful market access, independent parity evidence, matching updated website/worker credentials and unattended results. The user rejected PC hosting on 2026-11-16; no hosting settings changed here.
+- [ ] Verify permanent free cloud monitoring with the browser closed — actual hosted heartbeat/recovery and matching credentials verified in prompt-8; still needs zero-cost eligibility, lawful access, independent parity certification, all-feed live data and unattended results. The user rejected PC hosting; no hosting settings changed here.
 - [x] Update chat.md and document verified results and remaining blockers.
 - [x] Finish uploaded-requirements verification after key setup: 20 real saved candle streams, restart recovery, four genuine recovered trades read back, stopped temporary-test status, 40 passing tests and browser checks.
 - [x] Diagnose offline report and verify Telegram separately — engine STOPPED since 14:29 UTC, website never published, labelled TEST delivered and read back SENT; no matching src/main.tsx / React.queryClient error found.
