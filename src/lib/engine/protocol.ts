@@ -13,11 +13,13 @@ const timeframe = z.object({ minutes: z.union([z.literal(15), z.literal(5), z.li
   ema20: finite.nullable(), ema50: finite.nullable(), emaHistory: z.array(z.tuple([finite, finite])).max(6),
   tr: average, plusDM: average, minusDM: average, adx: average, plusDI: finite.nullable(), minusDI: finite.nullable(),
   window: z.array(z.object({ high: finite.positive(), low: finite.positive() })).max(7),
-  pivotHighs: z.array(finite).max(2), pivotLows: z.array(finite).max(2), trend: trendValue });
+  pivotHighs: z.array(finite).max(2), pivotLows: z.array(finite).max(2), trend: trendValue,
+  bullScore: finite.nullable().optional(), bearScore: finite.nullable().optional(), adxValue: finite.nullable().optional() });
 export const mtfSchema = z.object({ m15: timeframe, m5: timeframe, m1: timeframe });
 const trade = z.object({ id: z.string().min(3).max(200), direction: z.enum(['LONG','SHORT']),
   entry: finite.positive(), stop: finite.positive(), originalStop: finite.positive(), target: finite.positive(),
-  risk: finite.positive(), entryTime: candleTime, breakeven: z.boolean(), breakevenTime: candleTime.nullable(), entryTrend: mtfSnapshot.optional() });
+  risk: finite.positive(), entryTime: candleTime, breakeven: z.boolean(), breakevenTime: candleTime.nullable(), entryTrend: mtfSnapshot.optional(),
+  entryStrength: z.enum(['STRONG','NORMAL']).optional() });
 const side = z.object({ trade: trade.nullable(), lastExitTime: candleTime.nullable(), performance: z.object({
   total: z.number().int().nonnegative(), wins: z.number().int().nonnegative(), losses: z.number().int().nonnegative(),
   positiveNetR: finite, negativeNetR: finite, grossProfitR: finite, grossLossR: finite, netR: finite,
@@ -40,6 +42,7 @@ export const signalSchema = z.object({
   exit_price: finite.positive().optional(), fee_rate_percent: finite.min(0).max(5),
   timestamp: z.string().datetime(), net_result_r: finite.optional(),
   trend_aligned: z.boolean().optional(), mtf_trend: mtfSnapshot.optional(),
+  signal_strength: z.enum(['STRONG','NORMAL']).optional(),
 }).refine((e) => e.indicator === INDICATORS[e.direction] && e.event_id === `${e.trade_id}-${e.event}` &&
   (!['stop_loss_hit','take_profit_hit'].includes(e.event) || (e.exit_price !== undefined && e.net_result_r !== undefined)), 'Invalid signal identity or exit result');
 

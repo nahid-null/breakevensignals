@@ -1,5 +1,5 @@
 import type { Direction, EventType, Symbol } from "../config";
-import type { MtfState, MtfSnapshot } from "./mtf-trend";
+import type { MtfState, MtfSnapshot, SignalStrength } from "./mtf-trend";
 
 export const MINUTE = 60_000;
 export const ENGINE_VERSION = 1;
@@ -18,6 +18,8 @@ export interface Trade {
   target: number; risk: number; entryTime: number; breakeven: boolean; breakevenTime: number | null;
   /** 15M/5M/1M trend that approved the entry; absent for trades opened before the trend filter. */
   entryTrend?: MtfSnapshot;
+  /** Simulator leverage tier decided at entry from the trend scores and ADX. */
+  entryStrength?: SignalStrength;
 }
 export interface Performance {
   total: number; wins: number; losses: number; positiveNetR: number; negativeNetR: number;
@@ -38,7 +40,7 @@ export interface Signal {
   indicator: string; timeframe: string; entry_price: number; stop_loss: number;
   take_profit: number; fee_rate_percent: number; timestamp: string;
   exit_price?: number; net_result_r?: number;
-  trend_aligned?: boolean; mtf_trend?: MtfSnapshot;
+  trend_aligned?: boolean; mtf_trend?: MtfSnapshot; signal_strength?: SignalStrength;
 }
 export interface Analysis {
   ema9: number; ema21: number; ema200: number; rsi: number | null; atr: number | null;
