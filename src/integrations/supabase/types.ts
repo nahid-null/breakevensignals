@@ -395,8 +395,12 @@ export type Database = {
           last_candle_at: string | null
           liquidity: string | null
           note: string | null
+          note_long: string | null
+          note_short: string | null
           price: number | null
           quote_volume_24h: number | null
+          score_long: number | null
+          score_short: number | null
           spread_bps: number | null
           status: string
           symbol: string
@@ -412,8 +416,12 @@ export type Database = {
           last_candle_at?: string | null
           liquidity?: string | null
           note?: string | null
+          note_long?: string | null
+          note_short?: string | null
           price?: number | null
           quote_volume_24h?: number | null
+          score_long?: number | null
+          score_short?: number | null
           spread_bps?: number | null
           status?: string
           symbol: string
@@ -429,8 +437,12 @@ export type Database = {
           last_candle_at?: string | null
           liquidity?: string | null
           note?: string | null
+          note_long?: string | null
+          note_short?: string | null
           price?: number | null
           quote_volume_24h?: number | null
+          score_long?: number | null
+          score_short?: number | null
           spread_bps?: number | null
           status?: string
           symbol?: string
@@ -445,10 +457,13 @@ export type Database = {
           band: string
           closed_at: string | null
           direction: string
+          entry_fee: number
           entry_price: number
           exit_price: number | null
           exit_reason: string | null
           fees: number
+          fill_status: string
+          funding: number
           id: string
           initial_stop: number
           last_candle_time: number
@@ -458,17 +473,21 @@ export type Database = {
           liquidity: string | null
           margin: number
           mode: string
+          net_roi_pct: number | null
           notional: number
           opened_at: string
           quantity: number
           quantity_open: number
           realized_pnl: number
+          requested_quantity: number | null
           risk_usdt: number
           score: number
           setup: string
           status: string
           stop_loss: number
           symbol: string
+          target_roi_pct: number | null
+          tick_size: number | null
           tp1: number
           tp1_done: boolean
           tp2: number
@@ -480,10 +499,13 @@ export type Database = {
           band: string
           closed_at?: string | null
           direction: string
+          entry_fee?: number
           entry_price: number
           exit_price?: number | null
           exit_reason?: string | null
           fees?: number
+          fill_status?: string
+          funding?: number
           id: string
           initial_stop: number
           last_candle_time: number
@@ -493,17 +515,21 @@ export type Database = {
           liquidity?: string | null
           margin: number
           mode?: string
+          net_roi_pct?: number | null
           notional: number
           opened_at: string
           quantity: number
           quantity_open: number
           realized_pnl?: number
+          requested_quantity?: number | null
           risk_usdt: number
           score: number
           setup: string
           status?: string
           stop_loss: number
           symbol: string
+          target_roi_pct?: number | null
+          tick_size?: number | null
           tp1: number
           tp1_done?: boolean
           tp2: number
@@ -515,10 +541,13 @@ export type Database = {
           band?: string
           closed_at?: string | null
           direction?: string
+          entry_fee?: number
           entry_price?: number
           exit_price?: number | null
           exit_reason?: string | null
           fees?: number
+          fill_status?: string
+          funding?: number
           id?: string
           initial_stop?: number
           last_candle_time?: number
@@ -528,23 +557,93 @@ export type Database = {
           liquidity?: string | null
           margin?: number
           mode?: string
+          net_roi_pct?: number | null
           notional?: number
           opened_at?: string
           quantity?: number
           quantity_open?: number
           realized_pnl?: number
+          requested_quantity?: number | null
           risk_usdt?: number
           score?: number
           setup?: string
           status?: string
           stop_loss?: number
           symbol?: string
+          target_roi_pct?: number | null
+          tick_size?: number | null
           tp1?: number
           tp1_done?: boolean
           tp2?: number
           unrealized_pnl?: number
           updated_at?: string
           version?: number
+        }
+        Relationships: []
+      }
+      robot_scanner: {
+        Row: {
+          counting_since: string
+          evaluated: number
+          exec_failures: Json
+          id: number
+          last_candle_at: string | null
+          live_feeds: number
+          long_candidates: number
+          monitored: number
+          orders_filled: number
+          orders_partial: number
+          orders_rejected: number
+          orders_submitted: number
+          qualified: number
+          queue: Json
+          reasons: Json
+          rejected: number
+          setups: Json
+          short_candidates: number
+          updated_at: string
+        }
+        Insert: {
+          counting_since?: string
+          evaluated?: number
+          exec_failures?: Json
+          id: number
+          last_candle_at?: string | null
+          live_feeds?: number
+          long_candidates?: number
+          monitored?: number
+          orders_filled?: number
+          orders_partial?: number
+          orders_rejected?: number
+          orders_submitted?: number
+          qualified?: number
+          queue?: Json
+          reasons?: Json
+          rejected?: number
+          setups?: Json
+          short_candidates?: number
+          updated_at?: string
+        }
+        Update: {
+          counting_since?: string
+          evaluated?: number
+          exec_failures?: Json
+          id?: number
+          last_candle_at?: string | null
+          live_feeds?: number
+          long_candidates?: number
+          monitored?: number
+          orders_filled?: number
+          orders_partial?: number
+          orders_rejected?: number
+          orders_submitted?: number
+          qualified?: number
+          queue?: Json
+          reasons?: Json
+          rejected?: number
+          setups?: Json
+          short_candidates?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -558,6 +657,7 @@ export type Database = {
           high_score: number
           id: number
           loss_streak_cooldown: number
+          maker_fee_pct: number
           max_allocation_pct: number
           max_concurrent: number
           max_hold_minutes: number
@@ -579,6 +679,7 @@ export type Database = {
           high_score?: number
           id: number
           loss_streak_cooldown?: number
+          maker_fee_pct?: number
           max_allocation_pct?: number
           max_concurrent?: number
           max_hold_minutes?: number
@@ -600,6 +701,7 @@ export type Database = {
           high_score?: number
           id?: number
           loss_streak_cooldown?: number
+          maker_fee_pct?: number
           max_allocation_pct?: number
           max_concurrent?: number
           max_hold_minutes?: number
@@ -992,6 +1094,7 @@ export type Database = {
         Args: { p: Json; tg_message: string }
         Returns: Json
       }
+      robot_add_counts: { Args: { a: Json; b: Json }; Returns: Json }
       robot_commit: { Args: { p: Json }; Returns: Json }
       robot_correct_initial_balance: {
         Args: { p_start: number }
