@@ -26,6 +26,10 @@ const tone: Record<string, string> = {
   stale: "text-waiting border-waiting/40 bg-waiting/10",
   PENDING: "text-breakeven border-breakeven/40 bg-breakeven/10",
   "MANUAL VERIFICATION REQUIRED": "text-breakeven border-breakeven/40 bg-breakeven/10",
+  'EMERGENCY STOP': 'text-short border-short/40 bg-short/10',
+  PAPER: 'text-active border-active/40 bg-active/10',
+  TAKEN: 'text-long border-long/40 bg-long/10',
+  OPEN: 'text-active border-active/40 bg-active/10',
   LONG: "text-long border-long/40 bg-long/10",
   SHORT: "text-short border-short/40 bg-short/10",
 };
