@@ -1,8 +1,10 @@
 # Independent Crypto Signal Terminal
 
 ## Railway Binance access investigation (2026-11-16)
-- [ ] Inspect public Futures endpoints, startup failures, hosting configuration and dashboard status; check official regional/access guidance and safe data alternatives.
-- [ ] Propose changes and a real Railway verification procedure without modifying production code — implementation requires the user's approval; Railway logs, chosen region and outbound access are not directly available here.
+- [x] Inspect public Futures endpoints, startup failures, hosting configuration and dashboard status: sandbox requests return 200; isolated 451 fails before heartbeat; 13 targeted tests pass; preview/published retain STOPPED status and four genuine SHORT positions. Official current regional permission remains unverified; official archives are historical-only and live provider candidates exceed the $0 budget.
+- [x] Prepare a safe proposal and read-only Railway verification procedure; no production code, hosting settings, strategy, history or Telegram changes.
+- [ ] Implement restriction-aware health/logging and Railway-compatible presentation — waits for user's approval of the plan.
+- [ ] Verify permitted market access and genuine deployed scanning — needs Railway's chosen region/public 451 response, Binance eligibility confirmation and access to real hosted results; no verified free equivalent live replacement.
 
 ## Safe setup reference request (2026-11-16)
 - [x] Add all required Render setup names, safe public values and copy buttons; private values never appear on the public website, and forgotten keys use the secure replacement form.
