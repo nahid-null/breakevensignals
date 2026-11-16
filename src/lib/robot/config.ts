@@ -1,4 +1,5 @@
 /** Paper-trading robot universe and default risk settings. Pure module, safe for browser and worker. */
+export const DEFAULT_PAPER_BALANCE = 10;
 export const ROBOT_SYMBOLS = [
   'NEARUSDT', 'LINKUSDT', 'SUIUSDT', 'INJUSDT', 'TAOUSDT', 'UNIUSDT', 'ONDOUSDT', 'BOMEUSDT', 'BCHUSDT', 'BERAUSDT',
   'ZROUSDT', 'POLUSDT', 'LTCUSDT', 'XRPUSDT', 'FILUSDT', 'TIAUSDT', 'WIFUSDT', 'ENAUSDT', 'RENDERUSDT', 'HBARUSDT',

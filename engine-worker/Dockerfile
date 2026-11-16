@@ -5,4 +5,5 @@ RUN bun install --frozen-lockfile
 COPY engine-worker ./engine-worker
 COPY src/lib/config.ts ./src/lib/config.ts
 COPY src/lib/engine ./src/lib/engine
+COPY src/lib/robot ./src/lib/robot
 CMD ["bun", "run", "engine-worker/main.ts"]

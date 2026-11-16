@@ -6,7 +6,7 @@ import { Bot, OctagonX, Play, Plus } from 'lucide-react';
 import { fmtTime } from '@/lib/data';
 import { dailyPnl, robotStats, robotStatus, useRobotAccount, useRobotMarkets, useRobotPositions, useRobotSettings, useRobotSignals } from '@/lib/robot/data';
 import { robotDeposit, robotResume, robotStopAll } from '@/lib/robot/robot.functions';
-import { ROBOT_SYMBOLS } from '@/lib/robot/config';
+import { DEFAULT_PAPER_BALANCE, ROBOT_SYMBOLS } from '@/lib/robot/config';
 import { StatusBadge } from '@/components/terminal/StatusBadge';
 import { EXIT, MetricsTable, SETUP, Tile, pct, px, signed, tone, usd } from '@/components/robot/ui';
 import { RobotSettingsForm } from '@/components/robot/RobotSettingsForm';
@@ -35,7 +35,7 @@ function RobotPage() {
   const balance = Number(account.data?.balance ?? 0);
   const unrealized = open.reduce((a, p) => a + Number(p.unrealized_pnl), 0);
   const margin = open.reduce((a, p) => a + Number(p.margin), 0);
-  const stats = robotStats(list, Number(account.data?.start_balance ?? 1000));
+  const stats = robotStats(list, Number(account.data?.start_balance ?? DEFAULT_PAPER_BALANCE));
   const days = dailyPnl(list);
   const today = days.find((d) => d.date === new Date().toISOString().slice(0, 10))?.pnl ?? 0;
   const status = robotStatus(markets.data ?? [], settings.data);
@@ -84,7 +84,7 @@ function RobotPage() {
       </div>
 
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        <Tile label="Main balance" value={usd(balance)} hint={`Added in total ${usd(account.data?.total_deposited)}`} />
+        <Tile label="Main balance" value={usd(balance)} hint={`Start ${usd(account.data?.start_balance ?? DEFAULT_PAPER_BALANCE)} · added ${usd(Number(account.data?.total_deposited ?? DEFAULT_PAPER_BALANCE) - Number(account.data?.start_balance ?? DEFAULT_PAPER_BALANCE))}`} />
         <Tile label="Equity" value={usd(balance + unrealized)} hint="Balance + open P&L" />
         <Tile label="Margin in use" value={usd(margin)} hint={`${pct(balance > 0 ? (margin / balance) * 100 : 0)} of balance · cap ${pct(Number(settings.data?.max_allocation_pct ?? 70), 0)}`} />
         <Tile label="Open P&L" value={signed(unrealized)} tone={tone(unrealized)} />
