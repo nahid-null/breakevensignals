@@ -45,9 +45,10 @@ function pivot(window: { high: number; low: number }[], kind: 'high' | 'low'): n
 /** f_trend() evaluated on one closed bar of the timeframe. Mutates the timeframe state. */
 export function closeBar(s: TimeframeTrend, c: Candle): TrendValue {
   const prev = s.previous;
-  s.ema20 = ema(s.ema20, c.close, T.emaFastLen);
-  s.ema50 = ema(s.ema50, c.close, T.emaSlowLen);
-  s.emaHistory.push([s.ema20, s.ema50]);
+  const e20 = ema(s.ema20, c.close, T.emaFastLen);
+  const e50 = ema(s.ema50, c.close, T.emaSlowLen);
+  s.ema20 = e20; s.ema50 = e50;
+  s.emaHistory.push([e20, e50]);
   if (s.emaHistory.length > T.slopeLookback + 1) s.emaHistory.shift();
   // ta.dmi: ta.change and ta.tr are na on the first bar, so smoothing starts on the second bar.
   if (prev) {
@@ -70,7 +71,6 @@ export function closeBar(s: TimeframeTrend, c: Candle): TrendValue {
   if (ph !== null) { s.pivotHighs.push(ph); if (s.pivotHighs.length > 2) s.pivotHighs.shift(); }
   if (pl !== null) { s.pivotLows.push(pl); if (s.pivotLows.length > 2) s.pivotLows.shift(); }
 
-  const e20 = s.ema20; const e50 = s.ema50;
   const ago = s.emaHistory.length > T.slopeLookback ? s.emaHistory[0]! : null;
   const adx = s.adx.value === null ? null : 100 * s.adx.value;
   const strong = adx !== null && ge(adx, T.minADX);

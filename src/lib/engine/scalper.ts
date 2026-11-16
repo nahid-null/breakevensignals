@@ -1,6 +1,7 @@
 import { INDICATORS, type Direction } from "../config";
 import { ema, rma, relativeStrength, trueRange, confirmedPivot } from "./calculations";
 import { pineGt as gt, pineLt as lt, pineGe as ge, pineLe as le } from './pine-numbers';
+import { alignment, snapshot, updateMtf } from "./mtf-trend";
 import { MINUTE, PARAMETERS as P, validateCandle, type EngineState, type Candle, type Trade, type Signal, type SideState, type Analysis } from "./model";
 
 export function calculate(state: EngineState, c: Candle): Analysis {
@@ -63,7 +64,8 @@ function signal(state: EngineState, trade: Trade, event: Signal["event"], time: 
     indicator: INDICATORS[trade.direction], timeframe: "1", event, entry_price: trade.entry,
     stop_loss: trade.stop, take_profit: trade.target, fee_rate_percent: P.feePercent,
     timestamp: new Date(time + MINUTE).toISOString(), ...(exit === undefined ? {} : { exit_price: exit }),
-    ...(net === undefined ? {} : { net_result_r: net }) };
+    ...(net === undefined ? {} : { net_result_r: net }),
+    ...(trade.entryTrend ? { trend_aligned: true, mtf_trend: trade.entryTrend } : {}) };
 }
 export function manageTrade(state: EngineState, side: SideState, c: Candle): Signal | null {
   const t = side.trade;
@@ -102,6 +104,9 @@ export function processCandle(state: EngineState, c: Candle, allowEntries = true
   validateCandle(c);
   if (state.lastTime !== null && c.time <= state.lastTime) return { signals: [], analysis: null, duplicate: true };
   if (state.lastTime !== null && c.time !== state.lastTime + MINUTE) throw new Error("Missing candles: recovery required before processing");
+  // Previous completed 15M/5M/1M bars, as read by request.security(f_trend()[1]) on this 1M bar.
+  const trend = state.mtf ? snapshot(state.mtf) : null;
+  const aligned = trend ? alignment(trend) : null;
   const analysis = calculate(state, c);
   const signals: Signal[] = [];
   for (const direction of ["LONG", "SHORT"] as Direction[]) {
@@ -110,15 +115,18 @@ export function processCandle(state: EngineState, c: Candle, allowEntries = true
     if (managed) signals.push(managed);
     const stop = direction === "LONG" ? analysis.longStop : analysis.shortStop;
     const setup = direction === "LONG" ? analysis.longSetup : analysis.shortSetup;
-    if (allowEntries && !side.trade && cooldownFinished(side.lastExitTime, c.time) && setup && stop !== null) {
+    // Trend filter: LONG only when all three timeframes are BULLISH, SHORT only when all are BEARISH.
+    const trendAllows = aligned === null || aligned === (direction === "LONG" ? 1 : -1);
+    if (allowEntries && trendAllows && !side.trade && cooldownFinished(side.lastExitTime, c.time) && setup && stop !== null) {
       const risk = Math.abs(c.close - stop);
       const trade: Trade = { id: `native-${state.symbol}-${direction}-${c.time}`, direction, entry: c.close,
         stop, originalStop: stop, target: c.close + (direction === "LONG" ? 1 : -1) * risk * P.rrMultiplier,
-        risk, entryTime: c.time, breakeven: false, breakevenTime: null };
+        risk, entryTime: c.time, breakeven: false, breakevenTime: null, ...(trend ? { entryTrend: trend } : {}) };
       side.trade = trade;
       signals.push(signal(state, trade, "entry_confirmed", c.time));
     }
   }
+  if (state.mtf) updateMtf(state.mtf, c);
   state.lastTime = c.time; state.count += 1;
   return { signals, analysis, duplicate: false };
 }
