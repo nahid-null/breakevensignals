@@ -1,8 +1,8 @@
 # Independent Crypto Signal Terminal
 
 ## Restriction flow sweep (2026-11-16)
-- [ ] Read every screen, worker path, notification entry point and database function for paused-market safety and truthful saved-state display.
-- [ ] Fix uncovered forward behavior without changing settled history, permissions, preferences or market calculations.
+- [x] Read all seven screens, shared header/monitor/setup/details, scanner startup/history/recovery/live/reconnect/price/delivery/shutdown paths, alert send/retry/test functions, health reads and all current database functions.
+- [x] Fix abort handling and stale-socket events, per-symbol saved-state labels, active ledger/history notices, setup ERROR and manual/background delivery pause; additive 0008 guards market writes and signal claims with existing lease serialization. Sent/closed records, permissions, preferences and calculations unchanged.
 - [ ] Run isolated regressions and browser flows; update chat.md with coverage and remaining hosted-access blockers.
 
 ## Railway Binance access investigation (2026-11-16)
