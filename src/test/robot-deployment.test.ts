@@ -7,7 +7,7 @@ import { sourceFingerprint } from '../../engine-worker/release-fingerprint';
 import expected from '@/lib/robot/expected-release.json';
 
 const hash='a'.repeat(64); const at=Date.parse('2026-11-16T18:00:00Z');
-const runtime={source_hash:hash,strategy:'LIQUIDITY_SWEEP_V1',reported_at:new Date(at).toISOString(),started_at:new Date(at-60000).toISOString(),host_kind:'hosted',runtime_mode:'production',git_commit:null};
+const runtime={source_hash:hash,strategy:'SMC_V1',reported_at:new Date(at).toISOString(),started_at:new Date(at-60000).toISOString(),host_kind:'hosted',runtime_mode:'production',git_commit:null};
 const trade=(source='LIVE_BINANCE')=>({direction:'LONG',status:'CLOSED',setup:'SWEEP_RECLAIM',entry_audit:{strategy:'LIQUIDITY_SWEEP_V1',source},realized_pnl:0.1,closed_at:new Date(at).toISOString(),updated_at:new Date(at).toISOString(),risk_usdt:0.2,mae_roi_pct:-8,mfe_roi_pct:10});
 describe('deployment evidence and 30-trade paper validation',()=>{
   it('requires a fresh matching hosted source fingerprint, not a socket or old trade',()=>{
