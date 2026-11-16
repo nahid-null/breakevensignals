@@ -125,4 +125,5 @@
 - [x] prompt-19: hosted worker verified on LIQUIDITY_SWEEP_V1 (commit 248e709, hash match)
 - [x] prompt-19: public reads closed, server-only reads, 20 findings fixed
 - [ ] prompt-19: user sets Publish to Invite only and republishes
+- [ ] prompt-19: user decides whether to press Resume on the Paper Robot (stopped 18:36 UTC)
 - [ ] prompt-19: 30 genuine new-strategy completed trades — waiting on market (0/30)
