@@ -32,9 +32,8 @@ use the editor.
 - Run market calculations in the separate always-on `engine-worker`, never web requests or browser components, because the web runtime cannot guarantee continuous subscriptions.
 - Keep pure candle calculations in `src/lib/engine`; persist checkpoints, events and notification outbox atomically through the shared-secret engine API to prevent replay and concurrency drift.
 - Tag warmup adoption and recovery separately, suppress their notifications, and keep replayed closed trades out of live history so historical events cannot masquerade as live execution.
-- Keep public dashboard tables anon-readable and checkpoints service-only; all writes go through server code, and retained legacy receipts must never receive new signal traffic.
+- Browser roles get no table or function access; dashboard reads go through fixed read-only server functions in `src/lib/dashboard.functions.ts` and all writes through server code, because the site is private and the data must not be reachable with the browser key; retained legacy receipts must never receive new signal traffic.
 - Telegram goes through the connector gateway (`src/lib/telegram.server.ts`); chat target comes from the `TELEGRAM_CHAT_ID` secret.
-- Use a publishable, no-session server client for public health reads; reserve the admin client for privileged writes so public read paths remain covered by database access policies.
 - Test transaction behavior against migrations in isolated PostgreSQL, never production test trades, because persistent history must remain genuine.
 - Persist service runtime identity and release only the owning lease on shutdown so temporary checks cannot be mistaken for production or block restarts.
 - Derive displayed trade trigger levels from original risk and signal timestamps from entry/breakeven/exit times so replay processing time cannot masquerade as detection time.
