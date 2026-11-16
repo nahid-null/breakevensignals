@@ -47,6 +47,9 @@ export const robotSaveSettings = createServerFn({ method: 'POST' })
   .inputValidator((d: unknown) => robotSettingsSchema.parse(d))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+    const open = await supabaseAdmin.from('robot_positions').select('symbol').eq('status', 'OPEN');
+    if (open.error) throw new Error('Could not check open paper positions');
+    if (open.data?.some((p) => !data.symbols.includes(p.symbol))) throw new Error('Keep every coin with an open paper position in the monitored list');
     const { error } = await supabaseAdmin.from('robot_settings').update({ ...data, updated_at: new Date().toISOString() }).eq('id', 1);
     if (error) throw new Error(error.message);
     return { ok: true };

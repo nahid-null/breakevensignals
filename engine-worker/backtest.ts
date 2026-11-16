@@ -19,7 +19,7 @@ const s = { ...DEFAULT_SETTINGS, ...JSON.parse(process.env['ROBOT_SETTINGS'] ?? 
 const START = Number(startArg);
 const info = JSON.parse(readFileSync(infoPath, 'utf8')) as { symbols: { symbol: string; filters: Parameters<typeof rulesFromFilters>[0] }[] };
 
-const core = new RobotCore(s);
+const core = new RobotCore(s, process.env['BT_STRATEGY'] === 'legacy');
 const data = new Map<string, number[][]>(); const cursor = new Map<string, number>();
 for (const sym of ROBOT_SYMBOLS) {
   const p = `${dir}/${sym}.json`; if (!existsSync(p)) continue;
@@ -30,13 +30,14 @@ for (const sym of ROBOT_SYMBOLS) {
 let start = Infinity; let end = -Infinity;
 for (const r of data.values()) { start = Math.min(start, r[0]![0]!); end = Math.max(end, r.at(-1)![0]!); }
 
-let balance = START; const closed: (ClosedTrade & { symbol: string; setup: string; score: number; leverage: number; roi: number; holdMin: number; margin: number })[] = [];
+let balance = START; const closed: (ClosedTrade & { symbol: string; setup: string; score: number; leverage: number; roi: number; holdMin: number; margin: number; mae: number | null; mfe: number | null; regime: string })[] = [];
+const regimes = new Map<string, string>(); let peakEquity = START; let markedDrawdownPct = 0;
 const pending = new Map<string, Queued>(); let maxAlloc = 0; let maxOpen = 0; const levs = new Set<number>(); let reopenedAfterClose = 0; let lastCloseAt = -1;
 const fillsBy = { full: 0, partial: 0 };
 const track = (p: Position) => {
   closed.push({ symbol: p.symbol, direction: p.direction, netPnl: p.realized, exitReason: p.exitReason!, closedAt: p.closedAt!, riskUsdt: p.riskUsdt,
     setup: p.setup, score: p.score, leverage: p.leverage, roi: (p.realized / ((p.qty * p.entry) / p.leverage)) * 100, holdMin: (p.closedAt! - p.openedAt) / MINUTE,
-    margin: (p.qty * p.entry) / p.leverage });
+    margin: (p.qty * p.entry) / p.leverage, mae: p.maeRoi ?? null, mfe: p.mfeRoi ?? null, regime: regimes.get(p.id) ?? 'UNKNOWN' });
   lastCloseAt = p.closedAt!;
 };
 end = Math.min(end, TO);
@@ -50,8 +51,11 @@ for (let t = start; t <= end; t += MINUTE) {
     if (q) {
       pending.delete(sym);
       const tick = core.rules.get(sym)!.tickSize;
-      const res = core.execute(q, { bids: [[bar.open - tick, 1e12]], asks: [[bar.open + tick, 1e12]] }, balance, t - 1);
+      const res = core.execute(q, { bids: [[bar.open - tick, 1e12]], asks: [[bar.open + tick, 1e12]], receivedAt: t, source: 'CANDLE_REPLAY' }, balance, t);
       if (!('rejected' in res)) {
+        res.position.lastCandleTime = t - MINUTE; // Replay enters at bar open, before this whole bar is observed.
+        const state = core.states.get(sym); const atr = state?.m5.atr.value ?? 0;
+        regimes.set(res.position.id, atr / res.position.entry > 0.008 ? 'HIGH_VOLATILITY' : state?.m15.trend(false) === 0 ? 'SIDEWAYS' : 'TRENDING');
         core.confirmOpen(res, q.c, true); balance += res.fill.pnl; levs.add(res.position.leverage); fillsBy[res.position.fillStatus === 'PARTIAL' ? 'partial' : 'full']++;
         if (lastCloseAt >= 0 && t - lastCloseAt <= 5 * MINUTE) reopenedAfterClose++;
         const used = exposure(core.open).reduce((a, p) => a + p.margin, 0); maxAlloc = Math.max(maxAlloc, (used / balance) * 100);
@@ -70,6 +74,9 @@ for (let t = start; t <= end; t += MINUTE) {
     pending.set(q.c.symbol, q); core.queue.delete(`${q.c.symbol}|${q.c.direction}`);
   }
   core.takeSignals(1e9);
+  const equity = balance + core.open.reduce((a,p) => a + p.unrealized,0);
+  peakEquity = Math.max(peakEquity,equity);
+  if (peakEquity > 0) markedDrawdownPct = Math.max(markedDrawdownPct, (peakEquity-equity)/peakEquity*100);
 }
 const counters = core.counters;
 const m = (xs: ClosedTrade[]) => computeMetrics(xs, START);
@@ -82,7 +89,12 @@ const result = {
   symbols: [...data.keys()], start_balance: START, end_balance: balance, settings: s, leverage_used: [...levs], fixed_leverage: PAPER_LEVERAGE,
   assumptions: { entry_fill: 'Next 1m bar open, one-tick spread, plus slippage', exits: 'Stop checked before target in the same bar; TP is a maker limit at the 10% net ROI price',
     fees: `taker ${s.fee_pct}% / maker ${s.maker_fee_pct}%`, funding: 'not replayed (no history used)', order_book: 'not available historically' },
+  strategy: process.env['BT_STRATEGY'] === 'legacy' ? 'LEGACY_SIX_FAMILIES_CORRECTED_REPLAY' : 'LIQUIDITY_SWEEP_V1',
   all: m(closed), long: m(closed.filter((c) => c.direction === 'LONG')), short: m(closed.filter((c) => c.direction === 'SHORT')),
+  by_regime: by((c) => c.regime), net_balance_roi_pct: (balance / START - 1) * 100, marked_max_drawdown_pct: markedDrawdownPct,
+  excursion_roi: { mean_mae: closed.length ? closed.reduce((a,c) => a+(c.mae??0),0)/closed.length : null, mean_mfe: closed.length ? closed.reduce((a,c) => a+(c.mfe??0),0)/closed.length : null,
+    units: 'Net ROI percentage points on original position margin; closed-candle bounds, stop-first ordering, not historical executable book ticks' },
+  open_positions_at_end: core.open.filter((p)=>p.status==='OPEN').length,
   by_setup: by((c) => c.setup), by_exit: by((c) => c.exitReason), max_allocation_pct: maxAlloc, max_open_positions: maxOpen,
   tp_net_roi: tp.length ? { min: Math.min(...tp.map((c) => c.roi)), max: Math.max(...tp.map((c) => c.roi)), avg: tp.reduce((a, c) => a + c.roi, 0) / tp.length } : null,
   reopened_within_5min_of_a_close: reopenedAfterClose, fills: fillsBy, max_win_streak: streakW, max_loss_streak: streakL,
