@@ -70,7 +70,7 @@ describe('public Binance request failure classification', () => {
     expect(transport).toHaveBeenCalledTimes(1);
   });
   it.each([451, 418])('classifies native WebSocket upgrade rejection HTTP %s on the same host without retries', async (status) => {
-    const transport = vi.fn(async () => new Response('restricted', { status }));
+    const transport = vi.fn(async (_url: string, _init?: RequestInit) => new Response('restricted', { status }));
     vi.stubGlobal('fetch', transport);
     await expect(checkWebSocketAccess('nearusdt@kline_1m', new AbortController().signal)).rejects.toMatchObject({ status, pausesMarket: true });
     expect(transport).toHaveBeenCalledTimes(1);
