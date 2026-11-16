@@ -100,6 +100,7 @@ export class SignalService {
       await this.heartbeat('ERROR');
       if (this.marketPaused) return;
       if (!(error instanceof BinanceRequestError)) throw error;
+      if (error.kind === 'request') return;
       // Only transient provider failures may retry. A 451/418 stays paused until a lawful restart.
       const wait = backoff(this.failures++);
       this.startupTimer = setTimeout(() => {

@@ -2,6 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { CLOUD_SETUP, WORKER_SETUP, setupCopyText } from '@/lib/setup-reference';
 
 describe('safe setup reference', () => {
+  it('keeps Railway cloud identity explicitly configured as hosted', () => {
+    const entry = WORKER_SETUP.find((row) => row.name === 'ENGINE_HOST_KIND');
+    if (!entry) throw new Error('Missing host identity');
+    expect(setupCopyText(entry, 'value')).toBe('hosted');
+  });
   it('copies the actual published website address for Railway', () => {
     const entry = WORKER_SETUP.find((row) => row.name === 'ENGINE_APP_URL');
     expect(entry).toBeDefined();
