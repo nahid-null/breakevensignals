@@ -1,5 +1,10 @@
 # Independent Crypto Signal Terminal
 
+## MTF trend filter (prompt-12, 2026-11-16)
+- [ ] Native 15M/5M/1M trend detector from user's Trend_Identify_Indicator; LONG entries only when all three BULLISH, SHORT only when all three BEARISH; mixed/sideways = no signal.
+- [ ] Telegram labels NORMAL SIGNAL (entry) and BREAKEVEN; only trend-approved trades are sent; entry alerts enabled.
+- [ ] Dashboard shows per-coin 15M/5M/1M trend; tests; tell user to publish website then redeploy Railway.
+
 ## Railway redeployment investigation (prompt-10, 2026-11-16)
 - [x] Read-only check: new hosted owner started 09:33:51, renewed heartbeat/90-second lease through 09:38:11; matching owner, no recorded restriction. Recovery counters increased 12581 to 12890; 12/20 symbols have commits, oldest saved candle remains yesterday, no completed live scan or validated feed telemetry. Existing Telegram has only four TEST/SENT receipts (latest 11); no message sent.
 - [x] Explain expected overlapping/retrying startup lease denial versus unknown replica count; current evidence strongly indicates pre-fix worker despite website published 09:31:47 and database supporting feed evidence. 26 isolated tests pass, published/preview browser health agree, no runtime errors; application/configuration/history unchanged; chat.md updated.
