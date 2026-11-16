@@ -45,6 +45,9 @@ export class SignalService {
     private readonly runtimeMode: 'production' | 'temporary' = 'production',
     private readonly hostKind: 'windows_pc' | 'hosted' | 'temporary' | 'unknown' = 'unknown') {}
 
+  /** Read-only views for the paper robot, which shares this worker's lease and restriction pause. */
+  get leaseOwned() { return this.ownedLease && this.running; }
+  get marketAccessPaused() { return this.marketPaused; }
   private async app<T>(action: string, data: unknown): Promise<T> {
     if (this.marketPaused && ['commit', 'market', 'deliveries'].includes(action)) throw new Error('Market processing is paused');
     const response = await fetch(`${this.appUrl}/api/public/engine`, { method: 'POST',

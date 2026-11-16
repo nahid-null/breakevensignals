@@ -108,9 +108,6 @@ export class RobotService {
     // Keep local positions with unsaved fills; drop any closed elsewhere (for example by STOP ALL).
     this.open = this.open.filter((p) => durable.has(p.id) || this.pending.has(p.id));
     for (const [id, row] of durable) if (!this.open.some((p) => p.id === id)) this.open.push(positionFromRow(row));
-    for (const p of [...this.open]) if (!durable.has(p.id) && this.pending.has(p.id) && num(durable.get(p.id)?.version) !== this.pending.get(p.id)?.expected) {
-      /* resolved on next flush via version conflict */
-    }
     this.account = accountFrom(num(r.account.balance), this.open, r.closed, Date.now());
   }
 
