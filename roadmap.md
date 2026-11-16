@@ -1,5 +1,9 @@
 # Independent Crypto Signal Terminal
 
+## Railway redeployment investigation (prompt-10, 2026-11-16)
+- [ ] Read-only check of current lease owner, fresh heartbeats, deployed feed evidence, live scans and existing Telegram receipts; no worker termination, settings changes or test signals.
+- [ ] Explain lease/log causes, record confirmed versus unverified results and provide only the next Railway inspection step.
+
 ## Current deployed-status diagnosis (prompt-9, 2026-11-16)
 - [x] Investigate without application changes: hosted recovery advances; REST heartbeat expires during successful history; completed-scan timestamp awaits initialization; SYSTEM depends on RUNNING, not cloud/Telegram alone; WILD absent from listed trading contracts.
 - [x] Reproduce silent legacy candle connection against the same Binance host and verify the maintained SDK's market path: Node and Docker Bun 1.3.10 each receive zero frames on /stream and 26 valid frames on /market/stream during paired 18-second checks. This is sandbox evidence, not Railway live-feed certification.
