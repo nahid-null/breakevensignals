@@ -7,7 +7,7 @@ import { processCandle } from '@/lib/engine/scalper';
 import { marketSchema } from '@/lib/engine/protocol';
 
 const sockets = vi.hoisted(() => [] as { emit: (event: string, data?: unknown) => void; terminate: () => void }[]);
-vi.mock('ws', () => ({ default: class {
+vi.mock('../../engine-worker/websocket', () => ({ default: class {
   handlers = new Map<string, ((data?: unknown) => void)[]>();
   constructor() { sockets.push(this); }
   on(event: string, fn: (data?: unknown) => void) { this.handlers.set(event, [...this.handlers.get(event) ?? [], fn]); }
@@ -56,14 +56,15 @@ describe('persistent worker orchestration (simulated transport)', () => {
       const first = sockets[0]; if (!first) throw new Error('Socket not created'); first.emit('open');
       expect(service.snapshot().configured).toBe(21); expect(service.snapshot().available).toBe(1);
       expect(service.snapshot().scanned_symbols).toBe(1);
-      expect(service.snapshot().last_scan_at).toBe(new Date(Date.now()).toISOString());
+      expect(service.snapshot().last_scan_at).toBeNull();
+      expect(service.snapshot().receivedAt).toBe(0);
       expect(service.snapshot().markets.filter((m) => m.status === 'UNAVAILABLE')).toHaveLength(20);
       const previous = service.snapshot().counts[0]?.lastTime; if (previous === undefined || previous === null) throw new Error('Missing checkpoint');
       first.terminate(); expect(service.snapshot().connected).toBe(false);
       await vi.advanceTimersByTimeAsync(2001);
       const second = sockets[1]; if (!second) throw new Error('No reconnect'); second.emit('open');
       vi.setSystemTime(previous + 3 * MINUTE + 5000);
-      const message = JSON.stringify({ data: { s: 'NEARUSDT', k: { t: previous + 2 * MINUTE, o: '100', h: '100.5', l: '99.5', c: '100', v: '10', x: true } } });
+      const message = JSON.stringify({ data: { s: 'NEARUSDT', E: Date.now(), k: { t: previous + 2 * MINUTE, o: '100', h: '100.5', l: '99.5', c: '100', v: '10', x: true } } });
       second.emit('message', message);
       await vi.advanceTimersByTimeAsync(0);
       expect(service.snapshot().counts[0]?.lastTime).toBe(previous + 2 * MINUTE);

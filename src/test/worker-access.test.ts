@@ -3,11 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MINUTE } from '@/lib/engine/model';
 import { engineHealth } from '@/lib/engine/health';
 import { SignalService } from '../../engine-worker/service';
-import { BinanceRequestError, binanceFetch, history } from '../../engine-worker/binance';
+import { BinanceRequestError, binanceFetch, checkWebSocketAccess, history } from '../../engine-worker/binance';
 
 type FakeSocket = { emit: (event: string, data?: unknown, response?: unknown) => void; terminate: () => void };
 const sockets = vi.hoisted(() => [] as FakeSocket[]);
-vi.mock('ws', () => ({ default: class {
+vi.mock('../../engine-worker/websocket', () => ({ default: class {
   handlers = new Map<string, ((...data: unknown[]) => void)[]>();
   constructor() { sockets.push(this); }
   on(event: string, fn: (...data: unknown[]) => void) { this.handlers.set(event, [...this.handlers.get(event) ?? [], fn]); }
@@ -16,7 +16,7 @@ vi.mock('ws', () => ({ default: class {
 } }));
 vi.mock('../../engine-worker/binance', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../engine-worker/binance')>();
-  return { ...actual, delay: async () => {}, binanceFetch: vi.fn(), history: vi.fn(async () => Array.from({ length: 300 }, (_, i) => ({
+  return { ...actual, delay: async () => {}, binanceFetch: vi.fn(), checkWebSocketAccess: vi.fn(async () => {}), history: vi.fn(async () => Array.from({ length: 300 }, (_, i) => ({
     time: Math.floor(Date.now() / MINUTE) * MINUTE - (300 - i) * MINUTE, open: 100, high: 100.5, low: 99.5, close: 100, volume: 10,
   }))) };
 });
@@ -29,6 +29,7 @@ const exchange = { symbols: [{ symbol: 'NEARUSDT', status: 'TRADING', filters: [
 beforeEach(() => {
   vi.useFakeTimers(); vi.setSystemTime(1_800_000_000_000); calls.length = 0;
   vi.mocked(binanceFetch).mockReset().mockResolvedValue(exchange);
+  vi.mocked(checkWebSocketAccess).mockReset().mockResolvedValue(undefined);
   vi.mocked(history).mockClear();
   vi.spyOn(console, 'error').mockImplementation(() => {});
   vi.stubGlobal('fetch', vi.fn(async (_url: string, init: RequestInit) => {
@@ -71,7 +72,7 @@ describe('restriction-aware worker lifecycle (isolated transport)', () => {
     vi.mocked(binanceFetch).mockRejectedValue(new BinanceRequestError('restricted', 451, '/fapi/v1/time', 'Restricted location'));
     const commits = calls.filter((c) => c.action === 'commit').length;
     const time = Date.now();
-    socket.emit('message', JSON.stringify({ data: { s: 'NEARUSDT', k: { t: time, o: '100', h: '100.5', l: '99.5', c: '100', v: '10', x: true } } }));
+    socket.emit('message', JSON.stringify({ data: { s: 'NEARUSDT', E: Date.now(), k: { t: time - MINUTE, o: '100', h: '100.5', l: '99.5', c: '100', v: '10', x: true } } }));
     await vi.advanceTimersByTimeAsync(0);
     expect(service.snapshot()).toMatchObject({ process_alive: true, running: false, market_paused: true, connected: false });
     const callsAtPause = calls.length;
@@ -89,7 +90,7 @@ describe('restriction-aware worker lifecycle (isolated transport)', () => {
     const socket = sockets[0]; if (!socket) throw new Error('Missing socket');
     socket.emit('unexpected-response', {}, { statusCode: 451, resume: vi.fn() });
     await vi.advanceTimersByTimeAsync(0);
-    expect(service.snapshot().error).toContain('BINANCE_ACCESS_RESTRICTED: HTTP 451 /stream');
+    expect(service.snapshot().error).toContain('BINANCE_ACCESS_RESTRICTED: HTTP 451 /market/stream');
     expect(service.snapshot().market_paused).toBe(true);
     await vi.advanceTimersByTimeAsync(60_000);
     expect(sockets).toHaveLength(1);
@@ -136,10 +137,10 @@ describe('restriction-aware worker lifecycle (isolated transport)', () => {
     await service.start();
     expect(service.snapshot().market_paused).toBe(false);
     await vi.advanceTimersByTimeAsync(2001);
-    expect(service.snapshot()).toMatchObject({ process_alive: true, initialized: true, running: true });
+    expect(service.snapshot()).toMatchObject({ process_alive: true, initialized: true, running: false });
     const socket = sockets[0]; if (!socket) throw new Error('Missing socket'); socket.emit('open');
     await vi.advanceTimersByTimeAsync(10_000);
-    expect(service.snapshot().error).toBeNull();
+    expect(service.snapshot().market_paused).toBe(false);
     expect(calls.some((c) => c.action === 'commit')).toBe(true);
     expect(calls.some((c) => c.action === 'deliveries')).toBe(true);
   });
@@ -149,6 +150,21 @@ describe('restriction-aware worker lifecycle (isolated transport)', () => {
     await expect(service.start()).rejects.toThrow('Another engine instance owns the lease');
     expect(binanceFetch).not.toHaveBeenCalled();
     expect(service.snapshot().process_alive).toBe(false);
+  });
+  it('holds reconnects during native error classification and pauses on a confirmed 451', async () => {
+    if (!service) throw new Error('Missing service');
+    await service.start();
+    let rejectProbe: ((error: Error) => void) | undefined;
+    vi.mocked(checkWebSocketAccess).mockImplementationOnce(async () => new Promise<void>((_resolve, reject) => { rejectProbe = reject; }));
+    const socket = sockets[0]; if (!socket) throw new Error('No socket');
+    socket.emit('open'); socket.emit('error');
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(sockets).toHaveLength(1);
+    if (!rejectProbe) throw new Error('No pending classification');
+    rejectProbe(new BinanceRequestError('restricted', 451, '/market/stream', 'Restricted'));
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(service.snapshot().market_paused).toBe(true);
+    expect(sockets).toHaveLength(1);
   });
   it('serializes simultaneous restricted and timed heartbeats behind a slow open report', async () => {
     if (!service) throw new Error('Missing service');

@@ -12,6 +12,9 @@ export function ScannerMonitor() {
     <div><div className="mb-2 text-[10px] uppercase text-muted-foreground">Engine uptime · last reported</div><span className="font-mono text-xs">{formatUptime(s.health?.uptimeSeconds)}</span></div>
     <div><div className="mb-2 text-[10px] uppercase text-muted-foreground">Last successful scan</div><span className="font-mono text-xs">{fmtTime(s.health?.lastScanAt, timezone)}</span></div>
     <div><div className="mb-2 text-[10px] uppercase text-muted-foreground">Binance data</div><StatusBadge value={s.binance} /></div>
+    <div><div className="mb-2 text-[10px] uppercase text-muted-foreground">Validated market messages</div><span className="font-mono text-xs">{s.health?.liveMessages ?? 0} / {s.health?.engine?.available_symbols ?? '—'}</span></div>
+    <div><div className="mb-2 text-[10px] uppercase text-muted-foreground">Oldest saved candle · all available coins</div><span className="font-mono text-xs">{fmtTime(s.health?.oldestSavedCandleAt, timezone)}</span></div>
+    <div><div className="mb-2 text-[10px] uppercase text-muted-foreground">Recovery in progress</div><span className="font-mono text-xs">{s.health?.recoverySymbol ?? '—'}</span></div>
     <div><div className="mb-2 text-[10px] uppercase text-muted-foreground">Next scan · expected candle close</div><span className="font-mono text-xs">{fmtTime(s.health?.nextScanAt, timezone)}</span></div>
     <div><div className="mb-2 text-[10px] uppercase text-muted-foreground">Successful candle scans</div><span className="font-mono text-xs">{s.health?.successfulScans ?? '—'}</span></div>
     <div><div className="mb-2 text-[10px] uppercase text-muted-foreground">Last successful Telegram notification</div><span className="font-mono text-xs">{fmtTime(s.health?.lastTelegramAt, timezone)}</span></div>

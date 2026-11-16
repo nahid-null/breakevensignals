@@ -46,10 +46,16 @@ function Health() {
           <Row label="Cloud service"><StatusBadge value={s.cloud} /></Row>
           <Row label="Binance REST"><StatusBadge value={s.binance} /></Row>
           <Row label="Binance WebSocket"><StatusBadge value={s.websocket} /></Row>
+          <Row label="Validated current market data"><StatusBadge value={h?.marketData ?? 'DISCONNECTED'} /></Row>
+          <Row label="Coins with fresh valid messages">{h?.liveMessages ?? 0} / {h?.engine?.available_symbols ?? '—'}</Row>
+          <Row label="Last validated market message">{fmtTime(h?.lastMarketMessageAt, tz)}</Row>
           <Row label="Scanner Engine"><StatusBadge value={s.scanner} /></Row>
           <Row label="Service hosting">{h?.engine?.runtime_mode === 'temporary' ? 'TEMPORARY VERIFICATION' : h?.engine?.host_kind === 'hosted' ? 'HOSTED CLOUD' : 'NOT CONFIRMED'}</Row>
           <Row label="Engine uptime · last reported">{formatUptime(h?.uptimeSeconds)}</Row>
           <Row label="Last successful scan">{fmtTime(h?.lastScanAt, tz)}</Row>
+          <Row label="Oldest saved candle · all available coins">{fmtTime(h?.oldestSavedCandleAt, tz)}</Row>
+          <Row label="Recovery in progress">{h?.recoverySymbol ?? '—'}</Row>
+          <Row label="Coins with saved candle commits">{h?.recoveredSymbols ?? '—'} / {h?.engine?.available_symbols ?? '—'}</Row>
           <Row label="Next scan · expected candle close">{fmtTime(h?.nextScanAt, tz)}</Row>
           <Row label="Successful candle scans">{h?.successfulScans ?? '—'}</Row>
           <Row label="Total coins scanned">{h?.scannedSymbols ?? '—'} / {SYMBOLS.length}</Row>

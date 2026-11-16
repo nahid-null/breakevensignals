@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { SYMBOLS, EVENT_TYPES, INDICATORS } from "../config";
 import { ENGINE_VERSION, MINUTE } from './model';
+import { feedHealthSchema } from './feed-health';
 
 const finite = z.number().finite();
 const candleTime = z.number().int().nonnegative().refine((n) => n % MINUTE === 0);
@@ -53,6 +54,7 @@ export const heartbeatSchema = z.object({
   uptime_seconds: z.number().int().nonnegative().default(0),
   scanned_symbols: z.number().int().min(0).max(21).default(0),
   last_scan_at: z.string().datetime().nullable().default(null),
+  feed_health: feedHealthSchema.nullable().default(null),
 });
 export const commitSchema = z.object({
   instance_id: z.string().uuid(), symbol: z.enum(SYMBOLS), expected_revision: z.number().int().min(0),

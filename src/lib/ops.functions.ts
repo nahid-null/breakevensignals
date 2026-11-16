@@ -7,7 +7,7 @@ export const getSystemHealth = createServerFn({ method: "GET" }).handler(async (
   const db = publicClient();
   const [engine, markets, lastSignal, positions, lastDelivery] = await Promise.all([
     db.from("engine_health").select("*").eq('id',1).maybeSingle(),
-    db.from("market_state").select("last_candle_at, successful_scans"),
+    db.from("market_state").select("symbol, status, last_candle_at, successful_scans"),
     db.from("signal_events").select("timestamp").order("timestamp", { ascending: false }).limit(1).maybeSingle(),
     db.from("active_positions").select("id", { count: 'exact', head: true }).in('status', ['ACTIVE', 'BREAKEVEN']),
     db.from('telegram_logs').select('updated_at').eq('delivery_status', 'SENT').order('updated_at', { ascending: false }).limit(1).maybeSingle(),
@@ -19,6 +19,10 @@ export const getSystemHealth = createServerFn({ method: "GET" }).handler(async (
     engine: engine.data,
     ...engineHealth(engine.data, databaseOk),
     lastCandleAt: candleTimes.at(-1) ?? null,
+    oldestSavedCandleAt: (markets.data ?? []).filter((m) => m.status !== 'UNAVAILABLE').length === engine.data?.available_symbols
+      && (markets.data ?? []).filter((m) => m.status !== 'UNAVAILABLE').every((m) => m.last_candle_at)
+      ? (markets.data ?? []).filter((m) => m.status !== 'UNAVAILABLE').flatMap((m) => m.last_candle_at ? [m.last_candle_at] : []).sort().at(0) ?? null : null,
+    recoveredSymbols: (markets.data ?? []).filter((m) => m.status !== 'UNAVAILABLE' && m.successful_scans > 0).length,
     successfulScans: markets.error ? null : (markets.data ?? []).reduce((total, m) => total + m.successful_scans, 0),
     lastTelegramAt: lastDelivery.data?.updated_at ?? null,
     lastSignalAt: lastSignal.data?.timestamp ?? null,
