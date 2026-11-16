@@ -54,4 +54,19 @@ describe('public Binance request failure classification', () => {
     expect(await outcome).toMatchObject({ kind, status, pausesMarket: false });
     expect(fetch).toHaveBeenCalledTimes(4);
   });
+  it('retains the restriction when its public response body fails to download', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({ ok: false, status: 451, text: async () => { throw new Error('lost body'); } })));
+    await expect(binanceFetch('/fapi/v1/time')).rejects.toMatchObject({ kind: 'restricted', status: 451, pausesMarket: true });
+  });
+  it('does not retry an in-flight market request cancelled by a restriction', async () => {
+    const controller = new AbortController();
+    const transport = vi.fn(async (_url, init: RequestInit) => new Promise<Response>((_resolve, reject) => {
+      init.signal?.addEventListener('abort', () => reject(new DOMException('Cancelled', 'AbortError')));
+    }));
+    vi.stubGlobal('fetch', transport);
+    const result = binanceFetch('/fapi/v1/klines', controller.signal).catch((e: unknown) => e);
+    controller.abort();
+    expect(await result).toMatchObject({ name: 'AbortError' });
+    expect(transport).toHaveBeenCalledTimes(1);
+  });
 });

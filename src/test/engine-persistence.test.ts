@@ -120,4 +120,27 @@ describe('atomic persistence (isolated PostgreSQL, no production rows)', () => {
     expect((await db.query<{ status: string; websocket_connected: boolean }>('select status,websocket_connected from engine_health')).rows[0]).toMatchObject({ status: 'STOPPED', websocket_connected: false });
     expect((await db.query<{ n: number }>('select count(*)::int n from engine_checkpoints')).rows[0]?.n).toBe(3);
   });
+  it.each(['BINANCE_ACCESS_RESTRICTED: HTTP 451', 'BINANCE_IP_BANNED: HTTP 418'])('blocks all forward market writes and signal claims for %s without changing settled rows', async (error) => {
+    const heartbeat = { instance_id: instance, status: 'ERROR', error, binance_connected: false, websocket_connected: false, available_symbols: 20 };
+    const before = (await db.query('select (select jsonb_agg(t) from active_positions t) positions, (select jsonb_agg(t) from signal_events t) events, (select jsonb_agg(t) from telegram_logs t) logs, (select jsonb_agg(t) from engine_checkpoints t) checkpoints, (select jsonb_agg(t) from market_state t) markets')).rows;
+    await db.query('select engine_heartbeat($1::jsonb)', [JSON.stringify(heartbeat)]);
+    const payload = { instance_id: instance, symbol: 'LTCUSDT', expected_revision: 3, mode: 'live', checkpoint: { symbol: 'LTCUSDT', lastTime: 240000 }, market: { symbol: 'LTCUSDT', price: 100, trend: 'SIDEWAYS', status: 'LIVE', long_score: 0, short_score: 0 }, events: [] };
+    await expect(db.query('select commit_engine_candle($1::jsonb)', [JSON.stringify(payload)])).rejects.toThrow('Market processing paused');
+    await expect(process(p('entry_confirmed', `blocked-${error}`))).rejects.toThrow('Market processing paused');
+    await expect(db.exec("update market_state set price=999 where symbol='LTCUSDT'")).rejects.toThrow('Market processing paused');
+    await expect(db.exec("update active_positions set current_stop_loss=999 where trade_id='long-enabled'")).rejects.toThrow('Market processing paused');
+    const pending = (await db.query<{ id: string }>("select id from telegram_logs where trade_id='long-enabled'")).rows[0];
+    const sent = (await db.query<{ id: string }>("select id from telegram_logs where delivery_status='SENT'")).rows[0];
+    if (!pending || !sent) throw new Error('Missing isolated pending and sent notifications');
+    expect((await db.query('select * from claim_telegram_delivery($1,$2)', [pending.id, instance])).rows).toHaveLength(0);
+    expect((await db.query('select * from claim_telegram_delivery($1,$2)', [sent.id, instance])).rows).toHaveLength(0);
+    const after = (await db.query('select (select jsonb_agg(t) from active_positions t) positions, (select jsonb_agg(t) from signal_events t) events, (select jsonb_agg(t) from telegram_logs t) logs, (select jsonb_agg(t) from engine_checkpoints t) checkpoints, (select jsonb_agg(t) from market_state t) markets')).rows;
+    expect(after).toEqual(before);
+    const test = (await db.query<{ id: string }>("insert into telegram_logs(event_id,is_test,message) values($1,true,'TEST ONLY') returning id", [`isolated-test-${error}`])).rows[0];
+    if (!test) throw new Error('Missing test notification');
+    expect((await db.query('select * from claim_telegram_delivery($1,$2)', [test.id, instance])).rows).toHaveLength(1);
+    await db.query('select engine_heartbeat($1::jsonb)', [JSON.stringify({ ...heartbeat, status: 'RUNNING', error: null, binance_connected: true, websocket_connected: true })]);
+    expect((await db.query('select * from claim_telegram_delivery($1,$2)', [pending.id, instance])).rows).toHaveLength(1);
+    await db.query('update telegram_logs set delivery_claim=null,claimed_at=null where id=$1', [pending.id]);
+  });
 });

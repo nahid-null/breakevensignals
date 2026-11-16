@@ -94,6 +94,22 @@ describe('restriction-aware worker lifecycle (isolated transport)', () => {
     await vi.advanceTimersByTimeAsync(60_000);
     expect(sockets).toHaveLength(1);
   });
+  it('cancels active REST history and ignores old socket events after a restriction', async () => {
+    if (!service) throw new Error('Missing service');
+    await service.start();
+    const socket = sockets[0]; if (!socket) throw new Error('Missing socket');
+    socket.emit('open');
+    const signal = vi.mocked(binanceFetch).mock.calls[0]?.[1];
+    expect(signal?.aborted).toBe(false);
+    socket.emit('unexpected-response', {}, { statusCode: 418, resume: vi.fn() });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(signal?.aborted).toBe(true);
+    socket.emit('error'); socket.emit('close');
+    socket.emit('unexpected-response', {}, { statusCode: 503, resume: vi.fn() });
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(service.snapshot().error).toContain('BINANCE_IP_BANNED: HTTP 418');
+    expect(sockets).toHaveLength(1);
+  });
   it('pauses a 451 during history warmup before any candle commit', async () => {
     if (!service) throw new Error('Missing service');
     vi.mocked(history).mockRejectedValueOnce(new BinanceRequestError('restricted', 451, '/fapi/v1/klines', 'Restricted location'));
