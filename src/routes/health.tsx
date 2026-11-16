@@ -82,7 +82,7 @@ function Health() {
       {h?.engine?.error && <p className="break-words border-l-2 border-short bg-short/10 p-3 text-sm text-short">{h.engine.error}</p>}
       {h?.lastAccessIssue && <p className="border-l-2 border-waiting bg-waiting/5 p-3 text-sm text-waiting">Market processing is paused. Prices and candles are last saved values. Confirm permitted Binance access before restarting the Railway service.</p>}
       {!h?.engine && <p className="border-l-2 border-waiting bg-waiting/5 p-3 text-sm text-waiting">Always-on monitoring has not started. Engine deployment is pending.</p>}
-      <section className="border-t border-border pt-5"><h2 className="mb-3 text-xs uppercase text-muted-foreground">Contract feeds</h2><div className="grid gap-x-8 sm:grid-cols-2 lg:grid-cols-3">{SYMBOLS.map((symbol) => {
+      <section className="border-t border-border pt-5"><h2 className="mb-3 text-xs uppercase text-muted-foreground">Contract feeds</h2><div className="grid gap-x-8 sm:grid-cols-2 lg:grid-cols-3">{ROBOT_SYMBOLS.map((symbol) => {
         const m = markets.data?.find((row) => row.symbol === symbol);
         return <Row key={symbol} label={symbol}><StatusBadge value={contractFeedStatus(m, h, s.healthQuery.isError || markets.isError)} /></Row>;
       })}</div></section>
