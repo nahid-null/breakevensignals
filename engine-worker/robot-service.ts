@@ -30,7 +30,7 @@ export function positionFromRow(r: Row): Position {
 }
 
 /** Daily loss and loss-streak context from durable closed trades. */
-export function accountFrom(balance: number, open: Position[], closed: { realized_pnl: unknown; closed_at: unknown }[], now: number): Account {
+export function accountFrom(balance: number, open: Position[], closed: { realized_pnl?: unknown; closed_at?: unknown }[], now: number): Account {
   const dayStart = Math.floor(now / 86_400_000) * 86_400_000;
   const today = closed.filter((c) => Date.parse(String(c.closed_at)) >= dayStart).reduce((a, c) => a + num(c.realized_pnl), 0)
     + open.filter((p) => p.openedAt >= dayStart).reduce((a, p) => a + p.realized, 0);
