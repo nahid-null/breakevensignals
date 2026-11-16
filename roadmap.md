@@ -4,6 +4,7 @@
 - [x] Inspect genuine hosted evidence:40/40feeds, both directions evaluated; current decisions/trades still use old families, zero audited completed new sweeps. Actual paper leverage50x,target10,valid stops; open margin58.37% at18:13UTC. No thresholds/history changed.
 - [x] Add exact covered-source fingerprint and deployment status, full per-candle LONG/SHORT decisions, atomic runtime receipt and separate30-completed-new-sweep progress/performance. Old or temporary results excluded.
 - [x] Website published:public/robot HTTP200, new version panel+0/30 visible, no runtime errors.184tests pass/buildOK; isolated real40feeds,160durableLONG/SHORTdecisions,0forcedtrades; desktop/602/390 actual empty new-version panel verified.
+- [x] Final request recheck: all19current trade details on desktop/phone, all40coinrows with both directions, linked Backtest/Simulator; no errors/overflow. Corrected false loading zeroes in version/count/margin panel; republish requested.
 - [ ] Redeploy/verify Railway active source — requires Railway service access or the user's active-deployment evidence.
 - [ ] Collect at least30 genuine completed new-strategy paper trades — requires deployed corrected worker and future qualified opportunities; never force entries.
 
