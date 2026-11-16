@@ -14,6 +14,8 @@ import { Route as HealthRouteImport } from './routes/health'
 import { Route as MarketsRouteImport } from './routes/markets'
 import { Route as PositionsRouteImport } from './routes/positions'
 import { Route as RobotRouteImport } from './routes/robot'
+import { Route as RobotBacktestRouteImport } from './routes/robot-backtest'
+import { Route as RobotCoinsRouteImport } from './routes/robot-coins'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SetupRouteImport } from './routes/setup'
 import { Route as SignalsRouteImport } from './routes/signals'
@@ -45,6 +47,16 @@ const PositionsRoute = PositionsRouteImport.update({
 const RobotRoute = RobotRouteImport.update({
   id: '/robot',
   path: '/robot',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RobotBacktestRoute = RobotBacktestRouteImport.update({
+  id: '/robot-backtest',
+  path: '/robot-backtest',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RobotCoinsRoute = RobotCoinsRouteImport.update({
+  id: '/robot-coins',
+  path: '/robot-coins',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsRoute = SettingsRouteImport.update({
@@ -90,6 +102,8 @@ export interface FileRoutesByFullPath {
   '/markets': typeof MarketsRoute
   '/positions': typeof PositionsRoute
   '/robot': typeof RobotRoute
+  '/robot-backtest': typeof RobotBacktestRoute
+  '/robot-coins': typeof RobotCoinsRoute
   '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
   '/signals': typeof SignalsRoute
@@ -104,6 +118,8 @@ export interface FileRoutesByTo {
   '/markets': typeof MarketsRoute
   '/positions': typeof PositionsRoute
   '/robot': typeof RobotRoute
+  '/robot-backtest': typeof RobotBacktestRoute
+  '/robot-coins': typeof RobotCoinsRoute
   '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
   '/signals': typeof SignalsRoute
@@ -119,6 +135,8 @@ export interface FileRoutesById {
   '/markets': typeof MarketsRoute
   '/positions': typeof PositionsRoute
   '/robot': typeof RobotRoute
+  '/robot-backtest': typeof RobotBacktestRoute
+  '/robot-coins': typeof RobotCoinsRoute
   '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
   '/signals': typeof SignalsRoute
@@ -135,6 +153,8 @@ export interface FileRouteTypes {
     | '/markets'
     | '/positions'
     | '/robot'
+    | '/robot-backtest'
+    | '/robot-coins'
     | '/settings'
     | '/setup'
     | '/signals'
@@ -149,6 +169,8 @@ export interface FileRouteTypes {
     | '/markets'
     | '/positions'
     | '/robot'
+    | '/robot-backtest'
+    | '/robot-coins'
     | '/settings'
     | '/setup'
     | '/signals'
@@ -163,6 +185,8 @@ export interface FileRouteTypes {
     | '/markets'
     | '/positions'
     | '/robot'
+    | '/robot-backtest'
+    | '/robot-coins'
     | '/settings'
     | '/setup'
     | '/signals'
@@ -178,6 +202,8 @@ export interface RootRouteChildren {
   MarketsRoute: typeof MarketsRoute
   PositionsRoute: typeof PositionsRoute
   RobotRoute: typeof RobotRoute
+  RobotBacktestRoute: typeof RobotBacktestRoute
+  RobotCoinsRoute: typeof RobotCoinsRoute
   SettingsRoute: typeof SettingsRoute
   SetupRoute: typeof SetupRoute
   SignalsRoute: typeof SignalsRoute
@@ -222,6 +248,20 @@ declare module '@tanstack/react-router' {
       path: '/robot'
       fullPath: '/robot'
       preLoaderRoute: typeof RobotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/robot-backtest': {
+      id: '/robot-backtest'
+      path: '/robot-backtest'
+      fullPath: '/robot-backtest'
+      preLoaderRoute: typeof RobotBacktestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/robot-coins': {
+      id: '/robot-coins'
+      path: '/robot-coins'
+      fullPath: '/robot-coins'
+      preLoaderRoute: typeof RobotCoinsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings': {
@@ -282,6 +322,8 @@ const rootRouteChildren: RootRouteChildren = {
   MarketsRoute: MarketsRoute,
   PositionsRoute: PositionsRoute,
   RobotRoute: RobotRoute,
+  RobotBacktestRoute: RobotBacktestRoute,
+  RobotCoinsRoute: RobotCoinsRoute,
   SettingsRoute: SettingsRoute,
   SetupRoute: SetupRoute,
   SignalsRoute: SignalsRoute,
