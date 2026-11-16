@@ -30,6 +30,7 @@ export class SignalService {
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private startupTimer: ReturnType<typeof setTimeout> | null = null;
   private heartbeatInFlight: Promise<void> | null = null;
+  private readonly marketAbort = new AbortController();
   private recovery = new Set<Symbol>();
   private timers: ReturnType<typeof setInterval>[] = [];
   private startedAt: number | null = null;
@@ -64,6 +65,7 @@ export class SignalService {
       ...this.telemetry() });
     if (!r.acquired) {
       this.running = false; this.connected = false;
+      this.marketAbort.abort();
       for (const timer of this.timers) clearInterval(timer);
       if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
       if (this.startupTimer) clearTimeout(this.startupTimer);
@@ -128,7 +130,7 @@ export class SignalService {
     }
   }
   private async initializeMarkets() {
-    const info = await binanceFetch('/fapi/v1/exchangeInfo') as { symbols?: { symbol: string; status: string; filters: { filterType: string; tickSize?: string }[] }[] };
+    const info = await binanceFetch('/fapi/v1/exchangeInfo', this.marketAbort.signal) as { symbols?: { symbol: string; status: string; filters: { filterType: string; tickSize?: string }[] }[] };
     if (!this.running || this.marketPaused) return;
     this.lastRestAt = Date.now();
     for (const symbol of SYMBOLS) {
@@ -158,7 +160,7 @@ export class SignalService {
       if (!this.running || this.marketPaused) return;
       const saved = this.checkpoints.get(symbol);
       if (!saved) {
-        const candles = await history(symbol);
+        const candles = await history(symbol, undefined, undefined, this.marketAbort.signal);
         if (!this.running || this.marketPaused) return;
         if (candles.length < 200) throw new Error(`${symbol}: insufficient Binance history`);
         const state = initialState(symbol, tick);
@@ -274,7 +276,7 @@ export class SignalService {
     let saved = this.checkpoints.get(symbol);
     if (!saved || saved.state.lastTime === null) return;
     while (this.running && !this.marketPaused && saved.state.lastTime !== null && saved.state.lastTime + 2 * MINUTE <= until) {
-      const candles = await history(symbol, saved.state.lastTime + MINUTE, until);
+      const candles = await history(symbol, saved.state.lastTime + MINUTE, until, this.marketAbort.signal);
       if (!this.running || this.marketPaused) return;
       if (!candles.length) throw new Error(`${symbol}: missing candle recovery incomplete`);
       for (const c of candles) {
@@ -293,7 +295,7 @@ export class SignalService {
     try {
       if (Date.now() >= this.nextRestProbe) {
         this.nextRestProbe = Date.now() + 60_000;
-        await binanceFetch('/fapi/v1/time');
+        await binanceFetch('/fapi/v1/time', this.marketAbort.signal);
         if (!this.running || this.marketPaused) return;
         this.lastRestAt = Date.now();
       }
@@ -334,6 +336,7 @@ export class SignalService {
         endpoint: e.endpoint, checked_at: e.checkedAt, explanation: this.lastError }));
       if (e.pausesMarket) {
         this.marketPaused = true;
+        this.marketAbort.abort();
         this.connected = false;
         if (this.startupTimer) clearTimeout(this.startupTimer);
         if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
@@ -370,6 +373,7 @@ export class SignalService {
   async stop() {
     const wasRunning = this.running;
     this.running = false; this.connected = false;
+    this.marketAbort.abort();
     for (const timer of this.timers) clearInterval(timer);
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
     if (this.startupTimer) clearTimeout(this.startupTimer);

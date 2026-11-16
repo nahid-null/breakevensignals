@@ -36,12 +36,14 @@ function providerExplanation(text: string, fallback: string) {
   } catch { return fallback; }
 }
 
-export async function binanceFetch(path: string): Promise<unknown> {
+export async function binanceFetch(path: string, signal?: AbortSignal): Promise<unknown> {
   let lastFailure: BinanceRequestError | null = null;
   for (let attempt = 0; attempt < 4; attempt++) {
+    signal?.throwIfAborted();
     let response: Response;
-    try { response = await fetch(`${BINANCE_REST}${path}`, { signal: AbortSignal.timeout(20_000) }); }
+    try { response = await fetch(`${BINANCE_REST}${path}`, { signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(20_000)]) : AbortSignal.timeout(20_000) }); }
     catch {
+      signal?.throwIfAborted();
       lastFailure = new BinanceRequestError('network', null, path, 'Market-data request timed out or could not connect.');
       if (attempt === 3) throw lastFailure;
       await delay(1000 * 2 ** attempt); continue;
@@ -51,7 +53,7 @@ export async function binanceFetch(path: string): Promise<unknown> {
       : response.status === 429 ? 'rate_limit' : response.status >= 500 ? 'provider' : 'request';
     const fallback = kind === 'restricted' ? 'Binance rejected this source location. Confirm permitted access with Binance before restarting.'
       : kind === 'banned' ? 'Binance banned this source IP. Resolve the ban before restarting.' : 'Binance rejected the public market-data request.';
-    const explanation = providerExplanation(await response.text(), fallback);
+    const explanation = providerExplanation(await response.text().catch(() => ''), fallback);
     lastFailure = new BinanceRequestError(kind, response.status, path, explanation);
     if (response.status === 429 || response.status >= 500) {
       if (attempt === 3) throw lastFailure;
@@ -74,11 +76,11 @@ export function restCandle(row: unknown): Candle {
   return c;
 }
 
-export async function history(symbol: string, start?: number, end?: number): Promise<Candle[]> {
+export async function history(symbol: string, start?: number, end?: number, signal?: AbortSignal): Promise<Candle[]> {
   const params = new URLSearchParams({ symbol, interval: '1m', limit: '1500' });
   if (start !== undefined) params.set('startTime', String(start));
   if (end !== undefined) params.set('endTime', String(end));
-  const rows = await binanceFetch(`/fapi/v1/klines?${params}`);
+  const rows = await binanceFetch(`/fapi/v1/klines?${params}`, signal);
   if (!Array.isArray(rows)) throw new Error("Malformed Binance history");
   const now = end ?? Date.now();
   return rows.map(restCandle).filter((c) => c.time + MINUTE <= now).sort((a, b) => a.time - b.time);

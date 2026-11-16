@@ -17,7 +17,7 @@ beforeAll(async () => {
   db = new PGlite();
   await db.exec('CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role;');
   // Test copy only: the isolated database has no realtime service or publication.
-  for (const name of ['0000_migration.sql','0002_independent_signal_engine.sql','0003_engine_event_provenance_and_statistics.sql','0004_fix_engine_checkpoint_time_comparison.sql','0005_engine_runtime_identity_and_graceful_stop.sql','0006_windows_pc_engine_telemetry.sql','0007_durable_successful_candle_scans.sql']) {
+  for (const name of ['0000_migration.sql','0002_independent_signal_engine.sql','0003_engine_event_provenance_and_statistics.sql','0004_fix_engine_checkpoint_time_comparison.sql','0005_engine_runtime_identity_and_graceful_stop.sql','0006_windows_pc_engine_telemetry.sql','0007_durable_successful_candle_scans.sql','0008_guard_restricted_market_writes.sql']) {
     const sql = (await readFile(new URL(`../../drizzle/migrations/${name}`, import.meta.url), 'utf8')).replace(/^ALTER PUBLICATION.*$/gm, '');
     await db.exec(sql);
   }
@@ -61,6 +61,7 @@ describe('atomic persistence (isolated PostgreSQL, no production rows)', () => {
     if (!saved) throw new Error('Missing durable health');
     expect(engineHealth({ ...saved, last_heartbeat_at: saved.last_heartbeat_at.toISOString() }, true)).toMatchObject({ cloud: 'ONLINE', scanner: 'ERROR', binance: 'ACCESS RESTRICTED', websocket: 'DISCONNECTED', nextScanAt: null });
     expect(await count()).toEqual(before);
+    await db.query('select engine_heartbeat($1::jsonb)', [JSON.stringify({ ...heartbeat, status: 'RUNNING', error: null })]);
   });
   for (const mode of ['warmup','recovery'] as const) {
     it(`${mode}: stores provenance and checkpoint together without sending historical notifications`, async () => {
