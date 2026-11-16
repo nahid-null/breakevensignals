@@ -1,5 +1,10 @@
 # Independent Crypto Signal Terminal
 
+## Railway crash and paper starting balance (prompt-15, 2026-11-16)
+- [ ] Include all robot runtime dependencies in the Docker image and verify the packaged worker starts without the missing-module crash.
+- [ ] Change the robot starting balance to 10 USDT with an additive, tested change that preserves existing account and trade history.
+- [ ] Verify the website and explain the Railway redeployment step; hosted startup requires access to the user's Railway deployment.
+
 ## Paper trading robot (prompt-14, 2026-11-16)
 - [x] Runs alongside existing signals, Telegram and Simulator (unchanged); own paper account (1,000 USDT start), 40 coins (20 existing available + 20 top-volume; WILD unavailable).
 - [x] Independent liquidity-sweep / pullback strategy on 5m with 15m/1h trend, 0-100 score (75 trade, 85 high quality), risk-based sizing, dynamic leverage max 50x, 70% total margin cap, TP1 half + breakeven, early/time exits, daily loss limit, loss-streak pause, correlation limit.
