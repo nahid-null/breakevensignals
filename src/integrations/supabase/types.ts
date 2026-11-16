@@ -338,6 +338,141 @@ export type Database = {
         }
         Relationships: []
       }
+      sim_account: {
+        Row: {
+          balance: number
+          enabled: boolean
+          id: number
+          total_deposited: number
+          updated_at: string
+        }
+        Insert: {
+          balance?: number
+          enabled?: boolean
+          id: number
+          total_deposited?: number
+          updated_at?: string
+        }
+        Update: {
+          balance?: number
+          enabled?: boolean
+          id?: number
+          total_deposited?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sim_deposits: {
+        Row: {
+          amount: number
+          balance_after: number
+          created_at: string
+          id: string
+        }
+        Insert: {
+          amount: number
+          balance_after: number
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          amount?: number
+          balance_after?: number
+          created_at?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      sim_trades: {
+        Row: {
+          balance_after: number | null
+          balance_before: number
+          breakeven: boolean
+          closed_at: string | null
+          created_at: string
+          direction: string
+          entry_candle_time: number
+          entry_fee: number
+          entry_price: number
+          exit_fee: number
+          exit_price: number | null
+          exit_reason: string | null
+          gross_pnl: number | null
+          id: string
+          leverage: number
+          liquidation_price: number
+          margin: number
+          notional: number
+          opened_at: string
+          pnl: number | null
+          quantity: number
+          status: string
+          stop_loss: number
+          strength: string
+          symbol: string
+          take_profit: number
+          trade_id: string
+        }
+        Insert: {
+          balance_after?: number | null
+          balance_before: number
+          breakeven?: boolean
+          closed_at?: string | null
+          created_at?: string
+          direction: string
+          entry_candle_time: number
+          entry_fee: number
+          entry_price: number
+          exit_fee?: number
+          exit_price?: number | null
+          exit_reason?: string | null
+          gross_pnl?: number | null
+          id?: string
+          leverage: number
+          liquidation_price: number
+          margin: number
+          notional: number
+          opened_at: string
+          pnl?: number | null
+          quantity: number
+          status?: string
+          stop_loss: number
+          strength: string
+          symbol: string
+          take_profit: number
+          trade_id: string
+        }
+        Update: {
+          balance_after?: number | null
+          balance_before?: number
+          breakeven?: boolean
+          closed_at?: string | null
+          created_at?: string
+          direction?: string
+          entry_candle_time?: number
+          entry_fee?: number
+          entry_price?: number
+          exit_fee?: number
+          exit_price?: number | null
+          exit_reason?: string | null
+          gross_pnl?: number | null
+          id?: string
+          leverage?: number
+          liquidation_price?: number
+          margin?: number
+          notional?: number
+          opened_at?: string
+          pnl?: number | null
+          quantity?: number
+          status?: string
+          stop_loss?: number
+          strength?: string
+          symbol?: string
+          take_profit?: number
+          trade_id?: string
+        }
+        Relationships: []
+      }
       telegram_logs: {
         Row: {
           claimed_at: string | null
@@ -464,6 +599,9 @@ export type Database = {
         Args: { p: Json; tg_message: string }
         Returns: Json
       }
+      sim_deposit: { Args: { amount: number }; Returns: Json }
+      sim_set_enabled: { Args: { on_off: boolean }; Returns: undefined }
+      simulate_engine_candle: { Args: { p: Json }; Returns: undefined }
       stop_engine: { Args: { p_instance: string }; Returns: boolean }
       terminal_statistics: { Args: never; Returns: Json }
     }
