@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { winRate } from '@/lib/engine/stats';
 import { lastSignalTime } from '@/lib/engine/position-values';
 import { ScannerMonitor } from '@/components/terminal/ScannerMonitor';
+import { contractFeedStatus } from '@/lib/engine/market-policy';
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -55,7 +56,7 @@ function Dashboard() {
   const markets = useMarkets();
   const statsQuery = useStats();
   const settings = useSettings();
-  const { health, system, scanner } = useStatuses();
+  const { health, system, scanner, healthQuery } = useStatuses();
   const tz = settings.data?.display_timezone ?? "UTC";
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<Filter>("ALL");
@@ -165,11 +166,12 @@ function Dashboard() {
                 const upd = [r.long ? lastSignalTime(r.long) : null, r.short ? lastSignalTime(r.short) : null]
                   .filter((time): time is string => time !== null).sort((a, b) => Date.parse(a) - Date.parse(b)).pop();
                 const m = marketMap.get(r.symbol);
+                const feed = contractFeedStatus(m, health, healthQuery.isError || markets.isError);
                 return (
                   <tr key={r.symbol} className="border-b border-border/60 transition-colors hover:bg-accent/40">
                     <td className="px-3 py-2.5 font-mono font-semibold">{r.symbol}</td>
-                    <td className="px-3 py-2.5 font-mono tabular-nums">{fmtPrice(m?.price)}{m && scanner !== 'RUNNING' && <div className="mt-1 text-[9px] text-muted-foreground">LAST SAVED · {fmtTime(m.last_candle_at, tz)}</div>}</td>
-                    <td className="px-3 py-2.5"><div className="flex flex-col items-start gap-1"><StatusBadge value={m?.trend ?? 'WAITING'} /><span title={m?.error ?? ''} className="font-mono text-[9px] text-muted-foreground">{m?.status === 'UNAVAILABLE' ? 'UNAVAILABLE' : scanner !== 'RUNNING' && m ? 'STALE' : m?.status ?? 'NO FEED'}</span></div></td>
+                    <td className="px-3 py-2.5 font-mono tabular-nums">{fmtPrice(m?.price)}{m && feed !== 'LIVE' && <div className="mt-1 text-[9px] text-muted-foreground">LAST SAVED · {fmtTime(m.last_candle_at, tz)}</div>}</td>
+                    <td className="px-3 py-2.5"><div className="flex flex-col items-start gap-1"><StatusBadge value={m?.trend ?? 'WAITING'} /><span title={m?.error ?? ''} className="font-mono text-[9px] text-muted-foreground">{feed}</span></div></td>
                     {view !== 'SHORT' && <Cells p={r.long} />}
                     {view !== 'LONG' && <Cells p={r.short} />}
                     <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{fmtTime(upd, tz)}</td>

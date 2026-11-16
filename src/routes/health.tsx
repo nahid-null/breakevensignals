@@ -3,6 +3,7 @@ import { fmtTime, useSettings, useStatuses, useTelegramLogs, useMarkets, useStat
 import { formatUptime } from '@/lib/engine/health';
 import { SYMBOLS } from '@/lib/config';
 import { StatusBadge } from "@/components/terminal/StatusBadge";
+import { contractFeedStatus } from '@/lib/engine/market-policy';
 
 export const Route = createFileRoute("/health")({
   head: () => ({
@@ -77,7 +78,7 @@ function Health() {
       {!h?.engine && <p className="border-l-2 border-waiting bg-waiting/5 p-3 text-sm text-waiting">Always-on monitoring has not started. Engine deployment is pending.</p>}
       <section className="border-t border-border pt-5"><h2 className="mb-3 text-xs uppercase text-muted-foreground">Contract feeds</h2><div className="grid gap-x-8 sm:grid-cols-2 lg:grid-cols-3">{SYMBOLS.map((symbol) => {
         const m = markets.data?.find((row) => row.symbol === symbol);
-        return <Row key={symbol} label={symbol}><StatusBadge value={m?.status === 'UNAVAILABLE' ? 'UNAVAILABLE' : !h?.heartbeatFresh || h.engine?.status === 'STOPPED' ? 'OFFLINE' : h.lastAccessIssue ?? (s.scanner !== 'RUNNING' ? 'STALE' : m?.status ?? 'WAITING')} /></Row>;
+        return <Row key={symbol} label={symbol}><StatusBadge value={contractFeedStatus(m, h, s.healthQuery.isError || markets.isError)} /></Row>;
       })}</div></section>
     </div>
   );

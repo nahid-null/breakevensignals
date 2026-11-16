@@ -39,6 +39,7 @@ export class SignalService {
     private readonly hostKind: 'windows_pc' | 'hosted' | 'temporary' | 'unknown' = 'unknown') {}
 
   private async app<T>(action: string, data: unknown): Promise<T> {
+    if (this.marketPaused && ['commit', 'market', 'deliveries'].includes(action)) throw new Error('Market processing is paused');
     const response = await fetch(`${this.appUrl}/api/public/engine`, { method: 'POST',
       headers: { 'content-type': 'application/json', authorization: `Bearer ${this.secret}` },
       body: JSON.stringify({ action, data }), signal: AbortSignal.timeout(25_000) });
@@ -239,8 +240,9 @@ export class SignalService {
         void this.drain();
       } catch (e) { this.fail(e); }
     });
-    ws.on('error', () => { if (!this.marketPaused) this.lastError = 'Binance WebSocket connection error'; ws.terminate(); });
+    ws.on('error', () => { if (this.socket === ws && !this.marketPaused) this.lastError = 'Binance WebSocket connection error'; ws.terminate(); });
     ws.on('unexpected-response', (_request, response) => {
+      if (this.socket !== ws || !this.running || this.marketPaused) { response.resume(); return; }
       const status = response.statusCode;
       if (status === 451 || status === 418) {
         response.resume();
@@ -252,6 +254,7 @@ export class SignalService {
       }
     });
     ws.on('close', () => {
+      if (this.socket !== ws) return;
       this.connected = false;
       for (const s of this.available.keys()) this.recovery.add(s);
       if (this.socket === ws) this.socket = null;
@@ -274,7 +277,10 @@ export class SignalService {
       const candles = await history(symbol, saved.state.lastTime + MINUTE, until);
       if (!this.running || this.marketPaused) return;
       if (!candles.length) throw new Error(`${symbol}: missing candle recovery incomplete`);
-      for (const c of candles) await this.accept(symbol, c, 'recovery');
+      for (const c of candles) {
+        if (!this.running || this.marketPaused) return;
+        await this.accept(symbol, c, 'recovery');
+      }
       const next = this.checkpoints.get(symbol);
       if (!next || next.state.lastTime === saved.state.lastTime) throw new Error('Recovery made no progress');
       saved = next;

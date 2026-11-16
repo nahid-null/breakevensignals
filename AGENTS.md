@@ -49,3 +49,5 @@ use the editor.
 - Keep the browser setup reference as a public/private discriminated list with no private value fields; copy only public values or key names because the dashboard is public and must never expose credentials.
 - Acquire the owning lease and report heartbeat before market startup; keep health alive but halt market traffic on typed 451/418 errors until restart, because provider restrictions must not be hidden by a startup crash or bypassed by retry routing.
 - Share stable market-access error codes between worker and health projection using existing ERROR telemetry, because distinct public restriction status must remain compatible with the deployed heartbeat schema.
+- Enforce the recorded restriction at commit, price-update and signal-delivery boundaries as well as the worker; exempt explicitly labelled test deliveries, because concurrent or manual paths must not bypass the pause or alter sent history.
+- Use shared per-feed freshness and saved-state notices across market screens, because a healthy global heartbeat cannot make an individual stale price or recorded trade live.

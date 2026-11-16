@@ -1,4 +1,12 @@
+import { marketProcessingPaused, PAUSED_MARKET_MESSAGE } from './engine/market-policy';
+
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/telegram";
+
+async function signalDeliveryPaused() {
+  const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+  const health = await supabaseAdmin.from('engine_health').select('error').eq('id', 1).maybeSingle();
+  return Boolean(health.error) || marketProcessingPaused(health.data);
+}
 
 export async function sendTelegram(text: string): Promise<{ ok: true; messageId: number } | { ok: false; error: string; uncertain?: boolean; retryAfter?: number }> {
   const lovableKey = process.env["LOVABLE_API_KEY"];
@@ -34,6 +42,10 @@ export async function sendTelegram(text: string): Promise<{ ok: true; messageId:
 /** Atomically claims a delivery. Never blindly retries an ambiguous network outcome. */
 export async function deliverLog(logId: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const existing = await supabaseAdmin.from('telegram_logs').select('is_test,delivery_status').eq('id', logId).maybeSingle();
+  if (existing.error || !existing.data) return { ok: false, error: 'Could not read notification' };
+  if (existing.data.delivery_status === 'SENT') return { ok: false, error: 'Already sent — retry blocked to prevent duplicates' };
+  if (!existing.data.is_test && await signalDeliveryPaused()) return { ok: false, error: PAUSED_MARKET_MESSAGE };
   const claim = crypto.randomUUID();
   const { data, error } = await supabaseAdmin.rpc("claim_telegram_delivery", { log_id: logId, claim_id: claim });
   if (error) return { ok: false, error: "Could not claim notification" };
@@ -54,10 +66,11 @@ export async function deliverLog(logId: string) {
 
 export async function drainTelegram() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  if (await signalDeliveryPaused()) return;
   // A crashed sender might have delivered successfully. Flag, never auto-resend.
   await supabaseAdmin.from('telegram_logs').update({ delivery_status: 'FAILED', delivery_uncertain: true,
     error_message: 'Delivery interrupted; check Telegram before retrying.', delivery_claim: null, claimed_at: null })
-    .not('delivery_claim', 'is', null).lt('claimed_at', new Date(Date.now() - 120_000).toISOString());
+    .in('delivery_status', ['PENDING', 'FAILED']).not('delivery_claim', 'is', null).lt('claimed_at', new Date(Date.now() - 120_000).toISOString());
   const { data } = await supabaseAdmin.from('telegram_logs').select('id').in('delivery_status', ['PENDING', 'FAILED'])
     .eq('delivery_uncertain', false).is('delivery_claim', null).lt('retry_count', 5)
     .or(`next_retry_at.is.null,next_retry_at.lte.${new Date().toISOString()}`).order('created_at').limit(3);
