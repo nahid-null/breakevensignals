@@ -146,14 +146,10 @@ export class RobotCore {
   }
 
   /** Called after the database confirmed (or refused) an open. */
-  confirmOpen(r: PositionFill, ok: boolean, reason?: string) {
-    if (ok) { this.open.push(r.position); this.signals.push({ id: r.position.id, candidate: this.candidateOf(r.position), decision: 'TAKEN', reason: null }); }
-    else { this.counters.orders_rejected++; bump(this.counters.exec_failures, `Database: ${reason ?? 'rejected'}`); }
-  }
-  private candidateOf(p: Position): Candidate {
-    return { symbol: p.symbol, direction: p.direction, time: Math.floor(p.id.split('-').pop() as unknown as number) - MINUTE, setup: p.setup, score: p.score,
-      tier: 'QUALIFIED', parts: { trend: 0, structure: 0, setup: 0, trigger: 0, momentum: 0, volume: 0, execution: 0 }, entry: p.entry, stop: p.initialStop, tp: p.tp,
-      atr: 0, atrPct: 0, stopPct: 0, tpPct: 0, liquidity: p.liquidity };
+  confirmOpen(r: PositionFill, c: Candidate, ok: boolean, reason?: string) {
+    if (ok) { this.open.push(r.position); this.signals.push({ id: r.position.id, candidate: c, decision: 'TAKEN', reason: r.position.fillStatus === 'PARTIAL' ? 'Partial fill' : null }); }
+    else { this.counters.orders_rejected++; bump(this.counters.exec_failures, `Database: ${reason ?? 'rejected'}`);
+      this.signals.push({ id: r.position.id, candidate: c, decision: 'REJECTED', reason: `Database guard: ${reason ?? 'rejected'}` }); }
   }
 
   takeCounters(): Counters { const c = this.counters; this.counters = emptyCounters(); return c; }
