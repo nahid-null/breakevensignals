@@ -144,7 +144,7 @@ describe('atomic persistence (isolated PostgreSQL, no production rows)', () => {
     expect((await db.query<{ stopped: boolean }>('select stop_engine($1) stopped', ['22222222-2222-4222-8222-222222222222'])).rows[0]?.stopped).toBe(false);
     expect((await db.query<{ stopped: boolean }>('select stop_engine($1) stopped', [instance])).rows[0]?.stopped).toBe(true);
     expect((await db.query<{ status: string; websocket_connected: boolean }>('select status,websocket_connected from engine_health')).rows[0]).toMatchObject({ status: 'STOPPED', websocket_connected: false });
-    expect((await db.query<{ n: number }>('select count(*)::int n from engine_checkpoints')).rows[0]?.n).toBe(3);
+    expect((await db.query<{ n: number }>('select count(*)::int n from engine_checkpoints')).rows[0]?.n).toBe(6);
   });
   it.each(['BINANCE_ACCESS_RESTRICTED: HTTP 451', 'BINANCE_IP_BANNED: HTTP 418'])('blocks all forward market writes and signal claims for %s without changing settled rows', async (error) => {
     const heartbeat = { instance_id: instance, status: 'ERROR', error, binance_connected: false, websocket_connected: false, available_symbols: 20 };
