@@ -53,6 +53,8 @@ export class RobotService {
   private settings: RobotSettings = { ...DEFAULT_SETTINGS };
   private account: Account = { balance: 0, dayStartBalance: 0, realizedToday: 0, lossStreak: 0, lastLossAt: null };
   private socket: WebSocket | null = null;
+  private bookSocket: WebSocket | null = null;
+  private bookTimer: ReturnType<typeof setTimeout> | null = null;
   private running = false; private paused = false; private failures = 0; private checking = false;
   private draining = false; private flushing = false; private suspendedUntil = 0;
   private lastLiveBar = new Map<string, number>();
@@ -88,6 +90,7 @@ export class RobotService {
       }
       await this.refresh();
       this.connect();
+      this.connectBook();
       this.timers.push(setInterval(() => { void this.flush().catch((e) => this.fail(e)); }, 5000));
       this.timers.push(setInterval(() => { void this.refresh().catch((e) => this.fail(e)); }, 15_000));
       for (const symbol of this.states.keys()) {
@@ -309,7 +312,7 @@ export class RobotService {
   private connect() {
     if (!this.active()) return;
     const symbols = [...this.states.keys()].map((s) => s.toLowerCase());
-    const streams = symbols.flatMap((s) => [`${s}@kline_1m`, `${s}@bookTicker`]).join('/');
+    const streams = symbols.map((s) => `${s}@kline_1m`).join('/');
     const ws = new WebSocket(`${BINANCE_WS}${streams}`);
     this.socket = ws;
     ws.on('open', () => { this.failures = 0; console.log('PAPER ROBOT market stream connected'); });
@@ -320,11 +323,6 @@ export class RobotService {
           k?: { t: number; o: string; h: string; l: string; c: string; v: string; x: boolean; i?: string } } };
         const d = msg.data; const symbol = d?.s;
         if (!d || !symbol || !this.states.has(symbol)) return;
-        if (d.e === 'bookTicker') {
-          const bid = Number(d.b); const ask = Number(d.a);
-          if (bid > 0 && ask >= bid) this.books.set(symbol, { bid, ask, bidQty: Number(d.B), askQty: Number(d.A), at: Date.now() });
-          return;
-        }
         const k = d.k;
         if (!k || !k.x || (k.i !== undefined && k.i !== '1m')) return;
         const bar = restCandle([k.t, k.o, k.h, k.l, k.c, k.v, 0]);
@@ -352,10 +350,33 @@ export class RobotService {
     });
   }
 
+  /** Best bid/ask arrive on Binance's separate high-frequency public stream. Losing it only blanks spread data. */
+  private connectBook() {
+    if (!this.active()) return;
+    const streams = [...this.states.keys()].map((s) => `${s.toLowerCase()}@bookTicker`).join('/');
+    const ws = new WebSocket(`${BINANCE_WS.replace('/market/', '/public/')}${streams}`);
+    this.bookSocket = ws;
+    ws.on('message', (raw) => {
+      if (this.bookSocket !== ws || !this.active()) return;
+      try {
+        const d = (JSON.parse(raw.toString()) as { data?: { s?: string; b?: string; a?: string; B?: string; A?: string } }).data;
+        if (!d?.s || !this.states.has(d.s)) return;
+        const bid = Number(d.b); const ask = Number(d.a);
+        if (bid > 0 && ask >= bid) this.books.set(d.s, { bid, ask, bidQty: Number(d.B), askQty: Number(d.A), at: Date.now() });
+      } catch { /* malformed frame ignored; spread falls back to unknown */ }
+    });
+    ws.on('error', () => ws.terminate());
+    ws.on('close', () => {
+      if (this.bookSocket !== ws) return;
+      this.bookSocket = null;
+      if (this.active()) this.bookTimer = setTimeout(() => this.connectBook(), backoff(this.failures));
+    });
+  }
+
   private fail(e: unknown) {
     if (e instanceof BinanceRequestError && e.pausesMarket) {
       // Never retry around a 451/418. The signal engine reports the restriction in health.
-      this.paused = true; this.abort.abort(); this.socket?.terminate(); this.socket = null;
+      this.paused = true; this.abort.abort(); this.socket?.terminate(); this.socket = null; this.bookSocket?.terminate(); this.bookSocket = null;
       console.error('PAPER ROBOT paused: Binance restricted market access.');
       return;
     }
@@ -366,6 +387,7 @@ export class RobotService {
     this.running = false;
     for (const t of this.timers) clearInterval(t);
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
-    this.abort.abort(); this.socket?.terminate(); this.socket = null;
+    if (this.bookTimer) clearTimeout(this.bookTimer);
+    this.abort.abort(); this.socket?.terminate(); this.socket = null; this.bookSocket?.terminate(); this.bookSocket = null;
   }
 }
