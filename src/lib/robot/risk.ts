@@ -41,11 +41,36 @@ export function sizeOrder(margin: number, price: number, rules: SymbolRules): { 
   return { qty, notional: qty * price, margin: (qty * price) / PAPER_LEVERAGE };
 }
 
-/** Portfolio gates for paper mode. No daily loss shutdown, no loss-streak pause and no daily trade limit by design. */
-export function portfolioGate(c: Pick<Candidate, 'symbol' | 'direction'>, open: OpenExposure[], balance: number, s: RobotSettings): string | null {
+export type ClosedResult = { closedAt: number; pnl: number };
+const DAY = 86_400_000;
+/** Optional daily loss limit (off by default): realized loss since 00:00 UTC as % of the balance at the start of the day. */
+export function dailyLossHit(history: ClosedResult[], balance: number, now: number, s: Pick<RobotSettings, 'daily_loss_limit_enabled' | 'daily_loss_limit_pct'>) {
+  if (!s.daily_loss_limit_enabled) return false;
+  const day = Math.floor(now / DAY) * DAY;
+  const today = history.filter((h) => h.closedAt >= day && h.closedAt <= now).reduce((a, h) => a + h.pnl, 0);
+  const startOfDay = balance - today;
+  return today < 0 && startOfDay > 0 && -today / startOfDay * 100 >= s.daily_loss_limit_pct;
+}
+/** Optional loss-streak cooldown (off by default): N losses in a row pause new entries for the cooldown after the last loss. */
+export function lossStreakCooling(history: ClosedResult[], now: number, s: Pick<RobotSettings, 'loss_streak_enabled' | 'loss_streak_cooldown' | 'cooldown_minutes'>) {
+  if (!s.loss_streak_enabled) return false;
+  const last = [...history].filter((h) => h.closedAt <= now).sort((a, b) => b.closedAt - a.closedAt).slice(0, s.loss_streak_cooldown);
+  return last.length >= s.loss_streak_cooldown && last.every((h) => h.pnl < 0) && now - last[0]!.closedAt < s.cooldown_minutes * 60_000;
+}
+/** Largest margin whose loss at the structural stop (plus round-trip costs) stays within risk_per_trade_pct of the balance at 50x. */
+export function riskMarginCap(balance: number, entry: number, stop: number, s: Pick<RobotSettings, 'risk_per_trade_pct' | 'fee_pct' | 'slippage_bps'>) {
+  const lossFraction = Math.abs(entry - stop) / entry + 2 * s.fee_pct / 100 + 2 * s.slippage_bps / 10_000;
+  return lossFraction > 0 ? (Math.max(0, balance) * s.risk_per_trade_pct / 100) / (lossFraction * PAPER_LEVERAGE) : 0;
+}
+
+/** Portfolio gates for paper mode. The daily loss limit and loss-streak cooldown apply only when switched on; no daily trade limit. */
+export function portfolioGate(c: Pick<Candidate, 'symbol' | 'direction'>, open: OpenExposure[], balance: number, s: RobotSettings,
+  history: ClosedResult[] = [], now = Date.now()): string | null {
   if (s.emergency_stop) return 'Emergency stop active';
   if (!s.enabled) return 'Robot paused';
   if (balance <= 0) return 'No paper balance';
+  if (dailyLossHit(history, balance, now, s)) return 'Daily loss limit reached';
+  if (lossStreakCooling(history, now, s)) return 'Loss-streak cooldown';
   if (open.some((p) => p.symbol === c.symbol)) return 'Already in this coin';
   if (open.length >= s.max_concurrent) return 'All position slots in use';
   if (open.filter((p) => groupOf(p.symbol) === groupOf(c.symbol)).length >= MAX_PER_GROUP) return 'Correlated exposure limit';
