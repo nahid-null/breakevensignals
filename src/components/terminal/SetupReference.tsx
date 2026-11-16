@@ -18,7 +18,7 @@ function CopyAction({ text, label }: { text: string; label: string }) {
   return <Tooltip><TooltipTrigger asChild><Button type="button" variant="ghost" size="icon" aria-label={label} onClick={copy} className="shrink-0"><Copy /></Button></TooltipTrigger><TooltipContent>{label}</TooltipContent></Tooltip>;
 }
 
-function ReferenceRow({ entry, configuration }: { entry: SetupEntry; configuration?: Configuration }) {
+function ReferenceRow({ entry, configuration }: { entry: SetupEntry; configuration: Configuration | undefined }) {
   const publicValue = setupCopyText(entry, 'value');
   const configured = entry.kind === 'private' ? entry.status === 'engine' ? configuration?.engineConfigured : entry.status === 'chat' ? configuration?.chatConfigured : configuration?.botConfigured : undefined;
   return <div className="grid min-w-0 gap-2 border-b border-border/60 py-4 last:border-b-0 sm:grid-cols-2 sm:gap-6">
@@ -31,7 +31,7 @@ function ReferenceRow({ entry, configuration }: { entry: SetupEntry; configurati
   </div>;
 }
 
-export function SetupReference({ configuration }: { configuration?: Configuration }) {
+export function SetupReference({ configuration }: { configuration: Configuration | undefined }) {
   return <TooltipProvider><section aria-labelledby="render-values" className="border-y border-border py-5">
     <h2 id="render-values" className="font-mono text-sm">RENDER SETUP VALUES</h2>
     <div>{RENDER_SETUP.map((entry) => <ReferenceRow key={entry.name} entry={entry} configuration={configuration} />)}</div>
