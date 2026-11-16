@@ -20,6 +20,9 @@ const START = Number(startArg);
 const info = JSON.parse(readFileSync(infoPath, 'utf8')) as { symbols: { symbol: string; filters: Parameters<typeof rulesFromFilters>[0] }[] };
 
 const core = new RobotCore(s, process.env['BT_STRATEGY'] === 'legacy');
+import { evaluateSweep } from '../src/lib/robot/liquidity-sweep';
+if (process.env['BT_STRATEGY'] === 'sweep_v1') core.evaluator = evaluateSweep;
+const STRATEGY = process.env['BT_STRATEGY'] === 'legacy' ? 'LEGACY_SIX_FAMILIES_CORRECTED_REPLAY' : process.env['BT_STRATEGY'] === 'sweep_v1' ? 'LIQUIDITY_SWEEP_V1' : 'SMC_V1';
 const data = new Map<string, number[][]>(); const cursor = new Map<string, number>();
 for (const sym of ROBOT_SYMBOLS) {
   const p = `${dir}/${sym}.json`; if (!existsSync(p)) continue;
@@ -30,14 +33,16 @@ for (const sym of ROBOT_SYMBOLS) {
 let start = Infinity; let end = -Infinity;
 for (const r of data.values()) { start = Math.min(start, r[0]![0]!); end = Math.max(end, r.at(-1)![0]!); }
 
-let balance = START; const closed: (ClosedTrade & { symbol: string; setup: string; score: number; leverage: number; roi: number; holdMin: number; margin: number; mae: number | null; mfe: number | null; regime: string })[] = [];
+let balance = START; const closed: (ClosedTrade & { symbol: string; setup: string; score: number; leverage: number; roi: number; holdMin: number; margin: number; mae: number | null; mfe: number | null; regime: string; fees: number; slippageCost: number })[] = [];
 const regimes = new Map<string, string>(); let peakEquity = START; let markedDrawdownPct = 0;
 const pending = new Map<string, Queued>(); let maxAlloc = 0; let maxOpen = 0; const levs = new Set<number>(); let reopenedAfterClose = 0; let lastCloseAt = -1;
 const fillsBy = { full: 0, partial: 0 };
 const track = (p: Position) => {
   closed.push({ symbol: p.symbol, direction: p.direction, netPnl: p.realized, exitReason: p.exitReason!, closedAt: p.closedAt!, riskUsdt: p.riskUsdt,
     setup: p.setup, score: p.score, leverage: p.leverage, roi: (p.realized / ((p.qty * p.entry) / p.leverage)) * 100, holdMin: (p.closedAt! - p.openedAt) / MINUTE,
-    margin: (p.qty * p.entry) / p.leverage, mae: p.maeRoi ?? null, mfe: p.mfeRoi ?? null, regime: regimes.get(p.id) ?? 'UNKNOWN' });
+    margin: (p.qty * p.entry) / p.leverage, mae: p.maeRoi ?? null, mfe: p.mfeRoi ?? null, regime: regimes.get(p.id) ?? 'UNKNOWN',
+    fees: p.fees, slippageCost: p.qty * p.entry * s.slippage_bps / 10_000 * 2 });
+  core.history.push({ closedAt: p.closedAt!, pnl: p.realized });
   lastCloseAt = p.closedAt!;
 };
 end = Math.min(end, TO);
@@ -89,13 +94,16 @@ const result = {
   symbols: [...data.keys()], start_balance: START, end_balance: balance, settings: s, leverage_used: [...levs], fixed_leverage: PAPER_LEVERAGE,
   assumptions: { entry_fill: 'Next 1m bar open, one-tick spread, plus slippage', exits: 'Stop checked before target in the same bar; TP is a maker limit at the 10% net ROI price',
     fees: `taker ${s.fee_pct}% / maker ${s.maker_fee_pct}%`, funding: 'not replayed (no history used)', order_book: 'not available historically' },
-  strategy: process.env['BT_STRATEGY'] === 'legacy' ? 'LEGACY_SIX_FAMILIES_CORRECTED_REPLAY' : 'LIQUIDITY_SWEEP_V1',
+  strategy: STRATEGY, in_sample_from: FROM ? new Date(FROM).toISOString() : null,
   all: m(closed), long: m(closed.filter((c) => c.direction === 'LONG')), short: m(closed.filter((c) => c.direction === 'SHORT')),
   by_regime: by((c) => c.regime), net_balance_roi_pct: (balance / START - 1) * 100, marked_max_drawdown_pct: markedDrawdownPct,
   excursion_roi: { mean_mae: closed.length ? closed.reduce((a,c) => a+(c.mae??0),0)/closed.length : null, mean_mfe: closed.length ? closed.reduce((a,c) => a+(c.mfe??0),0)/closed.length : null,
     units: 'Net ROI percentage points on original position margin; closed-candle bounds, stop-first ordering, not historical executable book ticks' },
   open_positions_at_end: core.open.filter((p)=>p.status==='OPEN').length,
-  by_setup: by((c) => c.setup), by_exit: by((c) => c.exitReason), max_allocation_pct: maxAlloc, max_open_positions: maxOpen,
+  by_setup: by((c) => c.setup), by_symbol: by((c) => c.symbol),
+  entry_accuracy_pct: closed.length ? closed.filter((c) => (c.mfe ?? -Infinity) >= 5).length / closed.length * 100 : null,
+  entry_accuracy_definition: 'Share of closed trades whose best observed net margin ROI reached at least +5% (half the target) before exit',
+  total_fees: closed.reduce((a, c) => a + c.fees, 0), estimated_slippage_cost: closed.reduce((a, c) => a + c.slippageCost, 0), by_exit: by((c) => c.exitReason), max_allocation_pct: maxAlloc, max_open_positions: maxOpen,
   tp_net_roi: tp.length ? { min: Math.min(...tp.map((c) => c.roi)), max: Math.max(...tp.map((c) => c.roi)), avg: tp.reduce((a, c) => a + c.roi, 0) / tp.length } : null,
   reopened_within_5min_of_a_close: reopenedAfterClose, fills: fillsBy, max_win_streak: streakW, max_loss_streak: streakL,
   avg_hold_minutes: closed.length ? closed.reduce((a, c) => a + c.holdMin, 0) / closed.length : 0,
