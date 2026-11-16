@@ -16,6 +16,9 @@ export type BookContext = { spreadBps: number | null; imbalance: number | null; 
 
 /** Signal bars are 5m; the 15m and 1h trends give context. Sweeps are tracked on 1m bars. */
 const SWEEP_LOOKBACK_MS = 15 * 60_000;
+/** Structural constants, adjustable only after backtesting. */
+export const TUNING = { stopBufferAtr: 0.3, minRiskAtr: 0.6, maxRiskAtr: 2.2, requireBothTrends: false, allowPullback: true,
+  tp1R: 1, tp2R: 2, minRr1: 0.7, confirmBars: 1 };
 export const roundTripCostPct = (s: RobotSettings) => 2 * (s.fee_pct + s.slippage_bps / 100);
 
 export function evaluate(st: SymbolState, direction: Direction, s: RobotSettings, book: BookContext): Evaluation {
@@ -43,7 +46,7 @@ export function evaluate(st: SymbolState, direction: Direction, s: RobotSettings
 
   const htf = st.m60.trend(true); const mid = st.m15.trend(false);
   if (htf === -sign || mid === -sign) return reject('Against higher-timeframe trend');
-  if (htf !== sign && mid !== sign) return reject('No higher-timeframe trend');
+  if (TUNING.requireBothTrends ? htf !== sign || mid !== sign : htf !== sign && mid !== sign) return reject('No higher-timeframe trend');
   if (long ? rsi > 70 : rsi < 30) return reject('Momentum overextended');
 
   // Setup: sweep of a 5m+ liquidity pool and reclaim, else pullback into EMA21/VWAP in a 1h trend.
@@ -59,7 +62,7 @@ export function evaluate(st: SymbolState, direction: Direction, s: RobotSettings
   }
   if (swept) setup = 'SWEEP_RECLAIM';
   const recent = sig.bars.slice(-4, -1);
-  if (!setup && htf === sign) {
+  if (!setup && TUNING.allowPullback && htf === sign) {
     const zone = long ? Math.max(ema21, vwap) : Math.min(ema21, vwap);
     const touched = recent.some((b) => long ? b.low <= zone + 0.1 * atr : b.high >= zone - 0.1 * atr);
     const held = recent.every((b) => long ? b.close > zone - 0.5 * atr : b.close < zone + 0.5 * atr);
@@ -69,29 +72,30 @@ export function evaluate(st: SymbolState, direction: Direction, s: RobotSettings
 
   // Closed confirmation candle in the trade direction, beyond EMA9, not far from the reclaim.
   if (!((bar.close - bar.open) * sign > 0 && body >= 0.4 * range)) return reject('No confirmation candle');
+  for (let k = 1; k < TUNING.confirmBars; k++) { const b = sig.last(k); if (!b || (b.close - b.open) * sign <= 0) return reject('No confirmation candle'); }
   if ((price - ema9) * sign < 0) return reject('Close not beyond EMA9');
   const anchor = swept?.price ?? ema21;
   if ((price - anchor) * sign > 1.0 * atr) return reject('Entry too far from reclaim; not chasing');
 
   // Protective stop beyond the sweep extreme with a volatility buffer, never on an obvious pool.
-  let stop = extreme - sign * Math.max(0.3 * atr, 2 * st.tickSize);
+  let stop = extreme - sign * Math.max(TUNING.stopBufferAtr * atr, 2 * st.tickSize);
   const crowded = pools.find((l) => l.sweptAt === null && l.side === (long ? 'low' : 'high') && Math.abs(l.price - stop) < 0.2 * atr);
   if (crowded) stop = crowded.price - sign * 0.3 * atr;
   let risk = (price - stop) * sign;
-  if (risk < 0.6 * atr) { stop = price - sign * 0.6 * atr; risk = 0.6 * atr; }
-  if (risk > 2.2 * atr || risk / price > 0.025) return reject('Stop would be too wide');
+  if (risk < TUNING.minRiskAtr * atr) { stop = price - sign * TUNING.minRiskAtr * atr; risk = TUNING.minRiskAtr * atr; }
+  if (risk > TUNING.maxRiskAtr * atr || risk / price > 0.025) return reject('Stop would be too wide');
   if (cost / ((risk / price) * 100) > 0.25) return reject('Costs too large versus stop distance');
 
   // Room to the nearest opposing liquidity (resistance for LONG, support for SHORT).
   const opposing = pools.filter((l) => l.sweptAt === null && l.side === (long ? 'high' : 'low') && (l.price - price) * sign > 0.2 * atr)
     .map((l) => l.price).sort((a, b) => (a - b) * sign);
-  let tp1 = price + sign * risk; let tp2 = price + sign * 2 * risk;
+  let tp1 = price + sign * TUNING.tp1R * risk; let tp2 = price + sign * TUNING.tp2R * risk;
   const first = opposing[0]; const second = opposing[1] ?? first;
   if (first !== undefined && (first - sign * 0.1 * atr - tp1) * sign < 0) tp1 = first - sign * 0.1 * atr;
   if (second !== undefined && (second - sign * 0.1 * atr - tp2) * sign < 0) tp2 = second - sign * 0.1 * atr;
   if ((tp2 - tp1) * sign < 0) tp2 = tp1;
   const rr1 = ((tp1 - price) * sign) / risk;
-  if (rr1 < 0.7) return reject('Too close to opposing liquidity');
+  if (rr1 < TUNING.minRr1) return reject('Too close to opposing liquidity');
   if ((((tp1 - price) * sign) / price) * 100 < 3 * cost) return reject('Profit room too small for fees and slippage');
   if (pools.some((l) => l.sweptAt === null && l.side === (long ? 'low' : 'high') && (price - l.price) * sign > 0 && (price - l.price) * sign < 0.3 * atr))
     return reject('Unswept liquidity just behind entry (stop-hunt risk)');

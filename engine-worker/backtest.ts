@@ -10,10 +10,11 @@ import { abnormalMarket, evaluateBoth, exposure, pickEntry, stepSymbol } from '.
 import { openPosition, type Position } from '../src/lib/robot/paper';
 import { portfolioGate, sizePosition, type Account } from '../src/lib/robot/risk';
 import { computeMetrics, type ClosedTrade } from '../src/lib/robot/metrics';
-import type { Candidate } from '../src/lib/robot/strategy';
+import { TUNING, type Candidate } from '../src/lib/robot/strategy';
+Object.assign(TUNING, JSON.parse(process.env['ROBOT_TUNING'] ?? '{}'));
 
 const [dir = '/tmp/bt/data', infoPath = '/tmp/ei.json', outPath = '/tmp/bt/result.json'] = process.argv.slice(2);
-const s = { ...DEFAULT_SETTINGS };
+const s = { ...DEFAULT_SETTINGS, ...JSON.parse(process.env['ROBOT_SETTINGS'] ?? '{}') };
 const START_BALANCE = 1000;
 type Series = { t: Float64Array; o: Float64Array; h: Float64Array; l: Float64Array; c: Float64Array; v: Float64Array; n: number };
 const info = JSON.parse(readFileSync(infoPath, 'utf8')) as { symbols: { symbol: string; filters: { filterType: string; tickSize?: string }[] }[] };
