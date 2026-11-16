@@ -3,6 +3,8 @@ import { z } from "zod";
 import { commitSchema, heartbeatSchema, marketSchema, eventSource } from "@/lib/engine/protocol";
 import { formatSignalMessage } from "@/lib/telegram-format";
 import type { Json } from "@/integrations/supabase/types";
+import { robotCommitSchema } from "@/lib/robot/protocol";
+import { robotFillMessages, robotOpenMessage } from "@/lib/robot/telegram-format";
 
 export const Route = createFileRoute("/api/public/engine")({
   server: { handlers: { POST: async ({ request }) => {
@@ -13,7 +15,7 @@ export const Route = createFileRoute("/api/public/engine")({
     let input: unknown;
     try { const text = await request.text(); if (text.length > 150_000) return new Response('Too large', { status: 413 }); input = JSON.parse(text); }
     catch { return Response.json({ error: "Invalid JSON" }, { status: 400 }); }
-    const base = z.object({ action: z.enum(["heartbeat", "state", "commit", "market", "deliveries", 'stop', 'market-state']), data: z.unknown() }).safeParse(input);
+    const base = z.object({ action: z.enum(["heartbeat", "state", "commit", "market", "deliveries", 'stop', 'market-state', 'robot-state', 'robot-commit']), data: z.unknown() }).safeParse(input);
     if (!base.success) return Response.json({ error: "Invalid request" }, { status: 422 });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     try {
@@ -39,6 +41,29 @@ export const Route = createFileRoute("/api/public/engine")({
           source: eventSource(data.mode),
           telegram_message: data.mode === 'live' ? formatSignalMessage({ ...e, fee_rate_percent: e.fee_rate_percent ?? null }) : '' }));
         const { data: result, error } = await supabaseAdmin.rpc("commit_engine_candle", { p: { ...data, events } as Json });
+        if (error) throw error;
+        return Response.json(result);
+      }
+      if (base.data.action === 'robot-state') {
+        const since = new Date(Date.now() - 2 * 86_400_000).toISOString();
+        const [settings, account, open, closed] = await Promise.all([
+          supabaseAdmin.from('robot_settings').select('*').eq('id', 1).single(),
+          supabaseAdmin.from('robot_account').select('*').eq('id', 1).single(),
+          supabaseAdmin.from('robot_positions').select('*').eq('status', 'OPEN'),
+          supabaseAdmin.from('robot_positions').select('realized_pnl, closed_at').eq('status', 'CLOSED').gte('closed_at', since).order('closed_at', { ascending: false }).limit(200),
+        ]);
+        for (const r of [settings, account, open, closed]) if (r.error) throw r.error;
+        return Response.json({ settings: settings.data, account: account.data, open: open.data, closed: closed.data });
+      }
+      if (base.data.action === 'robot-commit') {
+        const data = robotCommitSchema.parse(base.data.data);
+        const p = {
+          instance_id: data.instance_id, markets: data.markets, signals: data.signals,
+          opens: data.opens.map((o) => ({ ...o, message: robotOpenMessage(o) })),
+          // Recovery fills after a restart are applied but never announced as live events.
+          updates: data.updates.map(({ fills, notify, ...u }) => ({ ...u, messages: notify ? robotFillMessages({ ...u, fills, notify }) : [] })),
+        };
+        const { data: result, error } = await supabaseAdmin.rpc('robot_commit', { p: p as unknown as Json });
         if (error) throw error;
         return Response.json(result);
       }
