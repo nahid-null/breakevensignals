@@ -13,7 +13,8 @@ import { DEFAULT_RULES, rulesFromFilters } from '../src/lib/robot/risk';
 import type { BookContext, Candidate } from '../src/lib/robot/strategy';
 import type { RobotCommit, RobotCommitResult } from '../src/lib/robot/protocol';
 
-type Row = Record<string, unknown>;
+type RowKey = 'id' | 'symbol' | 'direction' | 'status' | 'setup' | 'score' | 'leverage' | 'band' | 'entry_price' | 'quantity' | 'quantity_open' | 'margin' | 'notional' | 'stop_loss' | 'initial_stop' | 'tp1' | 'liquidation_price' | 'risk_usdt' | 'entry_fee' | 'fees' | 'funding' | 'realized_pnl' | 'opened_at' | 'last_candle_time' | 'version' | 'liquidity' | 'last_price' | 'unrealized_pnl' | 'tick_size' | 'requested_quantity' | 'fill_status' | 'balance';
+type Row = { [K in RowKey]?: unknown } & Record<string, unknown>;
 type Book = { bid: number; ask: number; bidQty: number; askQty: number; at: number };
 const LIVE_BAR_MAX_AGE = 2 * MINUTE;
 const num = (v: unknown) => Number(v);
