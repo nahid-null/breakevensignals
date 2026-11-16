@@ -4,6 +4,7 @@ import { EVENT_TYPES, SYMBOLS } from "@/lib/config";
 import { fmtPrice, fmtTime, useEvents, useSettings } from "@/lib/data";
 import { StatusBadge } from "@/components/terminal/StatusBadge";
 import { Input } from "@/components/ui/input";
+import { SavedMarketNotice } from '@/components/terminal/SavedMarketNotice';
 
 export const Route = createFileRoute("/signals")({
   head: () => ({
@@ -44,6 +45,7 @@ function Signals() {
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-semibold">Signal history</h1>
+      <SavedMarketNotice />
       <div className="flex flex-wrap gap-2 border-y border-border py-3">
         <select className={sel} value={coin} onChange={(e) => setCoin(e.target.value)}>
           <option value="">All coins</option>

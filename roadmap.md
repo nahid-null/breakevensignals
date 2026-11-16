@@ -1,9 +1,14 @@
 # Independent Crypto Signal Terminal
 
+## Restriction flow sweep (2026-11-16)
+- [x] Read all seven screens, shared header/monitor/setup/details, scanner startup/history/recovery/live/reconnect/price/delivery/shutdown paths, alert send/retry/test functions, health reads and all current database functions.
+- [x] Fix abort handling and stale-socket events, per-symbol saved-state labels, active ledger/history notices, setup ERROR and manual/background delivery pause; additive 0008 guards market writes and signal claims with existing lease serialization. Sent/closed records, permissions, preferences and calculations unchanged.
+- [x] Verify 103 tests, real isolated 20-feed reconnect/disk restart and all seven screens on desktop/phone; no overflow/runtime errors; build OK 08:39:27 UTC. chat.md updated; no real messages sent, hosted access/deployment/certification blockers retained.
+
 ## Railway Binance access investigation (2026-11-16)
 - [x] Inspect public Futures endpoints, startup failures, hosting configuration and dashboard status: sandbox requests return 200; isolated 451 fails before heartbeat; 13 targeted tests pass; preview/published retain STOPPED status and four genuine SHORT positions. Official current regional permission remains unverified; official archives are historical-only and live provider candidates exceed the $0 budget.
 - [x] Prepare a safe proposal and read-only Railway verification procedure; no production code, hosting settings, strategy, history or Telegram changes.
-- [ ] Implement restriction-aware health/logging and Railway-compatible presentation — waits for user's approval of the plan.
+- [x] Implement approved restriction-aware health/logging and Railway-compatible presentation; 89 tests pass, including concurrent heartbeat serialization; isolated real 20-feed Binance reconnect/disk restart passes, restricted desktop/current/phone checks have no overflow/runtime errors, latest build OK; chat.md updated. No production deployment or provider change.
 - [ ] Verify permitted market access and genuine deployed scanning — needs Railway's chosen region/public 451 response, Binance eligibility confirmation and access to real hosted results; no verified free equivalent live replacement.
 
 ## Safe setup reference request (2026-11-16)
@@ -14,7 +19,7 @@
 ## Render free hosting request (2026-11-16)
 - [x] Remove PC connection from website and package; replace with cloud scanner status.
 - [x] Run scanner as a Render free web service with health check and self keep-awake; tested locally (65 tests, real Binance connect, /healthz ok, private health 401).
-- [ ] Create Render account, connect GitHub and apply blueprint — needs the user's own accounts.
+- [x] Defer Render account/blueprint creation — superseded by the user's reported Railway Docker deployment; no account or subscription activated here.
 - [ ] Republish website so the live site has the current engine key — user decision.
 
 ## Current zero-cost reliability request
@@ -22,7 +27,7 @@
 - [x] Improve truthful scan status, next candle schedule, durable scan counts and delivery timestamps; preserve layout and recovery protections.
 - [x] Verify isolated startup/repeated scanning/reconnect/restart/deduplication, dashboard refresh and one labelled Telegram test — 64 tests pass; real 20-feed Binance recovery, 31 durable candle scans and reopened counters/checkpoints; safe TEST ID 10 SENT.
 - [x] Explain browser/PC shutdown limits and zero-cost deployment blockers without activating infrastructure — current web hosting does not run the separate continuous worker; an eligible free always-on host is still required.
-- [ ] Verify deployed genuine signal/breakeven Telegram delivery and unattended uptime — blocked by STOPPED production worker, no configured free host, independent certification and matching published credentials.
+- [ ] Verify deployed genuine signal/breakeven Telegram delivery and unattended uptime — needs lawful Binance access from the reported Railway deployment, updated website/worker with matching credentials, independent certification and real hosted results; production dashboard still STOPPED.
 
 - [x] Inspect current application, full LONG/SHORT Pine scripts, database and preferences.
 - [x] Check real Binance Futures availability for the existing 21 symbols.
@@ -35,7 +40,7 @@
 - [x] Add candidate Pine-language comparison using exact original uploads and 1500 identical real NEARUSDT candles; 44 tests pass, no production trading-rule changes.
 - [x] Correct comparison interpreter EMA/MACD startup, storage precision, extrema startup and float-comparison semantics; both intact originals match native results across 4500 real NEAR/LINK/WIF candles.
 - [ ] Certify exact TradingView outputs before deployment — local interpreter agreement passes, but independent TradingView exports on identical candles/start/inputs are still unavailable.
-- [ ] Install and verify permanent free cloud monitoring with the browser closed — requires a user-owned eligible free cloud machine, independent parity evidence, republication of the replaced engine key, matching host configuration and unattended verification. The user rejected PC hosting on 2026-11-16. Previously prepared Windows and Render files remain available but are not the chosen deployment.
+- [ ] Verify permanent free cloud monitoring with the browser closed — needs evidence that the reported Railway deployment meets the $0 budget, lawful market access, independent parity evidence, matching updated website/worker credentials and unattended results. The user rejected PC hosting on 2026-11-16; no hosting settings changed here.
 - [x] Update chat.md and document verified results and remaining blockers.
 - [x] Finish uploaded-requirements verification after key setup: 20 real saved candle streams, restart recovery, four genuine recovered trades read back, stopped temporary-test status, 40 passing tests and browser checks.
 - [x] Diagnose offline report and verify Telegram separately — engine STOPPED since 14:29 UTC, website never published, labelled TEST delivered and read back SENT; no matching src/main.tsx / React.queryClient error found.

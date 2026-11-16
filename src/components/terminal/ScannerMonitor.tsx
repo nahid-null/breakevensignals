@@ -7,11 +7,11 @@ export function ScannerMonitor() {
   const s = useStatuses();
   const timezone = useSettings().data?.display_timezone ?? 'UTC';
   return <section aria-label="Scanner status" className="grid gap-x-6 gap-y-4 border-y border-border py-4 sm:grid-cols-2 lg:grid-cols-4">
-    <div><div className="mb-2 text-[10px] uppercase text-muted-foreground">Cloud scanner (Render)</div><StatusBadge value={s.cloud} /></div>
+    <div><div className="mb-2 text-[10px] uppercase text-muted-foreground">Cloud service</div><StatusBadge value={s.cloud} /></div>
     <div><div className="mb-2 text-[10px] uppercase text-muted-foreground">Scanner Engine</div><StatusBadge value={s.scanner} /></div>
     <div><div className="mb-2 text-[10px] uppercase text-muted-foreground">Engine uptime · last reported</div><span className="font-mono text-xs">{formatUptime(s.health?.uptimeSeconds)}</span></div>
     <div><div className="mb-2 text-[10px] uppercase text-muted-foreground">Last successful scan</div><span className="font-mono text-xs">{fmtTime(s.health?.lastScanAt, timezone)}</span></div>
-    <div><div className="mb-2 text-[10px] uppercase text-muted-foreground">Binance connection</div><StatusBadge value={s.binance} /></div>
+    <div><div className="mb-2 text-[10px] uppercase text-muted-foreground">Binance data</div><StatusBadge value={s.binance} /></div>
     <div><div className="mb-2 text-[10px] uppercase text-muted-foreground">Next scan · expected candle close</div><span className="font-mono text-xs">{fmtTime(s.health?.nextScanAt, timezone)}</span></div>
     <div><div className="mb-2 text-[10px] uppercase text-muted-foreground">Successful candle scans</div><span className="font-mono text-xs">{s.health?.successfulScans ?? '—'}</span></div>
     <div><div className="mb-2 text-[10px] uppercase text-muted-foreground">Last successful Telegram notification</div><span className="font-mono text-xs">{fmtTime(s.health?.lastTelegramAt, timezone)}</span></div>

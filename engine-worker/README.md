@@ -1,17 +1,37 @@
 # Always-on signal service
 
-The existing website stays on Lovable. Scanning runs in the separate Bun worker, never Chrome or a web request. The operating budget is strictly zero: no paid or trial-only resources may be activated. A user-owned eligible free cloud machine is the preferred host, but none is configured or verified here. Free capacity, account eligibility, lawful Binance access, idle reclamation and Lovable usage allowances must be checked; uninterrupted permanently free operation is not guaranteed.
+The existing website stays on Lovable. Scanning runs in the separate Bun worker, never Chrome or a web request. The operating budget is strictly zero: no paid or trial-only resources may be activated. The user reports an existing Railway Docker deployment; its configuration and lawful Binance access have not been verified here. Capacity, account eligibility, hosting limits and Lovable usage allowances must be checked; uninterrupted permanently free operation is not guaranteed.
 
-Keeping Chrome open cannot start this worker. Closing or refreshing Chrome does not stop a separately running worker. The chosen host is a Render free web service (`render.yaml`): it binds `PORT`, answers `ok` on `/healthz`, and requests its own `RENDER_EXTERNAL_URL` every 10 minutes so the 15-minute free idle sleep never triggers. Render may still restart free services; checkpoints make the worker resume. The Windows PC option was removed on 2026-11-16 at the user's request.
+Keeping Chrome open cannot start this worker. Closing or refreshing Chrome does not stop a separately running worker. Both Railway and the retained Render free-service configuration bind `PORT` and answer `ok` on `/healthz`. Only Render uses the optional `RENDER_EXTERNAL_URL` self-request every ten minutes; this depends on hosting policy and does not guarantee uptime. Checkpoints let a permitted worker resume after restart. The Windows PC option was removed at the user's request.
 
-## Optional legacy Render deployment (not the primary choice)
-Do not deploy until original-Pine parity is validated. Render configuration is preparation only; paid activation requires the user's separate final confirmation.
+## Existing Railway Docker deployment
+The user reports running this scanner on Railway. No provider account, subscription or region is changed by this project. Keep a single instance and the existing values of `ENGINE_APP_URL`, `ENGINE_SHARED_SECRET` and `ENGINE_HOST_KIND=hosted`. Railway supplies `PORT`; the container uses `engine-worker/Dockerfile`. Railway environment identity also defaults the host kind to `hosted` when the explicit setting is absent. No database administrator or Binance trading key is needed.
 
-1. Set `ENGINE_SHARED_SECRET` using Lovable's secure secret form (Generate + copy), then paste that same private value into Render. Publish the website after saving the key to activate it at the public HTTPS URL. Never put it in chat or source.
-2. Connect the project source repository to Render and create a Blueprint from `render.yaml`. It requests one Frankfurt background-worker instance on the 0.5c-512mb plan (approximately $7/month; confirm current pricing in Render before approving).
-3. Set `ENGINE_APP_URL` to the published website origin (no trailing path) and `ENGINE_SHARED_SECRET` to the same private value saved in Lovable. No database administrator key or Binance trading key is required.
-4. Deploy. Verify System Health shows a fresh heartbeat, Binance connected, WebSocket connected and 20 available / 21 configured contracts. WILDUSDT is not currently listed and is deliberately unavailable.
-5. Close every browser, wait for multiple confirmed minutes, reopen and verify later candle timestamps and genuine new events. Restart the worker and verify checkpoint recovery. This step is required before claiming unattended operation.
+Publish the corresponding website update and deploy the matching worker revision. A fresh cloud heartbeat proves the service can reach the website, **not** that Binance permits access or that scanning is RUNNING. The service acquires its owning lease and starts dashboard heartbeat reporting before requesting Binance metadata. Public `/healthz` remains content-free liveness; `/health` needs a separate private health key.
+
+### Binance access restrictions
+The first public request is `https://fapi.binance.com/fapi/v1/exchangeInfo`; one-minute history uses `/fapi/v1/klines` and REST connectivity uses `/fapi/v1/time`. Live data uses `wss://fstream.binance.com/stream?streams=<symbol>@kline_1m/…`. These are USD-M Futures trade candles; Spot, Binance.US, testnet and another exchange are not replacements.
+
+HTTP 451 is classified as `BINANCE_ACCESS_RESTRICTED`; 418 is `BINANCE_IP_BANNED`. Both pause market requests, WebSocket reconnects, candle commits and notification-drain requests until the process is restarted after lawful access is resolved. Health reporting remains active. Logs include the public endpoint path, HTTP status, timestamp and bounded sanitized JSON explanation; query strings, raw HTML and keys are not logged. Other failures distinguish rate limits, network outages, provider outages and request rejection. Only transient startup failures retry with backoff. 429 honors Retry-After within the bounded request budget.
+
+Restrictions abort in-flight REST work and are enforced again at database write/claim boundaries. Dashboard and Health use each symbol's durable candle age rather than treating global liveness as fresh prices. Active Trade Ledger and Signal History display saved-state warnings; completed trades and sent deliveries remain unchanged. Manual signal retries and automatic outbox claims pause on a recorded restriction even after its heartbeat expires. Explicitly labelled TEST deliveries remain independent of market scanning. A Telegram request already submitted before the pause cannot be recalled; its actual outcome is recorded without resending or rewriting SENT history.
+
+Do not switch regions, add proxies or use alternate domains to route around restrictions. Current official permission for any of Railway's four regions has not been verified. Ask Binance to confirm eligibility for the actual residence, hosting country and source IP, including possible IP-geolocation errors. A successful request alone is not legal certification.
+
+1. In Railway, open the scanner service's Settings and note the selected region; leave it unchanged.
+2. In a terminal attached to the **running Railway container**, if available, run this read-only public check (not on your PC):
+
+```bash
+bun -e 'const r=await fetch("https://fapi.binance.com/fapi/v1/exchangeInfo",{signal:AbortSignal.timeout(15000)}); console.log("HTTP",r.status); console.log(r.ok ? "Exchange information received" : (await r.text()).slice(0,1000));'
+```
+
+3. Share only the public response and region, never variables or keys. If a terminal is unavailable, share the relevant log lines. Resolve a 451 through Binance's eligibility review, not circumvention.
+4. With the reporting update deployed, verify fresh CLOUD ONLINE / SCANNER ERROR / BINANCE ACCESS RESTRICTED and no later candle commits. If the heartbeat fails, check the published website address and matching private engine key separately.
+5. Only after lawful access is confirmed, restart and verify REST history, live WebSocket closed candles, advancing durable scans and checkpoint recovery. Genuine signal-to-Telegram delivery and browser-closed unattended uptime remain separate acceptance checks.
+
+Binance's official [public data archive](https://github.com/binance/binance-public-data) provides Futures history, but daily data arrives the next day and cannot power live one-minute alerts. Live vendor candidates need explicit licensing, symbol coverage, original-candle equivalence and cost checks; no permitted identical permanently free live alternative is verified. No provider substitution is implemented.
+
+The existing `render.yaml` remains optional free-service preparation; no paid activation is permitted under the standing zero-cost budget. Its Render-specific self-request timer is not used on Railway and cannot fix a Binance restriction.
 
 ## Trading semantics and provenance
 - Original one-minute Pine defaults, without invented ADX or 5m/15m filters.
@@ -34,4 +54,4 @@ The dashboard expires heartbeat-based status after 90 seconds. RUNNING also requ
 ## Isolated real-worker verification
 `bun run verify:worker` runs the real service against Binance and an authenticated local test endpoint backed by disk PGlite. It loads the existing migration set into an isolated database, deliberately disconnects WebSocket, verifies later candles, stops the worker, closes/reopens the disk database and starts a new worker from persisted checkpoints. It writes `/tmp/worker-verification-report.json`; no hosted database or Telegram credentials are used and fixture signals never reach the real chat. Telegram delivery is checked separately with a clearly marked backend TEST message.
 
-Render remains one Docker background worker with auto-deploy off; applying the Blueprint can incur the paid cost and must wait for final confirmation. The Docker container itself cannot be validated here without a Docker daemon. Local recovery evidence is not a deployed 24/7 uptime test.
+The Docker container itself cannot be validated here without a Docker daemon. Local recovery evidence is not a Railway network test, proof of permitted access or deployed 24/7 uptime.

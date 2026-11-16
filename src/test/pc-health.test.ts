@@ -44,6 +44,18 @@ describe('truthful cloud scanner health', () => {
     expect(engineHealth({ ...windows, status: 'STOPPED' }, true, now).nextScanAt).toBeNull();
     expect(engineHealth(windows, false, now).nextScanAt).toBeNull();
   });
+  it('shows an online cloud with a restricted scanner, never connected data or a next scan', () => {
+    const restricted = { ...windows, status: 'ERROR', error: 'BINANCE_ACCESS_RESTRICTED: HTTP 451 /fapi/v1/exchangeInfo — Restricted location' };
+    expect(engineHealth(restricted, true, now)).toMatchObject({ cloud: 'ONLINE', scanner: 'ERROR', binance: 'ACCESS RESTRICTED', websocket: 'DISCONNECTED', nextScanAt: null });
+  });
+  it('retains a recorded access issue but expires its cloud liveness at 90 seconds', () => {
+    const restricted = { ...windows, status: 'ERROR', error: 'BINANCE_ACCESS_RESTRICTED: HTTP 451', last_heartbeat_at: new Date(now - 90_000).toISOString() };
+    expect(engineHealth(restricted, true, now)).toMatchObject({ cloud: 'OFFLINE', scanner: 'STOPPED', binance: 'DISCONNECTED', lastAccessIssue: 'ACCESS RESTRICTED' });
+  });
+  it('distinguishes an IP ban from a regional restriction and transient errors', () => {
+    expect(engineHealth({ ...windows, status: 'ERROR', error: 'BINANCE_IP_BANNED: HTTP 418' }, true, now).binance).toBe('IP BANNED');
+    expect(engineHealth({ ...windows, status: 'ERROR', binance_connected: false, error: 'BINANCE_NETWORK_ERROR: timeout' }, true, now).binance).toBe('DISCONNECTED');
+  });
 });
 
 describe('private read-only local health', () => {

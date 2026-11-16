@@ -4,10 +4,10 @@ export type SetupEntry = SetupBase & (
   | { kind: 'private'; status: 'engine' | 'bot' | 'chat' }
 );
 
-export const RENDER_SETUP: readonly SetupEntry[] = [
-  { name: 'ENGINE_APP_URL', kind: 'public', value: 'https://breakevensignals.lovable.app', note: 'Required in Render · website address' },
-  { name: 'ENGINE_SHARED_SECRET', kind: 'private', status: 'engine', note: 'Required in Render · the same private key saved in Lovable' },
-  { name: 'ENGINE_HOST_KIND', kind: 'public', value: 'hosted', note: 'Already supplied by the Render Blueprint' },
+export const WORKER_SETUP: readonly SetupEntry[] = [
+  { name: 'ENGINE_APP_URL', kind: 'public', value: 'https://breakevensignals.lovable.app', note: 'Required in Railway · website address' },
+  { name: 'ENGINE_SHARED_SECRET', kind: 'private', status: 'engine', note: 'Required in Railway · the same private key saved in Lovable' },
+  { name: 'ENGINE_HOST_KIND', kind: 'public', value: 'hosted', note: 'Required in Railway · enables cloud health reporting' },
 ];
 
 export const CLOUD_SETUP: readonly SetupEntry[] = [

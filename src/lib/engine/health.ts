@@ -1,24 +1,29 @@
+import { marketAccessLabel } from './market-access';
+
 export const HEARTBEAT_MAX_AGE_MS = 90_000;
 const CANDLE_INTERVAL_MS = 60_000;
 export type EngineHealthInput = {
   host_kind?: string; runtime_mode?: string; status: string;
   last_heartbeat_at: string; binance_connected: boolean; websocket_connected: boolean;
   uptime_seconds?: number; scanned_symbols?: number; last_scan_at?: string | null;
+  error?: string | null;
 };
 
 export function engineHealth(engine: EngineHealthInput | null | undefined, databaseOk: boolean, now = Date.now()) {
   const age = engine ? now - Date.parse(engine.last_heartbeat_at) : NaN;
   const fresh = databaseOk && Number.isFinite(age) && age >= -5000 && age < HEARTBEAT_MAX_AGE_MS;
   const alive = fresh && !!engine && engine.status !== 'STOPPED';
+  const access = marketAccessLabel(engine?.error);
   const scanTime = Date.parse(engine?.last_scan_at ?? '');
   const scanFresh = Number.isFinite(scanTime) && now - scanTime >= -5000 && now - scanTime < 3 * CANDLE_INTERVAL_MS;
-  const processing = alive && engine?.status === 'RUNNING' && engine.binance_connected && engine.websocket_connected && scanFresh;
+  const processing = alive && !access && engine?.status === 'RUNNING' && engine.binance_connected && engine.websocket_connected && scanFresh;
   return {
     heartbeatFresh: fresh,
     cloud: alive && engine?.host_kind === 'hosted' && engine.runtime_mode === 'production' ? 'ONLINE' : 'OFFLINE',
-    scanner: alive ? engine.status === 'RUNNING' && !processing ? 'RECOVERING' : engine.status : 'STOPPED',
-    binance: alive && engine.binance_connected ? 'CONNECTED' : 'DISCONNECTED',
-    websocket: alive && engine.websocket_connected ? 'CONNECTED' : 'DISCONNECTED',
+    scanner: alive ? access ? 'ERROR' : engine.status === 'RUNNING' && !processing ? 'RECOVERING' : engine.status : 'STOPPED',
+    binance: alive ? access ?? (engine.binance_connected ? 'CONNECTED' : 'DISCONNECTED') : 'DISCONNECTED',
+    websocket: alive && !access && engine.websocket_connected ? 'CONNECTED' : 'DISCONNECTED',
+    lastAccessIssue: access,
     uptimeSeconds: fresh ? engine?.uptime_seconds ?? 0 : null,
     scannedSymbols: engine?.scanned_symbols ?? 0,
     lastScanAt: engine?.last_scan_at ?? null,

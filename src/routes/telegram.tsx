@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 import { RotateCw } from "lucide-react";
-import { fmtTime, useSettings, useTelegramLogs } from "@/lib/data";
+import { fmtTime, useSettings, useTelegramLogs, useStatuses } from "@/lib/data";
+import { marketProcessingPaused } from '@/lib/engine/market-policy';
 import { retryTelegram } from "@/lib/ops.functions";
 import { StatusBadge } from "@/components/terminal/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,8 @@ export const Route = createFileRoute("/telegram")({
 
 function TelegramPage() {
   const logs = useTelegramLogs();
+  const status = useStatuses();
+  const paused = marketProcessingPaused(status.health?.engine);
   const tz = useSettings().data?.display_timezone ?? "UTC";
   const [busy, setBusy] = useState<string | null>(null);
   const retry = async (id: string) => {
@@ -35,6 +38,7 @@ function TelegramPage() {
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-semibold">Telegram history</h1>
+      {paused && <p role="status" className="border-l-2 border-waiting bg-waiting/5 p-3 text-sm text-waiting">Signal deliveries are paused while Binance access is blocked. Sent messages remain unchanged; test notifications are separate.</p>}
       {logs.isLoading && <div className="glass p-10 text-center text-muted-foreground">Loading…</div>}
       {!logs.isLoading && (logs.data ?? []).length === 0 && (
         <div className="glass p-10 text-center text-muted-foreground">No notifications yet.</div>
@@ -54,7 +58,7 @@ function TelegramPage() {
             </div>
             {l.error_message && <p className="rounded border border-short/30 bg-short/10 p-2 font-mono text-[11px] text-short">{l.error_message}</p>}
             {l.delivery_status === "FAILED" && !l.delivery_uncertain && (
-              <Button size="sm" variant="outline" disabled={busy === l.id} onClick={() => retry(l.id)}>
+              <Button size="sm" variant="outline" disabled={busy === l.id || (!l.is_test && (paused || status.healthQuery.isError || !status.health))} onClick={() => retry(l.id)}>
                 <RotateCw className="h-3.5 w-3.5" /> Retry delivery
               </Button>
             )}

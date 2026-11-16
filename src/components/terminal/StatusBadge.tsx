@@ -16,6 +16,8 @@ const tone: Record<string, string> = {
   "STOP LOSS HIT": "text-short border-short/40 bg-short/10",
   OFFLINE: "text-short border-short/40 bg-short/10",
   DISCONNECTED: "text-short border-short/40 bg-short/10",
+  'ACCESS RESTRICTED': 'text-short border-short/40 bg-short/10',
+  'IP BANNED': 'text-short border-short/40 bg-short/10',
   STOPPED: 'text-short border-short/40 bg-short/10',
   ERROR: "text-short border-short/40 bg-short/10",
   FAILED: "text-short border-short/40 bg-short/10",

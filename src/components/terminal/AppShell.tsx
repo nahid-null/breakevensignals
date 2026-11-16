@@ -41,6 +41,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] text-muted-foreground">
             <span className="flex items-center gap-1.5">SYSTEM <StatusBadge value={s.system} /></span>
             <span className="flex items-center gap-1.5">CLOUD <StatusBadge value={s.cloud} /></span>
+            <span className="flex items-center gap-1.5">SCANNER <StatusBadge value={s.scanner} /></span>
             <span className="flex items-center gap-1.5">BINANCE <StatusBadge value={s.binance} /></span>
             <span className="flex items-center gap-1.5">WEBSOCKET <StatusBadge value={s.websocket} /></span>
             <span className="flex items-center gap-1.5">TELEGRAM <StatusBadge value={s.telegram} /></span>
