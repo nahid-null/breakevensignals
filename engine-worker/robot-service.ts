@@ -66,6 +66,7 @@ export class RobotService {
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly abort = new AbortController();
   private unavailable: string[] = [];
+  private configuredSymbols: string[] = [...ROBOT_SYMBOLS];
 
   constructor(private readonly appUrl: string, private readonly secret: string, private readonly instance: () => string,
     private readonly ownsLease: () => boolean, private readonly marketPaused: () => boolean, private readonly observeOnly = false) {}
@@ -214,8 +215,9 @@ export class RobotService {
       band: p.band.slice(0, 60), entry_price: p.entry, quantity: p.qty, requested_quantity: p.requestedQty, fill_status: p.fillStatus, margin: p.margin,
       notional: p.notional, stop_loss: p.stop, tp1: p.tp, tp2: p.tp, liquidation_price: p.liquidation, risk_usdt: p.riskUsdt, fees: p.fees, entry_fee: p.entryFee,
       realized_pnl: r.fill.pnl, liquidity: p.liquidity.slice(0, 160), opened_at: iso(p.openedAt), last_candle_time: p.lastCandleTime,
-      balance_before: Math.max(0, this.balance), target_roi_pct: TARGET_NET_ROI_PCT, tick_size: p.tick };
-    // Entry evidence accompanies the same atomic open; no later synthetic historical backfill.
+      balance_before: Math.max(0, this.balance), target_roi_pct: TARGET_NET_ROI_PCT, tick_size: p.tick,
+      ...(p.audit ? { entry_audit: p.audit } : {}), mae_roi_pct: p.maeRoi ?? null, mfe_roi_pct: p.mfeRoi ?? null,
+      unrealized_pnl: p.unrealized, net_roi_pct: (p.realized + p.unrealized) / p.margin * 100, funding_applied_at: p.fundingApplied };
   }
 
   private signalRows(raw: ReturnType<RobotCore['takeSignals']>): RobotCommit['signals'] {
@@ -315,6 +317,7 @@ export class RobotService {
       tp1_done: false, fees: p.fees, realized_pnl: p.realized, unrealized_pnl: p.status === 'OPEN' ? p.unrealized : 0, last_price: p.lastPrice,
       closed_at: p.closedAt === null ? null : iso(p.closedAt), exit_price: p.exitPrice, exit_reason: p.exitReason, last_candle_time: p.lastCandleTime,
       pnl_delta: fills.reduce((a, f) => a + f.pnl, 0), entry_price: p.entry, leverage: PAPER_LEVERAGE, opened_at: iso(p.openedAt),
+      mae_roi_pct: p.maeRoi ?? null, mfe_roi_pct: p.mfeRoi ?? null, funding_applied_at: p.fundingApplied,
       fills: fills.filter((f) => f.kind === 'CLOSE').map((f) => ({ kind: 'CLOSE' as const, price: f.price, qty: f.qty, pnl: f.pnl, fee: f.fee,
         reason: (f.reason ?? 'TAKE_PROFIT') as never, time: Math.round(f.time) })), notify: this.notify.get(p.id) ?? false };
   }

@@ -65,10 +65,11 @@ describe('paper robot rules', () => {
   });
   it('refills the slot after a close: a closed position frees margin for the next queued setup', () => {
     const core = new RobotCore({ ...s }); core.addSymbol('NEARUSDT', rules); core.addSymbol('SOLUSDT', rules);
-    const cand = (symbol: string): Candidate => ({ symbol, direction: 'LONG', time: 0, setup: 'TREND_PULLBACK', score: 90, tier: 'STRONG',
+    const cand = (symbol: string): Candidate => ({ symbol, direction: 'LONG', time: -60000, setup: 'TREND_PULLBACK', score: 90, tier: 'STRONG',
       parts: { trend: 0, structure: 0, setup: 0, trigger: 0, momentum: 0, volume: 0, execution: 0 }, entry: 100, stop: 99.5, tp: 100.3, atr: 0.5, atrPct: 0.5, stopPct: 0.005, tpPct: 0.3, liquidity: 'x' });
     core.queue.set('SOLUSDT|LONG', { c: cand('SOLUSDT'), rank: 1, expires: 1e15, spreadBps: 1, lastReason: null });
-    const r = core.execute(core.nextCandidate(1, 20)!, deepBook(99.99, 100), 20, 1);
+    const next = core.nextCandidate(1, 20); if (!next) throw new Error('Missing queued test entry');
+    const r = core.execute(next, { bids: [[99.99, 1e6]], asks: [[100, 1e6]], receivedAt: 1 }, 20, 1);
     if ('rejected' in r) throw new Error(r.rejected);
     core.confirmOpen(r, cand('SOLUSDT'), true);
     expect(core.open).toHaveLength(1);

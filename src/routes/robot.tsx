@@ -6,6 +6,7 @@ import { Bot, OctagonX, Play, Plus } from 'lucide-react';
 import { fmtTime } from '@/lib/data';
 import { dailyPnl, robotStats, robotStatus, useRobotAccount, useRobotMarkets, useRobotPositions, useRobotScanner, useRobotSettings, useRobotSignals } from '@/lib/robot/data';
 import { ScannerPanel } from '@/components/robot/ScannerPanel';
+import { EntryAuditReport } from '@/components/robot/EntryAuditReport';
 import { robotDeposit, robotResume, robotStopAll } from '@/lib/robot/robot.functions';
 import { DEFAULT_PAPER_BALANCE, PAPER_LEVERAGE, ROBOT_SYMBOLS, TARGET_NET_ROI_PCT } from '@/lib/robot/config';
 import { StatusBadge } from '@/components/terminal/StatusBadge';
@@ -17,7 +18,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { cn } from '@/lib/utils';
 
 const TITLE = 'Paper Robot — Crypto Signal Terminal';
-const DESC = 'Independent paper-trading robot for 40 Binance futures coins: six setup families, fixed 50x simulated positions, 10% net ROI targets, live diagnostics and trade history.';
+const DESC = 'Independent Binance futures paper robot with confirmed liquidity sweeps, fixed 50x leverage, 10% net margin ROI targets, entry audit and preserved trade history.';
 export const Route = createFileRoute('/robot')({
   head: () => ({ meta: [
     { title: TITLE }, { name: 'description', content: DESC }, { property: 'og:title', content: TITLE }, { property: 'og:description', content: DESC },
@@ -139,6 +140,7 @@ function RobotPage() {
       </section>
 
       <ScannerPanel s={scanner.data} />
+      <EntryAuditReport />
 
       <section className="border border-border bg-card/40">
         <h2 className="border-b border-border px-4 py-2 text-xs uppercase tracking-widest text-muted-foreground">Performance (paper)</h2>
