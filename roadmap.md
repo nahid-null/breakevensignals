@@ -1,5 +1,9 @@
 # Independent Crypto Signal Terminal
 
+## Safe setup reference request (2026-11-16)
+- [ ] Add all required Render setup names, safe public values and copy buttons; private values must never appear on the public website.
+- [ ] Verify copy actions, private-value protection and the reported mobile-hook diagnostic without changing trading rules.
+
 ## Render free hosting request (2026-11-16)
 - [x] Remove PC connection from website and package; replace with cloud scanner status.
 - [x] Run scanner as a Render free web service with health check and self keep-awake; tested locally (65 tests, real Binance connect, /healthz ok, private health 401).
