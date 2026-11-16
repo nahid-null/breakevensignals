@@ -122,3 +122,6 @@
 - [x] Simple dashboard; other pages under "More"
 - [ ] Publish website, then redeploy Railway so signals carry STRONG/NORMAL (until then all simulated trades use 20x) — waits on user
 - [ ] User adds practice balance on the Simulator page — waits on user
+- [x] prompt-19: hosted worker verified on LIQUIDITY_SWEEP_V1 (commit 248e709, hash match)
+- [ ] prompt-19: resolve public-read security findings — waiting on user choice (no-login rule conflict)
+- [ ] prompt-19: 30 genuine new-strategy completed trades — waiting on market (0/30)
