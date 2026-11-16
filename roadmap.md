@@ -3,7 +3,7 @@
 ## Current deployed-status diagnosis (prompt-9, 2026-11-16)
 - [x] Investigate without application changes: hosted recovery advances; REST heartbeat expires during successful history; completed-scan timestamp awaits initialization; SYSTEM depends on RUNNING, not cloud/Telegram alone; WILD absent from listed trading contracts.
 - [x] Reproduce silent legacy candle connection against the same Binance host and verify the maintained SDK's market path: Node and Docker Bun 1.3.10 each receive zero frames on /stream and 26 valid frames on /market/stream during paired 18-second checks. This is sandbox evidence, not Railway live-feed certification.
-- [ ] Implement approved feed/health proposal and verify isolated valid messages, rejection status, durable recovery and browser health; preserve signals/history/restriction enforcement.
+- [x] Implement approved same-host feed path, REST freshness, valid per-feed telemetry, startup watchdog, oldest saved recovery view and strict live-readiness gating; 113 tests pass and Docker Bun real isolated 20-feed message/reconnect/disk restart passes, no production fixtures or Telegram. Preview health/dashboard desktop/current/phone checked; latest build OK.
 - [ ] Verify actual Railway live frames after matching website/worker deployment — needs user to deploy the updated worker and share actual hosted results.
 - [ ] Verify all 20 fresh durable feeds and genuine hosted breakeven delivery — depends on completed recovery, correct live feed and real deployed observations.
 
