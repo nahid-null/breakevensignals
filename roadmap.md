@@ -79,3 +79,8 @@
 - [x] Defer Windows reboot, crash and tunnel activation — superseded by the user's 2026-11-16 request for free cloud hosting; preserve existing Windows files without activating them.
 - [x] Diagnose PC-key request: secure replacement/copy form confirmed a new engine key saved; never expose it in chat. Reported NotFound file/error is not present; no application changes needed. chat.md updated.
 - [x] Guide free PC-independent hosting and diagnose the reported mobile-hook UMD error — Oracle Always Free is conditional on capacity/account eligibility and idle-reclamation limits; Render free workers are unavailable. Actual hook already imports React; no quoted diagnostic reproduced. Routing test and live desktop/current-screen checks passed; no application changes or activation.
+## Simulator trading (prompt-13)
+- [x] Simulator balance, 80% margin, STRONG 50x / NORMAL 20x, fees + liquidation, one trade at a time
+- [x] Simple dashboard; other pages under "More"
+- [ ] Publish website, then redeploy Railway so signals carry STRONG/NORMAL (until then all simulated trades use 20x) — waits on user
+- [ ] User adds practice balance on the Simulator page — waits on user
