@@ -115,8 +115,11 @@ export class SymbolState {
       this.levels = this.levels.filter((l) => l.sweptAt === null || now - l.sweptAt < 30 * MINUTE).slice(-KEEP_LEVELS * 2);
     }
   }
+  /** Latest public funding (live only; null in backtests). */
+  funding: { rate: number; next: number } | null = null;
+  /** 15m context, 5m setup and 1m timing indicators are all seeded. */
   ready() {
-    return this.m5.ema50.value !== null && this.m15.ema50.value !== null && this.m60.ema50.value !== null
-      && this.m5.macd.hist !== null && this.m5.atr.value !== null && this.m5.vol.value !== null && this.m1.atr.value !== null;
+    return this.m5.ema50.value !== null && this.m15.ema50.value !== null && this.m5.macd.hist !== null && this.m5.atr.value !== null
+      && this.m5.rsi.value !== null && this.m1.vol.value !== null && this.m1.ema9.value !== null && this.m1.vwap.value !== null;
   }
 }
