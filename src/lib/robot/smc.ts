@@ -96,7 +96,7 @@ export function evaluateSmc(st: SymbolState, direction: Direction, s: RobotSetti
   const swing = lastSwing(bars, si + 1, sign > 0 ? 'high' : 'low');
   if (!swing) return reject('No prior swing to confirm a structure shift');
   let mi = -1;
-  for (let j = si; j < n; j++) if ((bars[j]!.close - swing.price) * sign > 0) { mi = j; break; }
+  for (let j = si + 1; j < n; j++) if ((bars[j]!.close - swing.price) * sign > 0) { mi = j; break; }
   if (mi < 0) return reject(`Waiting for ${sign > 0 ? 'bullish' : 'bearish'} MSS: no close beyond ${swing.price}`);
   if (mi >= n - 1) return reject('Structure just shifted — waiting for the retracement, not chasing');
   const mssKind = st.m5.trend(false) === -sign ? 'CHoCH' : 'MSS';
