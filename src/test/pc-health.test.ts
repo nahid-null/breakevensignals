@@ -7,7 +7,9 @@ import { localHealthResponse } from '../../engine-worker/local-health';
 const now = Date.parse('2026-11-15T15:30:00Z');
 const windows = { host_kind: 'hosted', runtime_mode: 'production', status: 'RUNNING',
   last_heartbeat_at: new Date(now - 20_000).toISOString(), binance_connected: true, websocket_connected: true,
-  uptime_seconds: 123, scanned_symbols: 20, last_scan_at: '2026-11-15T15:29:00Z' };
+  uptime_seconds: 123, scanned_symbols: 20, last_scan_at: '2026-11-15T15:29:00Z', available_symbols: 1,
+  feed_health: { version: 1, initialized: true, rest_at: '2026-11-15T15:29:40Z', recovery_symbol: null,
+    feeds: [{ symbol: 'NEARUSDT', message_at: '2026-11-15T15:29:59Z', event_at: '2026-11-15T15:29:59Z', closed_at: '2026-11-15T15:29:00Z', live_commit_at: '2026-11-15T15:29:00Z' }] } };
 
 describe('truthful cloud scanner health', () => {
   it('shows ONLINE only for a real recent production cloud heartbeat', () => {
@@ -43,6 +45,15 @@ describe('truthful cloud scanner health', () => {
     expect(engineHealth(windows, true, now).nextScanAt).toBe('2026-11-15T15:31:00.000Z');
     expect(engineHealth({ ...windows, status: 'STOPPED' }, true, now).nextScanAt).toBeNull();
     expect(engineHealth(windows, false, now).nextScanAt).toBeNull();
+  });
+  it('requires fresh valid messages and live commits for every available coin, not socket-open', () => {
+    expect(engineHealth({ ...windows, feed_health: null }, true, now).scanner).toBe('RECOVERING');
+    expect(engineHealth({ ...windows, available_symbols: 20 }, true, now).scanner).toBe('RECOVERING');
+    const feed = windows.feed_health.feeds[0];
+    if (!feed) throw new Error('Missing feed');
+    for (const patch of [{ message_at: null }, { event_at: '2026-11-15T15:29:00Z' }, { live_commit_at: null }, { closed_at: null }]) {
+      expect(engineHealth({ ...windows, feed_health: { ...windows.feed_health, feeds: [{ ...feed, ...patch }] } }, true, now).scanner).toBe('RECOVERING');
+    }
   });
   it('shows an online cloud with a restricted scanner, never connected data or a next scan', () => {
     const restricted = { ...windows, status: 'ERROR', error: 'BINANCE_ACCESS_RESTRICTED: HTTP 451 /fapi/v1/exchangeInfo — Restricted location' };

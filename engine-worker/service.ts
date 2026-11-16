@@ -338,7 +338,7 @@ export class SignalService {
           this.queues.set(symbol, (this.queues.get(symbol) ?? []).filter((x) => x.time > c.time));
         }
       }
-      if (this.marketReady()) {
+      if (this.marketReady(true)) {
         this.lastError = null;
         this.recordSuccessfulScan();
       }
@@ -398,8 +398,8 @@ export class SignalService {
     if (this.running && !this.marketPaused) this.lastRestAt = Date.now();
     return candles;
   }
-  private marketReady() {
-    return this.running && this.initialized && !this.marketPaused && this.connected && !this.lastError
+  private marketReady(allowPreviousError = false) {
+    return this.running && this.initialized && !this.marketPaused && this.connected && (allowPreviousError || !this.lastError)
       && this.recovery.size === 0 && this.available.size > 0 && Date.now() - this.lastRestAt < 90_000
       && [...this.available.keys()].every((s) => {
         const feed = this.feedMessages.get(s);

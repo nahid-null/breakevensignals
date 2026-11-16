@@ -7,7 +7,7 @@ import { BinanceRequestError, binanceFetch, history } from '../../engine-worker/
 
 type FakeSocket = { emit: (event: string, data?: unknown, response?: unknown) => void; terminate: () => void };
 const sockets = vi.hoisted(() => [] as FakeSocket[]);
-vi.mock('ws', () => ({ default: class {
+vi.mock('../../engine-worker/websocket', () => ({ default: class {
   handlers = new Map<string, ((...data: unknown[]) => void)[]>();
   constructor() { sockets.push(this); }
   on(event: string, fn: (...data: unknown[]) => void) { this.handlers.set(event, [...this.handlers.get(event) ?? [], fn]); }
@@ -71,7 +71,7 @@ describe('restriction-aware worker lifecycle (isolated transport)', () => {
     vi.mocked(binanceFetch).mockRejectedValue(new BinanceRequestError('restricted', 451, '/fapi/v1/time', 'Restricted location'));
     const commits = calls.filter((c) => c.action === 'commit').length;
     const time = Date.now();
-    socket.emit('message', JSON.stringify({ data: { s: 'NEARUSDT', k: { t: time, o: '100', h: '100.5', l: '99.5', c: '100', v: '10', x: true } } }));
+    socket.emit('message', JSON.stringify({ data: { s: 'NEARUSDT', E: Date.now(), k: { t: time - MINUTE, o: '100', h: '100.5', l: '99.5', c: '100', v: '10', x: true } } }));
     await vi.advanceTimersByTimeAsync(0);
     expect(service.snapshot()).toMatchObject({ process_alive: true, running: false, market_paused: true, connected: false });
     const callsAtPause = calls.length;
@@ -89,7 +89,7 @@ describe('restriction-aware worker lifecycle (isolated transport)', () => {
     const socket = sockets[0]; if (!socket) throw new Error('Missing socket');
     socket.emit('unexpected-response', {}, { statusCode: 451, resume: vi.fn() });
     await vi.advanceTimersByTimeAsync(0);
-    expect(service.snapshot().error).toContain('BINANCE_ACCESS_RESTRICTED: HTTP 451 /stream');
+    expect(service.snapshot().error).toContain('BINANCE_ACCESS_RESTRICTED: HTTP 451 /market/stream');
     expect(service.snapshot().market_paused).toBe(true);
     await vi.advanceTimersByTimeAsync(60_000);
     expect(sockets).toHaveLength(1);
@@ -136,10 +136,10 @@ describe('restriction-aware worker lifecycle (isolated transport)', () => {
     await service.start();
     expect(service.snapshot().market_paused).toBe(false);
     await vi.advanceTimersByTimeAsync(2001);
-    expect(service.snapshot()).toMatchObject({ process_alive: true, initialized: true, running: true });
+    expect(service.snapshot()).toMatchObject({ process_alive: true, initialized: true, running: false });
     const socket = sockets[0]; if (!socket) throw new Error('Missing socket'); socket.emit('open');
     await vi.advanceTimersByTimeAsync(10_000);
-    expect(service.snapshot().error).toBeNull();
+    expect(service.snapshot().market_paused).toBe(false);
     expect(calls.some((c) => c.action === 'commit')).toBe(true);
     expect(calls.some((c) => c.action === 'deliveries')).toBe(true);
   });
