@@ -1,5 +1,9 @@
 # Independent Crypto Signal Terminal
 
+## Railway Binance access investigation (2026-11-16)
+- [ ] Inspect public Futures endpoints, startup failures, hosting configuration and dashboard status; check official regional/access guidance and safe data alternatives.
+- [ ] Propose changes and a real Railway verification procedure without modifying production code — implementation requires the user's approval; Railway logs, chosen region and outbound access are not directly available here.
+
 ## Safe setup reference request (2026-11-16)
 - [x] Add all required Render setup names, safe public values and copy buttons; private values never appear on the public website, and forgotten keys use the secure replacement form.
 - [x] Verify copy actions and private-value protection: 9 targeted tests passed, all 8 copy buttons verified in browser, desktop/current/phone layouts have no overflow or runtime errors; latest build OK. Mobile hook imports React correctly and quoted diagnostic is absent; no invented hook fix or trading-rule changes.
