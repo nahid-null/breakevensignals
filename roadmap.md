@@ -3,7 +3,7 @@
 ## Railway crash and paper starting balance (prompt-15, 2026-11-16)
 - [x] Reproduce the missing-module crash from the old Docker COPY set, include src/lib/robot, and verify the packaged main with Railway's exact Bun 1.3.10: health 200, safe isolated 451 pause, owning shutdown, no production signals.
 - [x] Set new-account defaults and unused initial allocation to 10 USDT through a guarded audited correction; preserved 10 USDT deposit gives 20 USDT current balance, deposit receipt unchanged, no robot trades erased. All 160 tests pass.
-- [x] Verify actual balance read-back, robot confirmation/cancel, original Simulator, desktop/602px/390px pages without runtime errors or overflow; website build OK. Explain updated-source deployment, not restart of the broken image.
+- [x] Verify actual balance read-back, robot confirmation/cancel and invalid deposit, all robot sections and 15 settings, linked backtest and coin monitor, original Simulator; desktop/602px/390px dark-only pages have no runtime errors or overflow; website build OK. Explain updated-source deployment, not restart of the broken image.
 - [ ] Verify actual Railway container startup after publishing website and deploying updated source — no Railway connection available; user deployment required. No uptime guarantee or production live-scan claim.
 
 ## Paper trading robot (prompt-14, 2026-11-16)
