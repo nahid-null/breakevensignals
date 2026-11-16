@@ -1,0 +1,18 @@
+/** Outcome of every trading signal that was actually delivered to Telegram (tests excluded). */
+export interface SentSignalSummary { sent: number; open: number; takeProfit: number; stopLoss: number; breakeven: number; closed: number; successRate: number | null }
+interface LogLike { trade_id: string | null; event_id: string; delivery_status: string; is_test: boolean }
+interface EventLike { trade_id: string; event_type: string }
+
+export function sentSignalSummary(logs: LogLike[], events: EventLike[]): SentSignalSummary {
+  const trades = new Set(logs.filter((l) => !l.is_test && l.delivery_status === 'SENT' && l.trade_id && l.event_id.endsWith('-entry_confirmed')).map((l) => l.trade_id!));
+  const byTrade = new Map<string, Set<string>>();
+  for (const e of events) if (trades.has(e.trade_id)) (byTrade.get(e.trade_id) ?? byTrade.set(e.trade_id, new Set()).get(e.trade_id)!).add(e.event_type);
+  let takeProfit = 0, stopLoss = 0, breakeven = 0;
+  for (const id of trades) {
+    const ev = byTrade.get(id);
+    if (ev?.has('take_profit_hit')) takeProfit++;
+    else if (ev?.has('stop_loss_hit')) { if (ev.has('breakeven_activated')) breakeven++; else stopLoss++; }
+  }
+  const closed = takeProfit + stopLoss + breakeven;
+  return { sent: trades.size, open: trades.size - closed, takeProfit, stopLoss, breakeven, closed, successRate: closed ? (takeProfit / closed) * 100 : null };
+}
