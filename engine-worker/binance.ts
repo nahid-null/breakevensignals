@@ -85,7 +85,7 @@ export async function history(symbol: string, start?: number, end?: number, sign
   if (!Array.isArray(rows)) throw new Error("Malformed Binance history");
   const now = end ?? Date.now();
   const span = interval === '15m' ? 15 * MINUTE : interval === '5m' ? 5 * MINUTE : MINUTE;
-  return rows.map((row) => restCandle(row, span)).filter((c) => c.time + span <= now + (end === undefined ? 0 : MINUTE)).sort((a, b) => a.time - b.time);
+  return rows.map((row) => restCandle(row, span)).filter((c) => c.time + span <= now).sort((a, b) => a.time - b.time);
 }
 
 export async function checkWebSocketAccess(streams: string, signal: AbortSignal): Promise<void> {
