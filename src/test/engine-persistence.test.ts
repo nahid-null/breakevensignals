@@ -24,18 +24,33 @@ beforeAll(async () => {
 }, 30000);
 afterAll(async () => { await db?.close(); });
 describe('atomic persistence (isolated PostgreSQL, no production rows)', () => {
-  it('preserves breakeven-only LONG/SHORT notification defaults', async () => {
+  it('sends NORMAL SIGNAL entries and BREAKEVEN alerts for LONG and SHORT, leaving SL/TP alerts off', async () => {
     const settings = (await db.query('select telegram_enabled,long_breakeven_enabled,short_breakeven_enabled,long_entry_enabled,short_entry_enabled,long_stop_loss_enabled,short_stop_loss_enabled,long_take_profit_enabled,short_take_profit_enabled from app_settings')).rows[0];
     expect(settings).toEqual({ telegram_enabled: true, long_breakeven_enabled: true, short_breakeven_enabled: true,
-      long_entry_enabled: false, short_entry_enabled: false, long_stop_loss_enabled: false, short_stop_loss_enabled: false, long_take_profit_enabled: false, short_take_profit_enabled: false });
+      long_entry_enabled: true, short_entry_enabled: true, long_stop_loss_enabled: false, short_stop_loss_enabled: false, long_take_profit_enabled: false, short_take_profit_enabled: false });
   });
-  it('deduplicates events and creates exactly one breakeven notification', async () => {
-    expect((await process(p('entry_confirmed')))?.telegram_log_id).toBeNull();
+  it('deduplicates events and creates exactly one entry and one breakeven notification', async () => {
+    expect((await process(p('entry_confirmed')))?.telegram_log_id).toBeTruthy();
     expect((await process(p('entry_confirmed')))?.duplicate).toBe(true);
     expect((await process(p('breakeven_activated')))?.telegram_log_id).toBeTruthy();
     expect((await process(p('breakeven_activated')))?.duplicate).toBe(true);
     expect((await db.query<{ n: number }>('select count(*)::int n from signal_events where trade_id=$1', ['fixture-trade'])).rows[0]?.n).toBe(2);
-    expect((await db.query<{ n: number }>('select count(*)::int n from telegram_logs where trade_id=$1', ['fixture-trade'])).rows[0]?.n).toBe(1);
+    expect((await db.query<{ n: number }>('select count(*)::int n from telegram_logs where trade_id=$1', ['fixture-trade'])).rows[0]?.n).toBe(2);
+  });
+  it('queues live Telegram alerts only for trades approved by the 15M/5M/1M trend filter', async () => {
+    const market = (symbol: string) => ({ symbol, price: 100, trend: 'BULLISH', status: 'LIVE', last_candle_at: '2026-11-15T12:00:00Z', long_score: 0, short_score: 0, error: null, mtf_trend: { m15: 1, m5: 1, m1: 1 } });
+    const commit = (symbol: string, trade: string, aligned: boolean | undefined) => db.query('select commit_engine_candle($1::jsonb)', [JSON.stringify({
+      instance_id: instance, symbol, expected_revision: 0, mode: 'live', checkpoint: { symbol, lastTime: 60000 }, market: market(symbol),
+      events: [{ ...p('entry_confirmed', trade), symbol, telegram_message: 'NORMAL SIGNAL', ...(aligned === undefined ? {} : { trend_aligned: aligned }) }] })]);
+    const logs = async (trade: string) => (await db.query<{ n: number }>('select count(*)::int n from telegram_logs where trade_id=$1', [trade])).rows[0]?.n;
+    await commit('FILUSDT', 'trend-approved', true);
+    await commit('TIAUSDT', 'trend-unknown', undefined);
+    await commit('WIFUSDT', 'trend-mixed', false);
+    expect(await logs('trend-approved')).toBe(1);
+    expect(await logs('trend-unknown')).toBe(0);
+    expect(await logs('trend-mixed')).toBe(0);
+    expect((await db.query("select mtf_trend from market_state where symbol='FILUSDT'")).rows[0]).toEqual({ mtf_trend: { m15: 1, m5: 1, m1: 1 } });
+    expect((await db.query<{ n: number }>("select count(*)::int n from signal_events where trade_id in ('trend-unknown','trend-mixed')")).rows[0]?.n).toBe(2);
   });
   it('allows only one live engine owner', async () => {
     const heartbeat = { instance_id: instance, status: 'RUNNING', websocket_connected: true, binance_connected: true, available_symbols: 20, error: null };
@@ -119,7 +134,7 @@ describe('atomic persistence (isolated PostgreSQL, no production rows)', () => {
     expect((await db.query('select * from claim_telegram_delivery($1,$2)',[row.id, instance])).rows).toHaveLength(0);
   });
   it('keeps LONG and SHORT event notification controls separate', async () => {
-    await db.exec('update app_settings set long_entry_enabled=true');
+    await db.exec('update app_settings set long_entry_enabled=true, short_entry_enabled=false');
     expect((await process(p('entry_confirmed','long-enabled')))?.telegram_log_id).toBeTruthy();
     const short = { ...p('entry_confirmed','short-disabled'), direction: 'SHORT', indicator: 'PRO SHORT SCALPER', stop_loss: 101, take_profit: 98.5 };
     expect((await process(short))?.telegram_log_id).toBeNull();
