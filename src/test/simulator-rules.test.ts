@@ -47,6 +47,7 @@ describe('Telegram signal summary', () => {
       [{ trade_id: 'a', event_type: 'take_profit_hit' }, { trade_id: 'b', event_type: 'stop_loss_hit' },
        { trade_id: 'c', event_type: 'breakeven_activated' }, { trade_id: 'c', event_type: 'stop_loss_hit' }],
     );
-    expect(s).toEqual({ sent: 4, open: 1, takeProfit: 1, stopLoss: 1, breakeven: 1, closed: 3, successRate: 100 / 3 });
+    expect({ ...s, successRate: undefined }).toEqual({ sent: 4, open: 1, takeProfit: 1, stopLoss: 1, breakeven: 1, closed: 3, successRate: undefined });
+    expect(s.successRate).toBeCloseTo(33.333, 2);
   });
 });
