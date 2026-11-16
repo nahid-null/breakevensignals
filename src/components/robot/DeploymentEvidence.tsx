@@ -7,6 +7,13 @@ import { StatusBadge } from '@/components/terminal/StatusBadge';
 
 export function DeploymentEvidence() {
   const runtime=useRobotRuntime();const scanner=useRobotScanner();const positions=useRobotPositions();const account=useRobotAccount();const decisions=useRobotDecisions();const signals=useRobotSignals();
+  // Never present loading/failed data as a zero-trade result or a zero margin allocation.
+  const pending=[runtime,scanner,positions,account,decisions].some((q)=>q.isPending);
+  const failed=[runtime,scanner,positions,account,decisions].some((q)=>q.isError);
+  if(pending||failed) return <section className="min-w-0 space-y-3 border-y border-border py-5">
+    <h3 className="font-semibold">Deployment evidence &amp; live sweep validation</h3>
+    <p className={failed?'text-sm text-short':'text-sm text-muted-foreground'}>{failed?'Live evidence could not be read. Version, trade count and margin remain unverified.':'Reading the running version, genuine trades and paper margin…'}</p>
+  </section>;
   const state=deploymentState(runtime.data,expected.source_hash);
   const p=sweepPerformance(positions.data??[],Number(account.data?.start_balance??10));
   const legacy=(signals.data??[]).filter((s)=>s.setup!=='SWEEP_RECLAIM');
