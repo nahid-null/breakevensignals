@@ -2,7 +2,7 @@
 import { PAPER_LEVERAGE, TARGET_NET_ROI_PCT, type RobotSettings } from './config';
 import { MINUTE, type Bar, type SymbolState } from './series';
 import type { Direction, Setup } from './strategy';
-import { liquidationPrice, roundTick, sizeOrder, type SymbolRules } from './risk';
+import { liquidationPrice, roundTick, type SymbolRules } from './risk';
 
 export type ExitReason = 'TAKE_PROFIT' | 'STOP_LOSS' | 'BREAKEVEN_STOP' | 'EARLY_EXIT' | 'PROFIT_EXIT' | 'TIME_EXIT' | 'LIQUIDATION' | 'EMERGENCY_STOP';
 export type Position = {
@@ -69,8 +69,8 @@ export type OpenOrder = { id: string; symbol: string; direction: Direction; setu
 /** Build the position from an actual simulated fill. TP is computed from the real fill price, quantity and fee. */
 export function openPosition(o: OpenOrder, fill: { qty: number; avg: number; requested: number; partial: boolean }, rules: SymbolRules, time: number, s: RobotSettings):
   { position: Position; fill: Fill } | { rejected: string } {
-  const sized = sizeOrder((fill.qty * fill.avg) / PAPER_LEVERAGE, fill.avg, { ...rules, stepSize: rules.stepSize });
-  if ('rejected' in sized) return sized;
+  if (fill.qty < rules.minQty) return { rejected: 'Order rejected: below minimum quantity' };
+  if (fill.qty * fill.avg < rules.minNotional) return { rejected: `Order rejected: below ${rules.minNotional} USDT minimum notional` };
   const sign = sgn(o.direction);
   if ((o.stop - fill.avg) * sign >= 0) return { rejected: 'Fill price crossed the stop' };
   const entryFee = fill.qty * fill.avg * taker(s);
@@ -98,11 +98,11 @@ const stopReason = (p: Position): ExitReason => ((p.stop - p.initialStop) * sgn(
 function stopOut(p: Position, px: number, s: RobotSettings, time: number): Fill {
   const long = p.direction === 'LONG';
   if (long ? px <= p.liquidation : px >= p.liquidation) {
-    // Gap through liquidation: the isolated margin of the position is lost.
-    const loss = p.margin + p.realized; const f: Fill = { kind: 'CLOSE', price: p.liquidation, qty: p.qtyOpen, pnl: -p.margin - 0, fee: 0, reason: 'LIQUIDATION', time };
-    p.realized = -p.margin + Math.min(0, p.realized - loss + p.margin); p.qtyOpen = 0; p.status = 'CLOSED'; p.closedAt = time;
-    p.exitPrice = p.liquidation; p.exitReason = 'LIQUIDATION'; p.unrealized = 0; p.version++;
-    p.realized = -p.margin - p.fees; f.pnl = p.realized - (-p.entryFee + p.funding) ; return f;
+    // Gap through liquidation: the isolated margin of the position is lost (fees already paid stay paid).
+    const f: Fill = { kind: 'CLOSE', price: p.liquidation, qty: p.qtyOpen, pnl: -p.margin, fee: 0, reason: 'LIQUIDATION', time };
+    p.realized -= p.margin; p.qtyOpen = 0; p.status = 'CLOSED'; p.closedAt = time; p.exitPrice = p.liquidation; p.exitReason = 'LIQUIDATION';
+    p.unrealized = 0; p.version++;
+    return f;
   }
   return exit(p, px, px * p.qtyOpen * taker(s), time, stopReason(p));
 }
