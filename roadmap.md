@@ -1,9 +1,9 @@
 # Independent Crypto Signal Terminal
 
 ## Deployed sweep validation (prompt-18, 2026-11-16)
-- [ ] Inspect current hosted release, 40 feeds, LONG/SHORT decisions, genuine trades and paper safety without changing thresholds.
-- [ ] Add exact running-source fingerprint and deployment status, complete per-candle decision logging and separate new-strategy 30-closed-trade progress/performance.
-- [ ] Test version projection, full decision persistence and paper safeguards; publish matching website and verify it reads actual hosted data.
+- [x] Inspect genuine hosted evidence:40/40feeds, both directions evaluated; current decisions/trades still use old families, zero audited completed new sweeps. Actual paper leverage50x,target10,valid stops; open margin58.37% at18:13UTC. No thresholds/history changed.
+- [x] Add exact covered-source fingerprint and deployment status, full per-candle LONG/SHORT decisions, atomic runtime receipt and separate30-completed-new-sweep progress/performance. Old or temporary results excluded.
+- [ ] Verify requested website publication — scheduled at18:21UTC, final public page check pending.184tests pass/buildOK; isolated real40feeds,160durableLONG/SHORTdecisions,0forcedtrades; desktop/602/390 actual empty new-version panel verified.
 - [ ] Redeploy/verify Railway active source — requires Railway service access or the user's active-deployment evidence.
 - [ ] Collect at least30 genuine completed new-strategy paper trades — requires deployed corrected worker and future qualified opportunities; never force entries.
 
