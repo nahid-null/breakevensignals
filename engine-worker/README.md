@@ -9,6 +9,11 @@ The user reports running this scanner on Railway. No provider account, subscript
 
 Publish the corresponding website update and deploy the matching worker revision. A fresh cloud heartbeat proves the service can reach the website, **not** that Binance permits access or that scanning is RUNNING. The service acquires its owning lease and starts dashboard heartbeat reporting before requesting Binance metadata. Public `/healthz` remains content-free liveness; `/health` needs a separate private health key.
 
+### Missing robot module on redeployment
+The Docker image must include `engine-worker`, `src/lib/config.ts`, `src/lib/engine` **and** `src/lib/robot`. An image built before the robot COPY line was added exits with `Cannot find module '../src/lib/robot/config'`; restarting that same image cannot fix it. Publish the website, then deploy the updated connected source revision in Railway with the repository root as the build context and `engine-worker/Dockerfile` as the Dockerfile path. Keep existing keys, region, port and single-instance settings. Check the new deployment's logs and `/healthz`, then confirm fresh dashboard feeds separately; liveness alone is not proof of live scanning.
+
+The paper robot starts with 10 USDT. A correction to an unused initial allocation is recorded separately from deposits, preserves existing history and never resets an account with recorded trades. Existing backtests retain their original tested starting capital.
+
 ### Binance access restrictions
 The first public request is `https://fapi.binance.com/fapi/v1/exchangeInfo`; one-minute history uses `/fapi/v1/klines` and REST connectivity uses `/fapi/v1/time`. Live data uses `wss://fstream.binance.com/market/stream?streams=<symbol>@kline_1m/…`. These are USD-M Futures trade candles; Spot, Binance.US, testnet and another exchange are not replacements.
 
