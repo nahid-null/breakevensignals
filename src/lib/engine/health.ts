@@ -15,7 +15,7 @@ export function engineHealth(engine: EngineHealthInput | null | undefined, datab
   const processing = alive && engine?.status === 'RUNNING' && engine.binance_connected && engine.websocket_connected && scanFresh;
   return {
     heartbeatFresh: fresh,
-    pc: alive && engine?.host_kind === 'windows_pc' && engine.runtime_mode === 'production' ? 'ONLINE' : 'OFFLINE',
+    cloud: alive && engine?.host_kind === 'hosted' && engine.runtime_mode === 'production' ? 'ONLINE' : 'OFFLINE',
     scanner: alive ? engine.status === 'RUNNING' && !processing ? 'RECOVERING' : engine.status : 'STOPPED',
     binance: alive && engine.binance_connected ? 'CONNECTED' : 'DISCONNECTED',
     websocket: alive && engine.websocket_connected ? 'CONNECTED' : 'DISCONNECTED',
