@@ -5,27 +5,27 @@ import { heartbeatSchema } from '@/lib/engine/protocol';
 import { localHealthResponse } from '../../engine-worker/local-health';
 
 const now = Date.parse('2026-11-15T15:30:00Z');
-const windows = { host_kind: 'windows_pc', runtime_mode: 'production', status: 'RUNNING',
+const windows = { host_kind: 'hosted', runtime_mode: 'production', status: 'RUNNING',
   last_heartbeat_at: new Date(now - 20_000).toISOString(), binance_connected: true, websocket_connected: true,
   uptime_seconds: 123, scanned_symbols: 20, last_scan_at: '2026-11-15T15:29:00Z' };
 
-describe('truthful Windows PC health', () => {
-  it('shows ONLINE only for a real recent production Windows heartbeat', () => {
-    expect(engineHealth(windows, true, now)).toMatchObject({ pc: 'ONLINE', scanner: 'RUNNING', uptimeSeconds: 123, scannedSymbols: 20 });
-    expect(engineHealth({ ...windows, host_kind: 'hosted' }, true, now).pc).toBe('OFFLINE');
-    expect(engineHealth({ ...windows, runtime_mode: 'temporary' }, true, now).pc).toBe('OFFLINE');
+describe('truthful cloud scanner health', () => {
+  it('shows ONLINE only for a real recent production cloud heartbeat', () => {
+    expect(engineHealth(windows, true, now)).toMatchObject({ cloud: 'ONLINE', scanner: 'RUNNING', uptimeSeconds: 123, scannedSymbols: 20 });
+    expect(engineHealth({ ...windows, host_kind: 'windows_pc' }, true, now).cloud).toBe('OFFLINE');
+    expect(engineHealth({ ...windows, runtime_mode: 'temporary' }, true, now).cloud).toBe('OFFLINE');
   });
   it('expires online status at 90 seconds without pretending stored uptime is live', () => {
     const h = engineHealth({ ...windows, last_heartbeat_at: new Date(now - 90_000).toISOString() }, true, now);
-    expect(h).toMatchObject({ pc: 'OFFLINE', scanner: 'STOPPED', binance: 'DISCONNECTED', websocket: 'DISCONNECTED', uptimeSeconds: null });
+    expect(h).toMatchObject({ cloud: 'OFFLINE', scanner: 'STOPPED', binance: 'DISCONNECTED', websocket: 'DISCONNECTED', uptimeSeconds: null });
   });
   it('stays OFFLINE if the scanner stopped or database health is unavailable', () => {
-    expect(engineHealth({ ...windows, status: 'STOPPED' }, true, now).pc).toBe('OFFLINE');
-    expect(engineHealth(windows, false, now)).toMatchObject({ pc: 'OFFLINE', scanner: 'STOPPED', binance: 'DISCONNECTED' });
+    expect(engineHealth({ ...windows, status: 'STOPPED' }, true, now).cloud).toBe('OFFLINE');
+    expect(engineHealth(windows, false, now)).toMatchObject({ cloud: 'OFFLINE', scanner: 'STOPPED', binance: 'DISCONNECTED' });
   });
   it('never accepts impossible future or invalid heartbeats as ONLINE', () => {
-    expect(engineHealth({ ...windows, last_heartbeat_at: new Date(now + 60_000).toISOString() }, true, now).pc).toBe('OFFLINE');
-    expect(engineHealth({ ...windows, last_heartbeat_at: 'invalid' }, true, now).pc).toBe('OFFLINE');
+    expect(engineHealth({ ...windows, last_heartbeat_at: new Date(now + 60_000).toISOString() }, true, now).cloud).toBe('OFFLINE');
+    expect(engineHealth({ ...windows, last_heartbeat_at: 'invalid' }, true, now).cloud).toBe('OFFLINE');
   });
   it('keeps all 21 configured coins and rejects inflated scanner telemetry', () => {
     const input = { instance_id: '11111111-1111-4111-8111-111111111111', available_symbols: 20, status: 'RUNNING', error: null,
