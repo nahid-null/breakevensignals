@@ -41,8 +41,8 @@ use the editor.
 - Keep Pine-language verification in `engine-worker/verify-pine.ts` using intact sources and identical candles; isolate documented interpreter corrections in `pine-runtime.ts`, and never treat local agreement as independently exported TradingView certification.
 - Apply Pine's documented nine-fractional-digit operand comparison through `src/lib/engine/pine-numbers.ts`, without quantizing stored indicator values, because raw JavaScript noise can invent momentum on unchanged closes.
 - Verify real worker restart/reconnect against disk-isolated PostgreSQL through `engine-worker/verify-worker.ts`; never direct fixture signals to the hosted database or real Telegram chat.
-- Run the Windows worker under a boot-triggered SYSTEM task and a Bun child supervisor with an exclusive loopback port; keep the existing database writer lease as cross-host protection.
-- PC telemetry is outbound through the authenticated engine API; optional tunnels expose only a separately authenticated read-only loopback health endpoint, never database keys or write controls.
-- Derive public PC connectivity from production Windows identity plus a fresh server-received heartbeat; uptime is last reported and scan time is the slowest durable configured feed, never a poll timestamp.
+- Host the worker as a single-instance Render free web service: bind PORT with a content-free public /healthz, self-request RENDER_EXTERNAL_URL under 15 minutes to avoid idle sleep, and keep the database writer lease as cross-host protection.
+- Worker telemetry is outbound through the authenticated engine API; the public /healthz returns only liveness, and detailed health requires the separate health key, never database keys or write controls.
+- Derive public cloud connectivity from production hosted identity plus a fresh server-received heartbeat; uptime is last reported and scan time is the slowest durable configured feed, never a poll timestamp.
 - Count successful per-symbol closed-candle commits atomically in market state, excluding warmup; never count browser polls or duplicate revisions as scans.
 - Derive RUNNING and the next expected candle close only from fresh heartbeats, connected feeds and recent durable scan progress so a heartbeat cannot hide a stalled scanner.

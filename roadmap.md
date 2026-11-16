@@ -1,5 +1,11 @@
 # Independent Crypto Signal Terminal
 
+## Render free hosting request (2026-11-16)
+- [x] Remove PC connection from website and package; replace with cloud scanner status.
+- [x] Run scanner as a Render free web service with health check and self keep-awake; tested locally (65 tests, real Binance connect, /healthz ok, private health 401).
+- [ ] Create Render account, connect GitHub and apply blueprint — needs the user's own accounts.
+- [ ] Republish website so the live site has the current engine key — user decision.
+
 ## Current zero-cost reliability request
 - [x] Inspect the reported mobile-hook error and actual scanner/Telegram state without modifying strategies — hook correctly imports React, quoted text absent, no matching error; live engine STOPPED.
 - [x] Improve truthful scan status, next candle schedule, durable scan counts and delivery timestamps; preserve layout and recovery protections.

@@ -4,7 +4,7 @@ import { StatusBadge } from '@/components/terminal/StatusBadge';
 
 export const Route = createFileRoute('/setup')({ head: () => ({ meta: [
   { title: 'Engine Deployment — Crypto Signal Terminal' },
-  { name: 'description', content: 'Deployment requirements for the always-on independent Binance Futures signal service.' },
+  { name: 'description', content: 'How to run the always-on Binance Futures signal scanner on free Render cloud hosting.' },
   { property: 'og:title', content: 'Engine Deployment — Crypto Signal Terminal' },
   { property: 'og:description', content: 'Always-on service activation and Binance contract availability.' },
   { property: 'og:type', content: 'website' }, { name: 'twitter:card', content: 'summary_large_image' },
@@ -18,19 +18,17 @@ function Setup() {
       <div className="flex items-center justify-between border-b border-border py-3 text-sm">Independent scanner<StatusBadge value={health?.heartbeatFresh && health.engine?.runtime_mode === 'production' && health.scanner === 'RUNNING' ? 'CONNECTED' : 'WAITING'} /></div>
       <div className="flex items-center justify-between py-3 text-sm">Pine calculation comparison<StatusBadge value="MANUAL VERIFICATION REQUIRED" /></div>
     </section>
-    <section className="space-y-3"><h2 className="font-mono text-sm">FREE CLOUD HOST · NOT ACTIVATED</h2>
-      <p className="text-sm text-muted-foreground">No always-on free machine is connected. Free-host eligibility, available capacity and usage allowances must be confirmed; uninterrupted free operation is not guaranteed. Keeping Chrome open does not start the scanner.</p>
-    </section>
-    <section className="space-y-3"><h2 className="font-mono text-sm">OPTIONAL WINDOWS PC · NO PAID VPS</h2>
-      <p className="text-sm text-muted-foreground">Installation pending. The PC must stay powered on, awake and connected to the internet.</p>
+    <section className="space-y-3"><h2 className="font-mono text-sm">FREE RENDER CLOUD HOSTING</h2>
+      <p className="text-sm text-muted-foreground">The scanner runs on Render, not on your PC or in Chrome. Render's free plan sleeps after 15 minutes without visits, so the scanner visits its own address every 10 minutes to stay awake. Render can still restart free services; the scanner resumes from saved progress.</p>
       <ol className="list-decimal space-y-3 pl-5 text-sm text-muted-foreground">
-        <li>Complete the independent Pine comparison and publish the existing website.</li>
-        <li>Install the provided Windows scanner package. Supply the published website address and matching private engine key when prompted.</li>
-        <li>Enable the provided Windows startup task after verification. It runs before login and restarts failed processes.</li>
-        <li>Verify later scan times with browsers closed, then test PC reboot and internet recovery.</li>
+        <li>Publish this website so the latest private engine key is live.</li>
+        <li>Connect this project to GitHub from the Lovable GitHub button.</li>
+        <li>Sign up at render.com, choose New, then Blueprint, and pick your GitHub repository. Render reads the included setup file and selects the Free plan.</li>
+        <li>When asked, enter ENGINE_APP_URL as https://breakevensignals.lovable.app and ENGINE_SHARED_SECRET as the private engine key you saved earlier.</li>
+        <li>Click Apply. After the first deploy shows Live, this page and the dashboard show CLOUD ONLINE within two minutes.</li>
       </ol>
     </section>
-    <section className="border-t border-border pt-5"><h2 className="mb-2 font-mono text-sm">SECURE CONNECTION</h2><p className="text-sm text-muted-foreground">PC updates use an encrypted outbound connection. No router ports or tunnel are required for the dashboard. Optional Cloudflare Tunnel health checks require your Cloudflare account and an existing domain; they are not activated.</p></section>
+    <section className="border-t border-border pt-5"><h2 className="mb-2 font-mono text-sm">SECURE CONNECTION</h2><p className="text-sm text-muted-foreground">The scanner sends updates over an encrypted connection using the private engine key. Its public address only answers "ok"; it exposes no trades, keys or controls.</p></section>
     <section className="border-t border-border pt-5"><h2 className="mb-2 font-mono text-sm">CONTRACT AVAILABILITY</h2><p className="text-sm text-muted-foreground">The last Binance availability check found 20 of your 21 contracts trading. WILDUSDT was unavailable and remains in the configured list without substituted data.</p></section>
   </div>;
 }

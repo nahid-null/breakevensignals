@@ -2,7 +2,7 @@
 
 The existing website stays on Lovable. Scanning runs in the separate Bun worker, never Chrome or a web request. The operating budget is strictly zero: no paid or trial-only resources may be activated. A user-owned eligible free cloud machine is the preferred host, but none is configured or verified here. Free capacity, account eligibility, lawful Binance access, idle reclamation and Lovable usage allowances must be checked; uninterrupted permanently free operation is not guaranteed.
 
-Keeping Chrome open cannot start this worker. Closing or refreshing Chrome does not stop a separately running worker. Turning off its host computer does. The previously prepared [Windows setup guide](windows/SETUP.md) is an optional alternative only if the user chooses to keep a PC powered on, awake and online; it is not the chosen cloud deployment. No PC installation is claimed.
+Keeping Chrome open cannot start this worker. Closing or refreshing Chrome does not stop a separately running worker. The chosen host is a Render free web service (`render.yaml`): it binds `PORT`, answers `ok` on `/healthz`, and requests its own `RENDER_EXTERNAL_URL` every 10 minutes so the 15-minute free idle sleep never triggers. Render may still restart free services; checkpoints make the worker resume. The Windows PC option was removed on 2026-11-16 at the user's request.
 
 ## Optional legacy Render deployment (not the primary choice)
 Do not deploy until original-Pine parity is validated. Render configuration is preparation only; paid activation requires the user's separate final confirmation.

@@ -104,7 +104,7 @@ export function useStatuses() {
   const binance: Status = health.isError ? 'DISCONNECTED' : !h ? 'WAITING' : h.binance === 'CONNECTED' ? 'CONNECTED' : 'DISCONNECTED';
   const websocket: Status = health.isError ? 'DISCONNECTED' : !h ? 'WAITING' : h.websocket === 'CONNECTED' ? 'CONNECTED' : 'DISCONNECTED';
   const telegram: Status = health.isError || logs.isError ? 'ERROR' : !h ? "WAITING" : !h.botConfigured || !h.chatConfigured ? "NOT CONFIGURED" : !lastTg ? "WAITING" : lastTg.delivery_status === "SENT" ? "CONNECTED" : "ERROR";
-  return { system, pc: health.isError ? 'OFFLINE' : h?.pc ?? 'OFFLINE', scanner: health.isError ? 'STOPPED' : h?.scanner ?? 'STOPPED', binance, websocket, telegram, health: h, healthQuery: health };
+  return { system, cloud: health.isError ? 'OFFLINE' : h?.cloud ?? 'OFFLINE', scanner: health.isError ? 'STOPPED' : h?.scanner ?? 'STOPPED', binance, websocket, telegram, health: h, healthQuery: health };
 }
 
 /** Latest position per symbol+direction. */

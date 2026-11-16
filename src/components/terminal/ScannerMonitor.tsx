@@ -3,11 +3,11 @@ import { fmtTime } from '@/lib/data';
 import { formatUptime } from '@/lib/engine/health';
 import { StatusBadge } from './StatusBadge';
 
-export function PcMonitor() {
+export function ScannerMonitor() {
   const s = useStatuses();
   const timezone = useSettings().data?.display_timezone ?? 'UTC';
   return <section aria-label="Scanner status" className="grid gap-x-6 gap-y-4 border-y border-border py-4 sm:grid-cols-2 lg:grid-cols-4">
-    <div><div className="mb-2 text-[10px] uppercase text-muted-foreground">Local PC Server</div><StatusBadge value={s.pc} /></div>
+    <div><div className="mb-2 text-[10px] uppercase text-muted-foreground">Cloud scanner (Render)</div><StatusBadge value={s.cloud} /></div>
     <div><div className="mb-2 text-[10px] uppercase text-muted-foreground">Scanner Engine</div><StatusBadge value={s.scanner} /></div>
     <div><div className="mb-2 text-[10px] uppercase text-muted-foreground">Engine uptime · last reported</div><span className="font-mono text-xs">{formatUptime(s.health?.uptimeSeconds)}</span></div>
     <div><div className="mb-2 text-[10px] uppercase text-muted-foreground">Last successful scan</div><span className="font-mono text-xs">{fmtTime(s.health?.lastScanAt, timezone)}</span></div>

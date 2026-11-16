@@ -1,14 +1,17 @@
 services:
-  - type: worker
+  - type: web
     name: crypto-signal-engine
     runtime: docker
     region: frankfurt
-    plan: 0.5c-512mb
+    plan: free
     numInstances: 1
     dockerfilePath: ./engine-worker/Dockerfile
+    healthCheckPath: /healthz
     autoDeployTrigger: 'off'
     envVars:
       - key: ENGINE_APP_URL
         sync: false
       - key: ENGINE_SHARED_SECRET
         sync: false
+      - key: ENGINE_HOST_KIND
+        value: hosted

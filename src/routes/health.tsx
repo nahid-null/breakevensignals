@@ -42,11 +42,11 @@ function Health() {
       <div className="grid gap-4 lg:grid-cols-2">
         <section className="py-4 lg:pr-8">
           <h2 className="mb-2 text-xs uppercase tracking-widest text-muted-foreground">Signal pipeline</h2>
-          <Row label="Local PC Server"><StatusBadge value={s.pc} /></Row>
+          <Row label="Cloud scanner (Render)"><StatusBadge value={s.cloud} /></Row>
           <Row label="Binance REST"><StatusBadge value={s.binance} /></Row>
           <Row label="Binance WebSocket"><StatusBadge value={s.websocket} /></Row>
           <Row label="Scanner Engine"><StatusBadge value={s.scanner} /></Row>
-          <Row label="Service hosting">{h?.engine?.runtime_mode === 'temporary' ? 'TEMPORARY VERIFICATION' : h?.engine?.host_kind === 'windows_pc' ? 'WINDOWS PC' : h?.engine?.host_kind === 'hosted' ? 'HOSTED' : 'NOT CONFIRMED'}</Row>
+          <Row label="Service hosting">{h?.engine?.runtime_mode === 'temporary' ? 'TEMPORARY VERIFICATION' : h?.engine?.host_kind === 'hosted' ? 'RENDER CLOUD' : 'NOT CONFIRMED'}</Row>
           <Row label="Engine uptime · last reported">{formatUptime(h?.uptimeSeconds)}</Row>
           <Row label="Last successful scan">{fmtTime(h?.lastScanAt, tz)}</Row>
           <Row label="Next scan · expected candle close">{fmtTime(h?.nextScanAt, tz)}</Row>
