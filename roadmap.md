@@ -1,5 +1,10 @@
 # Independent Crypto Signal Terminal
 
+## Railway redeployment investigation (prompt-10, 2026-11-16)
+- [x] Read-only check: new hosted owner started 09:33:51, renewed heartbeat/90-second lease through 09:38:11; matching owner, no recorded restriction. Recovery counters increased 12581 to 12890; 12/20 symbols have commits, oldest saved candle remains yesterday, no completed live scan or validated feed telemetry. Existing Telegram has only four TEST/SENT receipts (latest 11); no message sent.
+- [x] Explain expected overlapping/retrying startup lease denial versus unknown replica count; current evidence strongly indicates pre-fix worker despite website published 09:31:47 and database supporting feed evidence. 26 isolated tests pass, published/preview browser health agree, no runtime errors; application/configuration/history unchanged; chat.md updated.
+- [ ] Identify Railway active source revision and deployment/replica state — needs user screenshot of active deployment repository/branch/commit before any deployment or termination advice.
+
 ## Current deployed-status diagnosis (prompt-9, 2026-11-16)
 - [x] Investigate without application changes: hosted recovery advances; REST heartbeat expires during successful history; completed-scan timestamp awaits initialization; SYSTEM depends on RUNNING, not cloud/Telegram alone; WILD absent from listed trading contracts.
 - [x] Reproduce silent legacy candle connection against the same Binance host and verify the maintained SDK's market path: Node and Docker Bun 1.3.10 each receive zero frames on /stream and 26 valid frames on /market/stream during paired 18-second checks. This is sandbox evidence, not Railway live-feed certification.
