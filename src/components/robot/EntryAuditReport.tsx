@@ -38,7 +38,7 @@ export function EntryAuditReport() {
 }
 function SmcBacktest() {
   return <div className="space-y-2 border-t border-border pt-3"><h4 className="text-sm font-semibold">SMC_V1 historical replay · {smc.source} · ${smc.start_balance} start</h4>
-    {Object.values(smc.runs).map((r)=><div key={r.label} className="text-xs text-muted-foreground"><p><span className="text-foreground">{r.label}</span> · {r.evaluated.toLocaleString()} coin-direction checks · {r.qualified} qualified · {r.all.trades} trades (LONG {r.long.trades} / SHORT {r.short.trades}) · net {signed(r.all.netPnl)} · end balance {usd(r.end_balance)}</p>
+    {Object.values(smc.runs).map((r)=><div key={r.label} className="text-xs text-muted-foreground"><p><span className="text-foreground">{r.label}</span> · {r.evaluated.toLocaleString()} coin-direction checks · {r.qualified} qualified · {r.all.trades} trade{r.all.trades===1?"":"s"} (LONG {r.long.trades} / SHORT {r.short.trades}) · net {signed(r.all.netPnl)} · end balance {usd(r.end_balance)}</p>
       <p>Most common reasons for no trade: {r.top_reasons.slice(0,4).map(([k,v])=>`${k} (${Number(v).toLocaleString()})`).join(' · ')}</p></div>)}
     <p className="text-xs text-waiting">Far too few trades to judge accuracy or profit. The strict sweep → structure shift → zone → OTE chain plus a +10% target at 50x (0.2% price move) against a structural stop leaves very few qualifying entries. Profitability needs at least 30 genuine completed paper trades.</p>
   </div>;
