@@ -143,7 +143,8 @@ export function evaluateSmc(st: SymbolState, direction: Direction, s: RobotSetti
   const opposing = st.levels.filter((x) => x.tf >= 5 && x.sweptAt === null && x.side === (sign > 0 ? 'high' : 'low') && (x.price - price) * sign > 0)
     .sort((a, b) => (a.price - b.price) * sign)[0];
   const costs = s.fee_pct / 100 * 2 + s.slippage_bps / 10_000 * 2;
-  const rewardRisk = move / (stopPct + costs);
+  // Net reward at the fixed target is 10% of margin = 0.2% of notional at 50x; compare it with the full loss at the stop (same rule as at execution).
+  const rewardRisk = (0.1 / 50) / (stopPct + costs);
 
   // --- Score --------------------------------------------------------------------------------
   const mid = (impulse + extreme) / 2;
