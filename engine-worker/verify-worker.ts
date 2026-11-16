@@ -18,7 +18,7 @@ for (const migration of ['0000_migration.sql', '0002_independent_signal_engine.s
 }
 const report = { scope: 'Temporary real Binance worker verification with isolated disk PostgreSQL; NOT deployed production',
   directory, startedAt: new Date().toISOString(), initialContracts: 0, reconnectPassed: false, candleAdvancePassed: false,
-  restoredCheckpoints: 0, restartPassed: false, successfulCandleScans: 0, scanCountRestored: false, validatedLiveFeeds: 0, isolatedPendingNotifications: 0, productionWrites: 0, completedAt: '' };
+  restoredCheckpoints: 0, trendFilterCheckpoints: 0, restartPassed: false, successfulCandleScans: 0, scanCountRestored: false, validatedLiveFeeds: 0, isolatedPendingNotifications: 0, productionWrites: 0, completedAt: '' };
 const server = Bun.serve({ hostname: '127.0.0.1', port: 0, async fetch(request) {
   if (request.headers.get('authorization') !== 'Bearer isolated-verification-key') return new Response('Unauthorized', { status: 401 });
   try {
