@@ -13,7 +13,7 @@ import { sizePosition, type Account } from '../src/lib/robot/risk';
 import { evaluate, type BookContext, type Candidate, type Evaluation } from '../src/lib/robot/strategy';
 import type { RobotCommit, RobotCommitResult } from '../src/lib/robot/protocol';
 
-type Row = Record<string, unknown>;
+type Row = { [k: string]: unknown } & { id?: unknown; symbol?: unknown; direction?: unknown; status?: unknown; setup?: unknown; score?: unknown; leverage?: unknown; band?: unknown; entry_price?: unknown; quantity?: unknown; quantity_open?: unknown; margin?: unknown; notional?: unknown; stop_loss?: unknown; initial_stop?: unknown; tp1?: unknown; tp2?: unknown; liquidation_price?: unknown; risk_usdt?: unknown; tp1_done?: unknown; fees?: unknown; realized_pnl?: unknown; opened_at?: unknown; closed_at?: unknown; last_candle_time?: unknown; version?: unknown; liquidity?: unknown; last_price?: unknown; unrealized_pnl?: unknown; balance?: unknown };
 type Book = { bid: number; ask: number; bidQty: number; askQty: number; at: number };
 type Pending = { expected: number; fills: Fill[]; notify: boolean };
 const LIVE_BAR_MAX_AGE = 2 * MINUTE;
