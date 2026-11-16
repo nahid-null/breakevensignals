@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MINUTE } from '@/lib/engine/model';
 import { engineHealth } from '@/lib/engine/health';
 import { SignalService } from '../../engine-worker/service';
-import { BinanceRequestError, binanceFetch } from '../../engine-worker/binance';
+import { BinanceRequestError, binanceFetch, history } from '../../engine-worker/binance';
 
 type FakeSocket = { emit: (event: string, data?: unknown, response?: unknown) => void; terminate: () => void };
 const sockets = vi.hoisted(() => [] as FakeSocket[]);
@@ -16,9 +16,9 @@ vi.mock('ws', () => ({ default: class {
 } }));
 vi.mock('../../engine-worker/binance', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../engine-worker/binance')>();
-  return { ...actual, delay: async () => {}, binanceFetch: vi.fn(), history: async () => Array.from({ length: 300 }, (_, i) => ({
+  return { ...actual, delay: async () => {}, binanceFetch: vi.fn(), history: vi.fn(async () => Array.from({ length: 300 }, (_, i) => ({
     time: Math.floor(Date.now() / MINUTE) * MINUTE - (300 - i) * MINUTE, open: 100, high: 100.5, low: 99.5, close: 100, volume: 10,
-  })) };
+  }))) };
 });
 
 type AppCall = { action: string; data: Record<string, unknown> };
@@ -29,6 +29,7 @@ const exchange = { symbols: [{ symbol: 'NEARUSDT', status: 'TRADING', filters: [
 beforeEach(() => {
   vi.useFakeTimers(); vi.setSystemTime(1_800_000_000_000); calls.length = 0;
   vi.mocked(binanceFetch).mockReset().mockResolvedValue(exchange);
+  vi.mocked(history).mockClear();
   vi.spyOn(console, 'error').mockImplementation(() => {});
   vi.stubGlobal('fetch', vi.fn(async (_url: string, init: RequestInit) => {
     const input = JSON.parse(String(init.body)) as AppCall;
@@ -92,6 +93,26 @@ describe('restriction-aware worker lifecycle (isolated transport)', () => {
     expect(service.snapshot().market_paused).toBe(true);
     await vi.advanceTimersByTimeAsync(60_000);
     expect(sockets).toHaveLength(1);
+  });
+  it('pauses a 451 during history warmup before any candle commit', async () => {
+    if (!service) throw new Error('Missing service');
+    vi.mocked(history).mockRejectedValueOnce(new BinanceRequestError('restricted', 451, '/fapi/v1/klines', 'Restricted location'));
+    await service.start();
+    expect(service.snapshot()).toMatchObject({ market_paused: true, running: false, connected: false });
+    expect(calls.some((c) => c.action === 'commit')).toBe(false);
+    const requestCount = vi.mocked(binanceFetch).mock.calls.length;
+    await vi.advanceTimersByTimeAsync(120_000);
+    expect(binanceFetch).toHaveBeenCalledTimes(requestCount);
+    expect(history).toHaveBeenCalledTimes(1);
+  });
+  it('loses the owning lease safely even when paused', async () => {
+    if (!service) throw new Error('Missing service');
+    vi.mocked(binanceFetch).mockRejectedValue(new BinanceRequestError('restricted', 451, '/fapi/v1/exchangeInfo', 'Restricted location'));
+    await service.start();
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json({ acquired: false })));
+    await vi.advanceTimersByTimeAsync(20_000);
+    expect(service.snapshot().process_alive).toBe(false);
+    expect(binanceFetch).toHaveBeenCalledTimes(1);
   });
   it('retries a transient startup outage and resumes healthy candle processing', async () => {
     if (!service) throw new Error('Missing service');

@@ -61,7 +61,6 @@ export class SignalService {
       websocket_connected: this.connected && !this.marketPaused, binance_connected: !this.marketPaused && this.lastRestAt > 0 && Date.now() - this.lastRestAt < 90_000,
       available_symbols: this.available.size, status: currentStatus, error: this.lastError, runtime_mode: this.runtimeMode,
       ...this.telemetry() });
-    if (!this.running) return;
     if (!r.acquired) {
       this.running = false; this.connected = false;
       for (const timer of this.timers) clearInterval(timer);
