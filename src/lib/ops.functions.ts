@@ -3,8 +3,7 @@ import { z } from "zod";
 import { engineHealth } from './engine/health';
 
 export const getSystemHealth = createServerFn({ method: "GET" }).handler(async () => {
-  const { publicClient } = await import('./public-client.server');
-  const db = publicClient();
+  const { supabaseAdmin: db } = await import('@/integrations/supabase/client.server');
   const [engine, markets, lastSignal, positions, lastDelivery] = await Promise.all([
     db.from("engine_health").select("*").eq('id',1).maybeSingle(),
     db.from("market_state").select("symbol, status, last_candle_at, successful_scans"),
