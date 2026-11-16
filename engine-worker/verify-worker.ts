@@ -82,6 +82,8 @@ try {
   report.scanCountRestored = (await db.query<{ n: number }>('select sum(successful_scans)::int n from market_state')).rows[0]?.n === report.successfulCandleScans;
   if (!report.scanCountRestored) throw new Error('Scan counter disk persistence mismatch');
   report.restoredCheckpoints = restored.length;
+  report.trendFilterCheckpoints = (await db.query<{ n: number }>("select count(*)::int n from engine_checkpoints where state ? 'mtf'")).rows[0]?.n ?? 0;
+  if (report.trendFilterCheckpoints !== restored.length) throw new Error('15M/5M/1M trend state was not saved with every checkpoint');
   service = new SignalService(url, 'isolated-verification-key', false, 'temporary');
   await service.start();
   report.restartPassed = before.every((row) => {
