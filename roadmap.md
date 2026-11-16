@@ -1,5 +1,12 @@
 # Independent Crypto Signal Terminal
 
+## Current zero-cost reliability request
+- [x] Inspect the reported mobile-hook error and actual scanner/Telegram state without modifying strategies — hook correctly imports React, quoted text absent, no matching error; live engine STOPPED.
+- [x] Improve truthful scan status, next candle schedule, durable scan counts and delivery timestamps; preserve layout and recovery protections.
+- [x] Verify isolated startup/repeated scanning/reconnect/restart/deduplication, dashboard refresh and one labelled Telegram test — 64 tests pass; real 20-feed Binance recovery, 31 durable candle scans and reopened counters/checkpoints; safe TEST ID 10 SENT.
+- [x] Explain browser/PC shutdown limits and zero-cost deployment blockers without activating infrastructure — current web hosting does not run the separate continuous worker; an eligible free always-on host is still required.
+- [ ] Verify deployed genuine signal/breakeven Telegram delivery and unattended uptime — blocked by STOPPED production worker, no configured free host, independent certification and matching published credentials.
+
 - [x] Inspect current application, full LONG/SHORT Pine scripts, database and preferences.
 - [x] Check real Binance Futures availability for the existing 21 symbols.
 - [x] Recommend Render background-worker hosting (paid, approximately $7/month); prepare deployment without provisioning an account.

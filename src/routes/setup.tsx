@@ -15,10 +15,13 @@ function Setup() {
     <div className="border-l-2 border-waiting bg-waiting/5 p-4 text-sm text-waiting">{health?.heartbeatFresh && health.engine?.runtime_mode === 'production' && health.engine.status !== 'STOPPED' ? 'Engine heartbeat received. See System Health for processing status.' : 'Production activation pending. Publishing the website alone does not start continuous monitoring.'}</div>
     <section className="border-y border-border py-5"><h2 className="mb-4 font-mono text-sm">ACTIVATION CHECKLIST</h2>
       <div className="flex items-center justify-between border-b border-border py-3 text-sm">Private engine credential<StatusBadge value={health?.engineConfigured ? 'CONNECTED' : 'NOT CONFIGURED'} /></div>
-      <div className="flex items-center justify-between border-b border-border py-3 text-sm">Windows PC scanner<StatusBadge value={health?.pc === 'ONLINE' && health.scanner === 'RUNNING' ? 'CONNECTED' : 'WAITING'} /></div>
+      <div className="flex items-center justify-between border-b border-border py-3 text-sm">Independent scanner<StatusBadge value={health?.heartbeatFresh && health.engine?.runtime_mode === 'production' && health.scanner === 'RUNNING' ? 'CONNECTED' : 'WAITING'} /></div>
       <div className="flex items-center justify-between py-3 text-sm">Pine calculation comparison<StatusBadge value="MANUAL VERIFICATION REQUIRED" /></div>
     </section>
-    <section className="space-y-3"><h2 className="font-mono text-sm">WINDOWS PC · NO PAID VPS</h2>
+    <section className="space-y-3"><h2 className="font-mono text-sm">FREE CLOUD HOST · NOT ACTIVATED</h2>
+      <p className="text-sm text-muted-foreground">No always-on free machine is connected. Free-host eligibility, available capacity and usage allowances must be confirmed; uninterrupted free operation is not guaranteed. Keeping Chrome open does not start the scanner.</p>
+    </section>
+    <section className="space-y-3"><h2 className="font-mono text-sm">OPTIONAL WINDOWS PC · NO PAID VPS</h2>
       <p className="text-sm text-muted-foreground">Installation pending. The PC must stay powered on, awake and connected to the internet.</p>
       <ol className="list-decimal space-y-3 pl-5 text-sm text-muted-foreground">
         <li>Complete the independent Pine comparison and publish the existing website.</li>

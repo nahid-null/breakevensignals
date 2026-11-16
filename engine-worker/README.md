@@ -1,6 +1,8 @@
 # Always-on signal service
 
-The existing website stays on Lovable. The primary scanner host is now the user's own Windows PC, using the same separate Bun worker. See [Windows setup guide](windows/SETUP.md). No paid VPS or Render service is required. A sandbox process is only a temporary test and is not production hosting; the Windows installation has not been performed or verified here.
+The existing website stays on Lovable. Scanning runs in the separate Bun worker, never Chrome or a web request. The operating budget is strictly zero: no paid or trial-only resources may be activated. A user-owned eligible free cloud machine is the preferred host, but none is configured or verified here. Free capacity, account eligibility, lawful Binance access, idle reclamation and Lovable usage allowances must be checked; uninterrupted permanently free operation is not guaranteed.
+
+Keeping Chrome open cannot start this worker. Closing or refreshing Chrome does not stop a separately running worker. Turning off its host computer does. The previously prepared [Windows setup guide](windows/SETUP.md) is an optional alternative only if the user chooses to keep a PC powered on, awake and online; it is not the chosen cloud deployment. No PC installation is claimed.
 
 ## Optional legacy Render deployment (not the primary choice)
 Do not deploy until original-Pine parity is validated. Render configuration is preparation only; paid activation requires the user's separate final confirmation.
@@ -23,6 +25,8 @@ Do not deploy until original-Pine parity is validated. Render configuration is p
 Versioned checkpoints commit together with events/positions/outbox entries. A database lease allows one writer; stale revisions and timestamps are rejected. REST recovery never skips a missing candle. WebSocket reconnect uses exponential backoff and jitter; no activity for 60 seconds forces reconnection. Binance 429 honors Retry-After, and regional restrictions/IP bans are surfaced rather than bypassed. Failed confirmed Telegram rejections retry at most five times; ambiguous outcomes require manual review because Telegram cannot guarantee exactly-once delivery after an interrupted response.
 
 Shutdown releases only the instance's own lease and marks the engine STOPPED. Temporary verification services must use runtime mode `temporary`; the dashboard distinguishes these runs from permanently hosted monitoring. Saved timestamps are normalized on restart and current market rows are restored before display updates resume.
+
+The dashboard expires heartbeat-based status after 90 seconds. RUNNING also requires connected Binance feeds and durable scan progress within three minutes. The next scan is the expected one-minute candle close, not a guaranteed execution time, and is absent while stopped or recovering. Successful candle scans count per-symbol live/recovery commits only, starting at the counter migration; initial warmup, duplicate commits and dashboard polling never increment it. Counters persist with checkpoints atomically. Returning to a visible tab or restored internet refreshes dashboard reads without spawning a scanner. Telegram status reflects the latest recorded delivery, not an ongoing API probe; successful delivery time uses its saved confirmation timestamp.
 
 ## Local observation (no writes)
 `bun run engine-worker/main.ts --observe` connects to real Binance REST/WebSocket, computes historical/live signals in memory, and writes no trades or notifications. It is a historical/live calculation check, not verification of production persistence or unattended hosting.

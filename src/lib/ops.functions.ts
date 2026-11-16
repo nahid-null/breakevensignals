@@ -5,18 +5,22 @@ import { engineHealth } from './engine/health';
 export const getSystemHealth = createServerFn({ method: "GET" }).handler(async () => {
   const { publicClient } = await import('./public-client.server');
   const db = publicClient();
-  const [engine, candle, lastSignal, positions] = await Promise.all([
+  const [engine, markets, lastSignal, positions, lastDelivery] = await Promise.all([
     db.from("engine_health").select("*").eq('id',1).maybeSingle(),
-    db.from("market_state").select("last_candle_at").order("last_candle_at", { ascending: false, nullsFirst: false }).limit(1).maybeSingle(),
+    db.from("market_state").select("last_candle_at, successful_scans"),
     db.from("signal_events").select("timestamp").order("timestamp", { ascending: false }).limit(1).maybeSingle(),
     db.from("active_positions").select("id", { count: 'exact', head: true }).in('status', ['ACTIVE', 'BREAKEVEN']),
+    db.from('telegram_logs').select('updated_at').eq('delivery_status', 'SENT').order('updated_at', { ascending: false }).limit(1).maybeSingle(),
   ]);
-  const databaseOk = !engine.error && !candle.error && !lastSignal.error && !positions.error;
+  const databaseOk = !engine.error && !markets.error && !lastSignal.error && !positions.error && !lastDelivery.error;
+  const candleTimes = (markets.data ?? []).flatMap((m) => m.last_candle_at ? [m.last_candle_at] : []).sort();
   return {
     databaseOk,
     engine: engine.data,
     ...engineHealth(engine.data, databaseOk),
-    lastCandleAt: candle.data?.last_candle_at ?? null,
+    lastCandleAt: candleTimes.at(-1) ?? null,
+    successfulScans: markets.error ? null : (markets.data ?? []).reduce((total, m) => total + m.successful_scans, 0),
+    lastTelegramAt: lastDelivery.data?.updated_at ?? null,
     lastSignalAt: lastSignal.data?.timestamp ?? null,
     activePositions: positions.count ?? 0,
     engineConfigured: Boolean(process.env["ENGINE_SHARED_SECRET"]),

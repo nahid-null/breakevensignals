@@ -34,6 +34,16 @@ describe('truthful Windows PC health', () => {
     expect(heartbeatSchema.safeParse({ ...input, scanned_symbols: 22 }).success).toBe(false);
     expect(heartbeatSchema.safeParse({ ...input, uptime_seconds: -1 }).success).toBe(false);
   });
+  it('does not report RUNNING when fresh heartbeats hide stopped candle progress', () => {
+    expect(engineHealth({ ...windows, last_scan_at: new Date(now - 180_000).toISOString() }, true, now).scanner).toBe('RECOVERING');
+    expect(engineHealth({ ...windows, websocket_connected: false }, true, now).scanner).toBe('RECOVERING');
+    expect(engineHealth({ ...windows, last_scan_at: null }, true, now).scanner).toBe('RECOVERING');
+  });
+  it('schedules the next one-minute candle only while real scanning is healthy', () => {
+    expect(engineHealth(windows, true, now).nextScanAt).toBe('2026-11-15T15:31:00.000Z');
+    expect(engineHealth({ ...windows, status: 'STOPPED' }, true, now).nextScanAt).toBeNull();
+    expect(engineHealth(windows, false, now).nextScanAt).toBeNull();
+  });
 });
 
 describe('private read-only local health', () => {

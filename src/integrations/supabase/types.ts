@@ -238,6 +238,7 @@ export type Database = {
           price: number | null
           short_score: number
           status: string
+          successful_scans: number
           symbol: string
           trend: string
           updated_at: string
@@ -249,6 +250,7 @@ export type Database = {
           price?: number | null
           short_score?: number
           status?: string
+          successful_scans?: number
           symbol: string
           trend?: string
           updated_at?: string
@@ -260,6 +262,7 @@ export type Database = {
           price?: number | null
           short_score?: number
           status?: string
+          successful_scans?: number
           symbol?: string
           trend?: string
           updated_at?: string

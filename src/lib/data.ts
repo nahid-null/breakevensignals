@@ -27,7 +27,17 @@ export function useRealtimeSync() {
       });
     }
     channel.subscribe();
+    const refresh = () => {
+      if (document.visibilityState === 'hidden') return;
+      for (const table of TABLES) void qc.invalidateQueries({ queryKey: [table] });
+      void qc.invalidateQueries({ queryKey: ['health'] });
+      void qc.invalidateQueries({ queryKey: ['terminal_statistics'] });
+    };
+    document.addEventListener('visibilitychange', refresh);
+    window.addEventListener('online', refresh);
     return () => {
+      document.removeEventListener('visibilitychange', refresh);
+      window.removeEventListener('online', refresh);
       void supabase.removeChannel(channel);
     };
   }, [qc]);
@@ -55,6 +65,7 @@ export const useTelegramLogs = () =>
   useQuery({
     queryKey: ["telegram_logs"],
     queryFn: () => must<TelegramLog[]>(supabase.from("telegram_logs").select("*").order("created_at", { ascending: false }).limit(500)),
+    refetchInterval: 15000,
   });
 
 export const useSettings = () =>
@@ -64,7 +75,7 @@ export const useSettings = () =>
   });
 
 export const useHealth = () =>
-  useQuery({ queryKey: ["health"], queryFn: () => getSystemHealth(), refetchInterval: 30000 });
+  useQuery({ queryKey: ["health"], queryFn: () => getSystemHealth(), refetchInterval: 15000 });
 
 export const useMarkets = () => useQuery({ queryKey: ['market_state'], queryFn: () =>
   must<MarketState[]>(supabase.from('market_state').select('*')), refetchInterval: 15000 });
@@ -89,10 +100,10 @@ export function useStatuses() {
   // Expire cached status even if the next read fails or is still pending.
   const h = health.data && now !== null ? { ...health.data, ...engineHealth(health.data.engine, health.data.databaseOk && !health.isError, now) } : health.data;
   const lastTg = logs.data?.find((l) => l.delivery_status !== "PENDING");
-  const system: Status = health.isError ? "OFFLINE" : !h ? "WAITING" : h.databaseOk && h.heartbeatFresh && h.engine?.status === 'RUNNING' ? "ONLINE" : "OFFLINE";
+  const system: Status = health.isError ? "OFFLINE" : !h ? "WAITING" : h.databaseOk && h.scanner === 'RUNNING' ? "ONLINE" : "OFFLINE";
   const binance: Status = health.isError ? 'DISCONNECTED' : !h ? 'WAITING' : h.binance === 'CONNECTED' ? 'CONNECTED' : 'DISCONNECTED';
   const websocket: Status = health.isError ? 'DISCONNECTED' : !h ? 'WAITING' : h.websocket === 'CONNECTED' ? 'CONNECTED' : 'DISCONNECTED';
-  const telegram: Status = !h ? "WAITING" : !h.botConfigured || !h.chatConfigured ? "NOT CONFIGURED" : !lastTg ? "WAITING" : lastTg.delivery_status === "SENT" ? "CONNECTED" : "ERROR";
+  const telegram: Status = health.isError || logs.isError ? 'ERROR' : !h ? "WAITING" : !h.botConfigured || !h.chatConfigured ? "NOT CONFIGURED" : !lastTg ? "WAITING" : lastTg.delivery_status === "SENT" ? "CONNECTED" : "ERROR";
   return { system, pc: health.isError ? 'OFFLINE' : h?.pc ?? 'OFFLINE', scanner: health.isError ? 'STOPPED' : h?.scanner ?? 'STOPPED', binance, websocket, telegram, health: h, healthQuery: health };
 }
 
