@@ -1,11 +1,16 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import { Activity, BookOpen, History, Send, Settings, HeartPulse, List } from "lucide-react";
+import { Activity, BookOpen, History, Send, Settings, HeartPulse, List, Wallet, LineChart, ChevronDown } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useRealtimeSync, useStatuses, fmtTime } from "@/lib/data";
 import { StatusBadge } from "./StatusBadge";
 
 const NAV = [
   { to: "/", label: "Dashboard", icon: Activity },
+  { to: "/simulator", label: "Simulator", icon: Wallet },
+] as const;
+const MORE = [
+  { to: "/markets", label: "Coin Monitor", icon: LineChart },
   { to: "/signals", label: "Signal History", icon: History },
   { to: '/positions', label: 'Trade Ledger', icon: List },
   { to: "/telegram", label: "Telegram", icon: Send },
@@ -61,6 +66,18 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Icon className="h-3.5 w-3.5" /> {label}
             </Link>
           ))}
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex items-center gap-1.5 whitespace-nowrap rounded px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
+              More <ChevronDown className="h-3.5 w-3.5" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              {MORE.map(({ to, label, icon: Icon }) => (
+                <DropdownMenuItem key={to} asChild>
+                  <Link to={to} className="flex items-center gap-2 text-xs"><Icon className="h-3.5 w-3.5" /> {label}</Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </nav>
       </header>
       <main className="mx-auto max-w-[1600px] px-4 py-6">{children}</main>

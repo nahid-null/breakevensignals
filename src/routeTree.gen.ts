@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as HealthRouteImport } from './routes/health'
+import { Route as MarketsRouteImport } from './routes/markets'
 import { Route as PositionsRouteImport } from './routes/positions'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SetupRouteImport } from './routes/setup'
@@ -27,6 +28,11 @@ const IndexRoute = IndexRouteImport.update({
 const HealthRoute = HealthRouteImport.update({
   id: '/health',
   path: '/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MarketsRoute = MarketsRouteImport.update({
+  id: '/markets',
+  path: '/markets',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PositionsRoute = PositionsRouteImport.update({
@@ -69,6 +75,7 @@ const ApiPublicTradingviewWebhookRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/health': typeof HealthRoute
+  '/markets': typeof MarketsRoute
   '/positions': typeof PositionsRoute
   '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
@@ -80,6 +87,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/health': typeof HealthRoute
+  '/markets': typeof MarketsRoute
   '/positions': typeof PositionsRoute
   '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
@@ -92,6 +100,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/health': typeof HealthRoute
+  '/markets': typeof MarketsRoute
   '/positions': typeof PositionsRoute
   '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
@@ -105,6 +114,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/health'
+    | '/markets'
     | '/positions'
     | '/settings'
     | '/setup'
@@ -116,6 +126,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/health'
+    | '/markets'
     | '/positions'
     | '/settings'
     | '/setup'
@@ -127,6 +138,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/health'
+    | '/markets'
     | '/positions'
     | '/settings'
     | '/setup'
@@ -139,6 +151,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   HealthRoute: typeof HealthRoute
+  MarketsRoute: typeof MarketsRoute
   PositionsRoute: typeof PositionsRoute
   SettingsRoute: typeof SettingsRoute
   SetupRoute: typeof SetupRoute
@@ -162,6 +175,13 @@ declare module '@tanstack/react-router' {
       path: '/health'
       fullPath: '/health'
       preLoaderRoute: typeof HealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/markets': {
+      id: '/markets'
+      path: '/markets'
+      fullPath: '/markets'
+      preLoaderRoute: typeof MarketsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/positions': {
@@ -219,6 +239,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   HealthRoute: HealthRoute,
+  MarketsRoute: MarketsRoute,
   PositionsRoute: PositionsRoute,
   SettingsRoute: SettingsRoute,
   SetupRoute: SetupRoute,
