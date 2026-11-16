@@ -155,6 +155,13 @@
       "when": 1794854313380,
       "tag": "0021_private_dashboard_reads",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1794855405630,
+      "tag": "0022_robot_smc_settings",
+      "breakpoints": true
     }
   ]
 }

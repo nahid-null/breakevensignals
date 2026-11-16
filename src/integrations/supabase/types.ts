@@ -742,7 +742,9 @@ export type Database = {
       }
       robot_settings: {
         Row: {
+          breakeven_trigger_roi_pct: number
           cooldown_minutes: number
+          daily_loss_limit_enabled: boolean
           daily_loss_limit_pct: number
           emergency_stop: boolean
           enabled: boolean
@@ -751,6 +753,7 @@ export type Database = {
           high_score: number
           id: number
           loss_streak_cooldown: number
+          loss_streak_enabled: boolean
           maker_fee_pct: number
           max_allocation_pct: number
           max_candle_atr: number
@@ -767,6 +770,8 @@ export type Database = {
           min_score: number
           min_sweep_atr: number
           min_volume_ratio: number
+          ote_max: number
+          ote_min: number
           quote_max_age_ms: number
           risk_per_trade_pct: number
           slippage_bps: number
@@ -775,7 +780,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          breakeven_trigger_roi_pct?: number
           cooldown_minutes?: number
+          daily_loss_limit_enabled?: boolean
           daily_loss_limit_pct?: number
           emergency_stop?: boolean
           enabled?: boolean
@@ -784,6 +791,7 @@ export type Database = {
           high_score?: number
           id: number
           loss_streak_cooldown?: number
+          loss_streak_enabled?: boolean
           maker_fee_pct?: number
           max_allocation_pct?: number
           max_candle_atr?: number
@@ -800,6 +808,8 @@ export type Database = {
           min_score?: number
           min_sweep_atr?: number
           min_volume_ratio?: number
+          ote_max?: number
+          ote_min?: number
           quote_max_age_ms?: number
           risk_per_trade_pct?: number
           slippage_bps?: number
@@ -808,7 +818,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          breakeven_trigger_roi_pct?: number
           cooldown_minutes?: number
+          daily_loss_limit_enabled?: boolean
           daily_loss_limit_pct?: number
           emergency_stop?: boolean
           enabled?: boolean
@@ -817,6 +829,7 @@ export type Database = {
           high_score?: number
           id?: number
           loss_streak_cooldown?: number
+          loss_streak_enabled?: boolean
           maker_fee_pct?: number
           max_allocation_pct?: number
           max_candle_atr?: number
@@ -833,6 +846,8 @@ export type Database = {
           min_score?: number
           min_sweep_atr?: number
           min_volume_ratio?: number
+          ote_max?: number
+          ote_min?: number
           quote_max_age_ms?: number
           risk_per_trade_pct?: number
           slippage_bps?: number
