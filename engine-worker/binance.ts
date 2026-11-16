@@ -2,7 +2,7 @@ import { MINUTE, validateCandle, type Candle } from "../src/lib/engine/model";
 import { BINANCE_ACCESS_RESTRICTED, BINANCE_IP_BANNED } from '../src/lib/engine/market-access';
 
 export const BINANCE_REST = "https://fapi.binance.com";
-export const BINANCE_WS = "wss://fstream.binance.com/stream?streams=";
+export const BINANCE_WS = "wss://fstream.binance.com/market/stream?streams=";
 export const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 type FailureKind = 'restricted' | 'banned' | 'rate_limit' | 'network' | 'provider' | 'request';

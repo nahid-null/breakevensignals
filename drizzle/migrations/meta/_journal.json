@@ -64,6 +64,13 @@
       "when": 1794818136390,
       "tag": "0008_guard_restricted_market_writes",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1794820941231,
+      "tag": "0009_validated_candle_feed_health",
+      "breakpoints": true
     }
   ]
 }

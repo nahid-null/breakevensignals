@@ -184,6 +184,7 @@ export type Database = {
           available_symbols: number
           binance_connected: boolean
           error: string | null
+          feed_health: Json | null
           host_kind: string
           id: number
           instance_id: string
@@ -200,6 +201,7 @@ export type Database = {
           available_symbols?: number
           binance_connected?: boolean
           error?: string | null
+          feed_health?: Json | null
           host_kind?: string
           id: number
           instance_id: string
@@ -216,6 +218,7 @@ export type Database = {
           available_symbols?: number
           binance_connected?: boolean
           error?: string | null
+          feed_health?: Json | null
           host_kind?: string
           id?: number
           instance_id?: string
