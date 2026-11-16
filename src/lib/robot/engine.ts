@@ -3,7 +3,7 @@
  * Market data -> analysis -> signal -> validation -> opportunity queue -> simulated order -> fill -> monitoring -> exit -> next opportunity.
  */
 import { MINUTE, SymbolState, type Bar } from './series';
-import { evaluate, maxStopFraction, type BookContext, type Candidate, type Direction, type Evaluation } from './strategy';
+import { evaluate, evaluateLegacy, maxStopFraction, type BookContext, type Candidate, type Direction, type Evaluation } from './strategy';
 import { allocationLimits, DEFAULT_RULES, planMargin, portfolioGate, sizeOrder, type OpenExposure, type SymbolRules } from './risk';
 import { managePosition, manageTick, openPosition, simulateMarketFill, type DepthBook, type Fill, type Position } from './paper';
 import { groupOf, type RobotSettings } from './config';
@@ -40,7 +40,7 @@ export class RobotCore {
   open: Position[] = [];
   counters = emptyCounters();
   signals: SignalLog[] = [];
-  constructor(public settings: RobotSettings) {}
+  constructor(public settings: RobotSettings, private readonly legacyComparison = false) {}
 
   addSymbol(symbol: string, rules: SymbolRules = DEFAULT_RULES) {
     this.states.set(symbol, new SymbolState(symbol, rules.tickSize)); this.rules.set(symbol, rules);
@@ -53,7 +53,7 @@ export class RobotCore {
     const fills: PositionFill[] = [];
     for (const p of this.open) if (p.symbol === symbol && p.status === 'OPEN') for (const f of managePosition(p, bar, st, this.settings)) fills.push({ position: p, fill: f });
     if (st.count < WARMUP_BARS) return { accepted: true, fills, evals: [] };
-    const evals = (['LONG', 'SHORT'] as Direction[]).map((d) => evaluate(st, d, this.settings, book));
+    const evals = (['LONG', 'SHORT'] as Direction[]).map((d) => (this.legacyComparison ? evaluateLegacy : evaluate)(st, d, this.settings, book));
     const note: Note = { long: null, short: null, longScore: null, shortScore: null };
     for (const e of evals) {
       const key = e.direction === 'LONG' ? 'long' : 'short';
@@ -125,8 +125,18 @@ export class RobotCore {
       this.signals.push({ id: signalId(c), candidate: c, decision: 'REJECTED', reason: `Execution: ${why}` }); return { rejected: why }; };
     const bid = depth.bids[0]?.[0]; const ask = depth.asks[0]?.[0];
     if (!bid || !ask || ask < bid) return fail('No valid order book');
+    if (!this.legacyComparison) {
+      const age = now - (c.time + MINUTE);
+      if (age < 0 || age > this.settings.entry_max_age_ms || now >= q.expires) return fail('Stale entry signal');
+      if (depth.receivedAt === undefined || now < depth.receivedAt || now - depth.receivedAt > this.settings.quote_max_age_ms) return fail('Stale or unverified order book');
+      if ((ask - bid) / ((ask + bid) / 2) * 10_000 > this.settings.max_spread_bps) return fail('Abnormal spread at execution');
+      const gate = portfolioGate(c, exposure(this.open), balance, this.settings);
+      if (gate) return fail(gate);
+    }
     const touch = sign > 0 ? ask : bid;
-    if (Math.abs(touch - c.entry) > 0.3 * c.atr) return fail('Price moved away before fill');
+    const drift = this.legacyComparison ? 0.3 : this.settings.max_entry_drift_atr;
+    if (Math.abs(touch - c.entry) > drift * c.atr) return fail('Price moved away before fill');
+    if (c.audit && (touch - c.audit.pool_price) * sign <= 0) return fail('Reclaim lost before execution');
     if ((touch - c.stop) * sign < 0.3 * c.atr) return fail('Price too close to stop at fill time');
     if (((touch - c.stop) * sign) / touch > maxStopFraction(this.settings)) return fail('Stop too wide at fill price');
     const margin = planMargin(c, balance, exposure(this.open), this.settings);
@@ -135,9 +145,27 @@ export class RobotCore {
     if ('rejected' in sized) return fail(sized.rejected);
     const fill = simulateMarketFill(c.direction, sized.qty, depth, this.settings, rules);
     if ('rejected' in fill) return fail(fill.rejected);
+    if (!this.legacyComparison) {
+      if (Math.abs(fill.avg - c.entry) > drift * c.atr) return fail('Final fill would chase signal');
+      if (c.audit && (fill.avg - c.audit.pool_price) * sign <= 0) return fail('Final fill invalidates reclaim');
+      const riskFraction = (fill.avg - c.stop) * sign / fill.avg + 2 * this.settings.fee_pct / 100 + 2 * this.settings.slippage_bps / 10_000;
+      if (c.audit && 0.1 / 50 / riskFraction < this.settings.min_reward_risk) return fail('Net reward too small at executable fill');
+    }
     const opened = openPosition({ id: signalId(c), symbol: c.symbol, direction: c.direction, setup: c.setup, score: c.score, tier: c.tier, stop: c.stop, liquidity: c.liquidity },
       fill, rules, now, this.settings);
     if ('rejected' in opened) return fail(opened.rejected);
+    if (c.audit) {
+      if (c.audit.opposing_level !== null && (c.audit.opposing_level - opened.position.tp) * sign < 0.05 * c.atr) return fail('Opposing liquidity too close at final fill');
+      opened.position.audit = { ...c.audit, source: depth.source ?? 'LIVE_BINANCE', bid, ask, spread_bps: (ask - bid) / ((ask + bid) / 2) * 10_000,
+        quote_received_at: depth.receivedAt, fill_at: now, delay_ms: now - c.audit.signal_close_at, fill_price: fill.avg,
+        slippage_bps: (fill.avg / touch - 1) * sign * 10_000, signal_drift_bps: (fill.avg / c.entry - 1) * sign * 10_000,
+        entry_fee: opened.position.entryFee, estimated_exit_fee: (sign > 0 ? bid : ask) * fill.qty * this.settings.fee_pct / 100,
+        requested_quantity: sized.qty, filled_quantity: fill.qty, depth_levels: fill.levels };
+    }
+    // Set immediate liquidation-value PnL on the actual exit side, including spread and estimated costs.
+    manageTick(opened.position, bid, ask, now, this.settings);
+    if (opened.position.status !== 'OPEN') return fail('Entry quote already crosses protective exit');
+    if (opened.position.audit) opened.position.audit.initial_net_roi_pct = (opened.position.realized + opened.position.unrealized) / opened.position.margin * 100;
     // The cap is checked against the balance after the entry fee, so combined margin never exceeds 70% at any moment.
     const { available } = allocationLimits(balance - opened.position.entryFee, exposure(this.open), this.settings);
     if (opened.position.margin > available + 1e-9) return fail('Margin budget full (70% cap)');

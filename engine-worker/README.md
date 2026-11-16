@@ -16,6 +16,10 @@ The paper robot simulates every position at exactly 50x and closes at 10% net RO
 
 The paper robot starts with 10 USDT. A correction to an unused initial allocation is recorded separately from deposits, preserves existing history and never resets an account with recorded trades. Existing backtests retain their original tested starting capital.
 
+### Entry audit and sweep-only paper source
+The dashboard report documents the old six-family evaluator before replacement. New entries require a previously confirmed liquidity pool, actual sweep, two reclaim closes, a later directional rejection/confirmation, volume and short-term momentum. `evaluateLegacy` is replay-only. Final depth execution rechecks signal age, spread, quote age, reclaim, post-slippage drift, net reward/risk and opposing liquidity. Entry evidence, executable-side ROI excursions and the last applied funding timestamp travel through `robot_commit_audited`, wrapping the owning lease/version/margin checks in one transaction. Existing records remain intact with NULL evidence, never backfilled as live telemetry. Forty configurable coins are read at startup; settings cannot remove an open-position coin.
+Replays use next-bar-open two-tick modeled spread plus configured slippage, not historical books. Use `BT_STRATEGY=legacy` for an old-entry comparison with corrected replay ordering; marked equity drawdown and net margin MAE/MFE are also reported. The retained November dataset has already been seen, so it is a historical comparison, not independent unseen validation.
+
 ### Binance access restrictions
 The first public request is `https://fapi.binance.com/fapi/v1/exchangeInfo`; one-minute history uses `/fapi/v1/klines` and REST connectivity uses `/fapi/v1/time`. Live data uses `wss://fstream.binance.com/market/stream?streams=<symbol>@kline_1m/…`. These are USD-M Futures trade candles; Spot, Binance.US, testnet and another exchange are not replacements.
 

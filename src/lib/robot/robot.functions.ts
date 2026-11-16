@@ -1,6 +1,6 @@
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
-import { ABSOLUTE_MAX_ALLOCATION_PCT } from './config';
+import { ABSOLUTE_MAX_ALLOCATION_PCT, ROBOT_SYMBOL_PATTERN } from './config';
 
 /** Adds practice money to the paper robot's main balance. */
 export const robotDeposit = createServerFn({ method: 'POST' })
@@ -35,13 +35,21 @@ export const robotSettingsSchema = z.object({
   max_allocation_pct: z.number().positive().max(ABSOLUTE_MAX_ALLOCATION_PCT),
   max_hold_minutes: z.number().int().min(10).max(1440), fee_pct: z.number().min(0).max(1), maker_fee_pct: z.number().min(0).max(1),
   slippage_bps: z.number().min(0).max(100), max_spread_bps: z.number().positive().max(100), min_quote_volume_musd: z.number().min(0).max(100_000),
-}).strict().refine((s) => s.high_score >= s.min_score, { message: 'High-quality score must be at or above the minimum score' });
+  entry_max_age_ms: z.number().int().min(1000).max(120000), quote_max_age_ms: z.number().int().min(500).max(30000), max_entry_drift_atr: z.number().positive().max(1),
+  min_sweep_atr: z.number().positive().max(3), max_sweep_atr: z.number().positive().max(5), min_rejection_wick: z.number().min(0.1).max(0.9),
+  min_volume_ratio: z.number().min(0.1).max(5), min_reward_risk: z.number().min(0.1).max(5), max_candle_atr: z.number().min(0.5).max(5), sweep_max_age_minutes: z.number().int().min(2).max(60),
+  symbols: z.array(z.string().regex(ROBOT_SYMBOL_PATTERN)).length(40).refine((xs) => new Set(xs).size === 40 && !xs.includes('WILDUSDT'), 'Use 40 different available futures coins, excluding WILDUSDT'),
+}).strict().refine((s) => s.high_score >= s.min_score, { message: 'High-quality score must be at or above the minimum score' })
+  .refine((s) => s.max_sweep_atr > s.min_sweep_atr, 'Maximum sweep must exceed minimum sweep');
 
 /** Saves robot settings. The database re-checks every hard limit (70% margin, exactly 50x leverage). */
 export const robotSaveSettings = createServerFn({ method: 'POST' })
   .inputValidator((d: unknown) => robotSettingsSchema.parse(d))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+    const open = await supabaseAdmin.from('robot_positions').select('symbol').eq('status', 'OPEN');
+    if (open.error) throw new Error('Could not check open paper positions');
+    if (open.data?.some((p) => !data.symbols.includes(p.symbol))) throw new Error('Keep every coin with an open paper position in the monitored list');
     const { error } = await supabaseAdmin.from('robot_settings').update({ ...data, updated_at: new Date().toISOString() }).eq('id', 1);
     if (error) throw new Error(error.message);
     return { ok: true };

@@ -457,6 +457,7 @@ export type Database = {
           band: string
           closed_at: string | null
           direction: string
+          entry_audit: Json | null
           entry_fee: number
           entry_price: number
           exit_price: number | null
@@ -464,6 +465,7 @@ export type Database = {
           fees: number
           fill_status: string
           funding: number
+          funding_applied_at: number
           id: string
           initial_stop: number
           last_candle_time: number
@@ -471,7 +473,9 @@ export type Database = {
           leverage: number
           liquidation_price: number
           liquidity: string | null
+          mae_roi_pct: number | null
           margin: number
+          mfe_roi_pct: number | null
           mode: string
           net_roi_pct: number | null
           notional: number
@@ -499,6 +503,7 @@ export type Database = {
           band: string
           closed_at?: string | null
           direction: string
+          entry_audit?: Json | null
           entry_fee?: number
           entry_price: number
           exit_price?: number | null
@@ -506,6 +511,7 @@ export type Database = {
           fees?: number
           fill_status?: string
           funding?: number
+          funding_applied_at?: number
           id: string
           initial_stop: number
           last_candle_time: number
@@ -513,7 +519,9 @@ export type Database = {
           leverage: number
           liquidation_price: number
           liquidity?: string | null
+          mae_roi_pct?: number | null
           margin: number
+          mfe_roi_pct?: number | null
           mode?: string
           net_roi_pct?: number | null
           notional: number
@@ -541,6 +549,7 @@ export type Database = {
           band?: string
           closed_at?: string | null
           direction?: string
+          entry_audit?: Json | null
           entry_fee?: number
           entry_price?: number
           exit_price?: number | null
@@ -548,6 +557,7 @@ export type Database = {
           fees?: number
           fill_status?: string
           funding?: number
+          funding_applied_at?: number
           id?: string
           initial_stop?: number
           last_candle_time?: number
@@ -555,7 +565,9 @@ export type Database = {
           leverage?: number
           liquidation_price?: number
           liquidity?: string | null
+          mae_roi_pct?: number | null
           margin?: number
+          mfe_roi_pct?: number | null
           mode?: string
           net_roi_pct?: number | null
           notional?: number
@@ -653,21 +665,32 @@ export type Database = {
           daily_loss_limit_pct: number
           emergency_stop: boolean
           enabled: boolean
+          entry_max_age_ms: number
           fee_pct: number
           high_score: number
           id: number
           loss_streak_cooldown: number
           maker_fee_pct: number
           max_allocation_pct: number
+          max_candle_atr: number
           max_concurrent: number
+          max_entry_drift_atr: number
           max_hold_minutes: number
           max_leverage: number
           max_same_direction: number
           max_spread_bps: number
+          max_sweep_atr: number
           min_quote_volume_musd: number
+          min_rejection_wick: number
+          min_reward_risk: number
           min_score: number
+          min_sweep_atr: number
+          min_volume_ratio: number
+          quote_max_age_ms: number
           risk_per_trade_pct: number
           slippage_bps: number
+          sweep_max_age_minutes: number
+          symbols: string[] | null
           updated_at: string
         }
         Insert: {
@@ -675,21 +698,32 @@ export type Database = {
           daily_loss_limit_pct?: number
           emergency_stop?: boolean
           enabled?: boolean
+          entry_max_age_ms?: number
           fee_pct?: number
           high_score?: number
           id: number
           loss_streak_cooldown?: number
           maker_fee_pct?: number
           max_allocation_pct?: number
+          max_candle_atr?: number
           max_concurrent?: number
+          max_entry_drift_atr?: number
           max_hold_minutes?: number
           max_leverage?: number
           max_same_direction?: number
           max_spread_bps?: number
+          max_sweep_atr?: number
           min_quote_volume_musd?: number
+          min_rejection_wick?: number
+          min_reward_risk?: number
           min_score?: number
+          min_sweep_atr?: number
+          min_volume_ratio?: number
+          quote_max_age_ms?: number
           risk_per_trade_pct?: number
           slippage_bps?: number
+          sweep_max_age_minutes?: number
+          symbols?: string[] | null
           updated_at?: string
         }
         Update: {
@@ -697,21 +731,32 @@ export type Database = {
           daily_loss_limit_pct?: number
           emergency_stop?: boolean
           enabled?: boolean
+          entry_max_age_ms?: number
           fee_pct?: number
           high_score?: number
           id?: number
           loss_streak_cooldown?: number
           maker_fee_pct?: number
           max_allocation_pct?: number
+          max_candle_atr?: number
           max_concurrent?: number
+          max_entry_drift_atr?: number
           max_hold_minutes?: number
           max_leverage?: number
           max_same_direction?: number
           max_spread_bps?: number
+          max_sweep_atr?: number
           min_quote_volume_musd?: number
+          min_rejection_wick?: number
+          min_reward_risk?: number
           min_score?: number
+          min_sweep_atr?: number
+          min_volume_ratio?: number
+          quote_max_age_ms?: number
           risk_per_trade_pct?: number
           slippage_bps?: number
+          sweep_max_age_minutes?: number
+          symbols?: string[] | null
           updated_at?: string
         }
         Relationships: []
@@ -1096,6 +1141,7 @@ export type Database = {
       }
       robot_add_counts: { Args: { a: Json; b: Json }; Returns: Json }
       robot_commit: { Args: { p: Json }; Returns: Json }
+      robot_commit_audited: { Args: { p: Json }; Returns: Json }
       robot_correct_initial_balance: {
         Args: { p_start: number }
         Returns: number

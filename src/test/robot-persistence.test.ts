@@ -100,4 +100,16 @@ describe('paper robot persistence (isolated PostgreSQL, no production rows)', ()
     expect((await one<{ b: number }>('select balance::float8 b from robot_account')).b).toBeCloseTo(before + 250, 6);
     await expect(db.query('select robot_deposit(0)')).rejects.toThrow();
   });
+  it('atomically stores entry evidence and observed excursions without rewriting older positions', async () => {
+    const p = { instance_id: instance, opens: [open('audit-open', 'AUDITUSDT', 1, {
+      entry_audit: { strategy: 'LIQUIDITY_SWEEP_V1', signal_price: 99.99, bid: 99.98, ask: 100, delay_ms: 3120 },
+      mae_roi_pct: -7, mfe_roi_pct: -7, unrealized_pnl: -0.025, net_roi_pct: -7,
+    })] };
+    const r = (await db.query<{ r: { opened: string[] } }>('select robot_commit_audited($1::jsonb) r',[JSON.stringify(p)])).rows[0]?.r;
+    expect(r?.opened).toEqual(['audit-open']);
+    expect(await one("select entry_audit->>'delay_ms' delay, mae_roi_pct::float8 mae from robot_positions where id='audit-open'")).toEqual({ delay: '3120', mae: -7 });
+    expect(await one("select entry_audit from robot_positions where id='a'")).toEqual({ entry_audit: null });
+    await db.query('select robot_commit_audited($1::jsonb)',[JSON.stringify(p)]);
+    expect(await one("select count(*)::int n from robot_positions where id='audit-open'")).toEqual({ n: 1 });
+  });
 });

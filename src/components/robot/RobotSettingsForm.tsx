@@ -7,8 +7,10 @@ import { robotSaveSettings, robotSettingsSchema } from '@/lib/robot/robot.functi
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
+import { ROBOT_SYMBOLS } from '@/lib/robot/config';
 
-const FIELDS: { key: Exclude<keyof z.infer<typeof robotSettingsSchema>, 'enabled'>; label: string; unit: string; step: string }[] = [
+const FIELDS: { key: Exclude<keyof z.infer<typeof robotSettingsSchema>, 'enabled' | 'symbols'>; label: string; unit: string; step: string }[] = [
   { key: 'min_score', label: 'Minimum score to trade', unit: '/100', step: '1' },
   { key: 'high_score', label: 'High-quality score', unit: '/100', step: '1' },
   { key: 'max_concurrent', label: 'Max open positions', unit: '(max 10)', step: '1' },
@@ -20,6 +22,16 @@ const FIELDS: { key: Exclude<keyof z.infer<typeof robotSettingsSchema>, 'enabled
   { key: 'slippage_bps', label: 'Extra slippage per market fill', unit: 'bps', step: '0.5' },
   { key: 'max_spread_bps', label: 'Max spread', unit: 'bps', step: '0.5' },
   { key: 'min_quote_volume_musd', label: 'Min 24h volume', unit: 'million USDT', step: '1' },
+  { key: 'entry_max_age_ms', label: 'Maximum signal age', unit: 'ms after candle close', step: '1000' },
+  { key: 'quote_max_age_ms', label: 'Maximum order-book age', unit: 'ms', step: '500' },
+  { key: 'max_entry_drift_atr', label: 'Maximum fill drift', unit: '× 5m ATR', step: '0.05' },
+  { key: 'min_sweep_atr', label: 'Minimum sweep depth', unit: '× ATR (also ≥2 ticks)', step: '0.05' },
+  { key: 'max_sweep_atr', label: 'Maximum sweep depth', unit: '× ATR', step: '0.1' },
+  { key: 'min_rejection_wick', label: 'Sweep rejection wick', unit: 'fraction of range', step: '0.05' },
+  { key: 'min_volume_ratio', label: 'Minimum confirmation volume', unit: '× prior 20-bar mean', step: '0.1' },
+  { key: 'min_reward_risk', label: 'Minimum net reward / total stop risk', unit: 'including costs', step: '0.05' },
+  { key: 'max_candle_atr', label: 'Maximum confirmation candle range', unit: '× ATR', step: '0.1' },
+  { key: 'sweep_max_age_minutes', label: 'Maximum sweep age', unit: 'minutes', step: '1' },
 ];
 
 export function RobotSettingsForm({ settings }: { settings: RobotSettingsRow }) {
@@ -27,8 +39,9 @@ export function RobotSettingsForm({ settings }: { settings: RobotSettingsRow }) 
   const [draft, setDraft] = useState(() => Object.fromEntries(FIELDS.map((f) => [f.key, String(settings[f.key])])) as Record<string, string>);
   const [enabled, setEnabled] = useState(settings.enabled);
   const [busy, setBusy] = useState(false);
+  const [symbols, setSymbols] = useState((settings.symbols ?? [...ROBOT_SYMBOLS]).join(', '));
   async function save() {
-    const parsed = robotSettingsSchema.safeParse({ enabled, ...Object.fromEntries(FIELDS.map((f) => [f.key, Number(draft[f.key])])) });
+    const parsed = robotSettingsSchema.safeParse({ enabled, symbols: symbols.toUpperCase().split(/[\s,]+/).filter(Boolean), ...Object.fromEntries(FIELDS.map((f) => [f.key, Number(draft[f.key])])) });
     if (!parsed.success) { toast.error(parsed.error.issues[0]?.message ?? 'Check the values'); return; }
     setBusy(true);
     try { await robotSaveSettings({ data: parsed.data }); toast.success('Robot settings saved'); await qc.invalidateQueries({ queryKey: ['robot_settings'] }); }
@@ -51,6 +64,7 @@ export function RobotSettingsForm({ settings }: { settings: RobotSettingsRow }) 
             <Input type="number" step={f.step} value={draft[f.key]} onChange={(e) => setDraft({ ...draft, [f.key]: e.target.value })} className="font-mono" />
           </label>
         ))}
+        <label className="space-y-1 text-xs sm:col-span-2 lg:col-span-3"><span className="text-muted-foreground">40 Binance USDT-M symbols · coin-list changes take effect on scanner restart; open positions stay protected</span><Textarea aria-label="40 Binance USDT-M symbols" className="min-h-24 font-mono" value={symbols} onChange={(e) => setSymbols(e.target.value)} /></label>
         <div className="flex items-end sm:col-span-2 lg:col-span-3"><Button type="submit" disabled={busy}>Save settings</Button></div>
       </form>
       <p className="mt-3 text-xs text-muted-foreground">Leverage is fixed at 50x on every paper trade. Take profit is fixed at 10% net ROI on margin after fees. There is no daily loss limit, loss-streak pause or daily trade cap in paper mode.</p>

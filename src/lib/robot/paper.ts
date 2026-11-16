@@ -3,6 +3,7 @@ import { PAPER_LEVERAGE, TARGET_NET_ROI_PCT, type RobotSettings } from './config
 import { MINUTE, type Bar, type SymbolState } from './series';
 import { TUNING, type Direction, type Setup } from './strategy';
 import { liquidationPrice, roundTick, type SymbolRules } from './risk';
+import type { EntryAudit } from './entry-audit';
 
 export type ExitReason = 'TAKE_PROFIT' | 'STOP_LOSS' | 'BREAKEVEN_STOP' | 'EARLY_EXIT' | 'PROFIT_EXIT' | 'TIME_EXIT' | 'LIQUIDATION' | 'EMERGENCY_STOP';
 export type Position = {
@@ -13,11 +14,12 @@ export type Position = {
   openedAt: number; closedAt: number | null; exitPrice: number | null; exitReason: ExitReason | null;
   lastCandleTime: number; version: number; liquidity: string; lastPrice: number; unrealized: number; tick: number;
   requestedQty: number; fillStatus: 'FILLED' | 'PARTIAL';
+  audit?: EntryAudit; maeRoi?: number; mfeRoi?: number;
 };
 /** A change to the account. pnl is net of the fee for this fill. */
 export type Fill = { kind: 'OPEN' | 'PARTIAL' | 'CLOSE' | 'FUNDING'; price: number; qty: number; pnl: number; fee: number; reason: ExitReason | 'TP1' | null; time: number };
 export type BookLevel = readonly [price: number, qty: number];
-export type DepthBook = { bids: BookLevel[]; asks: BookLevel[] };
+export type DepthBook = { bids: BookLevel[]; asks: BookLevel[]; receivedAt?: number; source?: 'LIVE_BINANCE' | 'CANDLE_REPLAY' };
 export type MarketFill = { qty: number; avg: number; requested: number; partial: boolean; levels: number } | { rejected: string };
 
 const slip = (s: RobotSettings) => s.slippage_bps / 10_000;
@@ -36,6 +38,7 @@ export function simulateMarketFill(direction: Direction, qty: number, book: Dept
   let left = qty; let cost = 0; let levels = 0;
   for (const [p, q] of side) {
     if (Math.abs(p - top) / top > 0.003 || left <= 0) break;
+    if (!(p > 0 && q > 0 && Number.isFinite(p) && Number.isFinite(q))) continue;
     const take = Math.min(left, q); cost += take * p; left -= take; levels++;
   }
   const filled = Math.floor((qty - left) / rules.stepSize + 1e-9) * rules.stepSize;
@@ -113,15 +116,23 @@ export function closeAtMarket(p: Position, price: number, s: RobotSettings, time
 function markToMarket(p: Position, price: number, s: RobotSettings) {
   const exitPx = price * (1 - sgn(p.direction) * slip(s));
   p.lastPrice = price; p.unrealized = sgn(p.direction) * (exitPx - p.entry) * p.qtyOpen - exitPx * p.qtyOpen * taker(s);
+  trackExcursion(p, price, s);
+}
+
+/** Observed executable-price net ROI extrema, not a reconstructed historical fill. */
+function trackExcursion(p: Position, price: number, s: RobotSettings) {
+  const roi = netRoi(p, price, s);
+  p.maeRoi = Math.min(p.maeRoi ?? roi, roi); p.mfeRoi = Math.max(p.mfeRoi ?? roi, roi);
 }
 
 /** Real-time check on best bid/ask: stop-market on the touch, resting TP limit filled when the touch reaches it. */
 export function manageTick(p: Position, bid: number, ask: number, time: number, s: RobotSettings): Fill[] {
   if (p.status !== 'OPEN' || !(bid > 0) || !(ask >= bid)) return [];
   const long = p.direction === 'LONG'; const touch = long ? bid : ask;
+  trackExcursion(p, touch, s);
   if (long ? touch <= p.stop : touch >= p.stop) return [stopOut(p, touch * (1 - sgn(p.direction) * slip(s)), s, time)];
   if (long ? touch >= p.tp : touch <= p.tp) return [exit(p, p.tp, p.tp * p.qtyOpen * maker(s), time, 'TAKE_PROFIT')];
-  markToMarket(p, (bid + ask) / 2, s);
+  markToMarket(p, touch, s);
   return [];
 }
 
@@ -130,6 +141,8 @@ export function managePosition(p: Position, bar: Bar, st: SymbolState, s: RobotS
   if (p.status !== 'OPEN' || bar.time <= p.lastCandleTime) return [];
   const fills: Fill[] = []; const long = p.direction === 'LONG'; const sign = sgn(p.direction);
   const at = bar.time + MINUTE; p.lastCandleTime = bar.time;
+  // Conservative adverse bound before exits; never record the favorable wick after a stop-first exit.
+  trackExcursion(p, long ? Math.max(bar.low, p.stop) : Math.min(bar.high, p.stop), s);
   // Funding settles on the open position at the funding timestamp (live data only).
   const f = st.funding;
   if (f && f.next > p.openedAt && f.next <= at && f.next > p.fundingApplied) {
@@ -145,8 +158,10 @@ export function managePosition(p: Position, bar: Bar, st: SymbolState, s: RobotS
   }
   if (long ? bar.high > p.tp : bar.low < p.tp) {
     const px = long ? Math.max(bar.open, p.tp) : Math.min(bar.open, p.tp);
+    trackExcursion(p, px, { ...s, fee_pct: s.maker_fee_pct, slippage_bps: 0 });
     fills.push(exit(p, px, px * p.qtyOpen * maker(s), at, 'TAKE_PROFIT')); return fills;
   }
+  trackExcursion(p, long ? bar.high : bar.low, s);
   const roi = netRoi(p, bar.close, s);
   // Lock profit once the trade has done most of the work: stop tightened to +2% net ROI.
   if (TUNING.profitLockAt > 0 && roi >= TUNING.profitLockAt) { const lock = lockPrice(p, s, 2); if ((lock - p.stop) * sign > 0 && (bar.close - lock) * sign > 0) { p.stop = lock; p.version++; } }

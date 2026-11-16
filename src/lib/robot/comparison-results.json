@@ -1,0 +1,638 @@
+{
+  "observed_at": "2026-11-16T18:06:25Z",
+  "notes": "Already-seen Binance1m dataset, historical comparison only, NOT independent unseen validation. Entries: next1m open, one tick each side (two-tick modeled full spread), plus2bps adverse slippage. Fees: taker0.05%,maker0.02%. No historical order books, funding or exchange queue-position data.20USDT initial cash. All configured40 symbols.",
+  "runs": [
+    {
+      "label": "Old six families \u00b7 corrected replay",
+      "strategy": "LEGACY_SIX_FAMILIES_CORRECTED_REPLAY",
+      "period_start": "2026-11-02T03:06:00.000Z",
+      "period_end": "2026-11-16T17:06:00.000Z",
+      "start_balance": 20,
+      "end_balance": 0.7070685286673299,
+      "all": {
+        "trades": 370,
+        "wins": 208,
+        "losses": 162,
+        "winRate": 56.21621621621622,
+        "netPnl": -19.29293147133267,
+        "grossProfit": 12.470771754005757,
+        "grossLoss": 31.763703225338425,
+        "profitFactor": 0.39261076284259006,
+        "avgWin": 0.059955633432719986,
+        "avgLoss": 0.19607224213171867,
+        "expectancy": -0.05214305803062883,
+        "expectancyR": -0.2536634774627997,
+        "maxDrawdown": 21.359184680372117,
+        "maxDrawdownPct": 96.81065820737533,
+        "stopLosses": 157,
+        "stopLossRate": 42.432432432432435,
+        "liquidations": 0,
+        "byReason": {
+          "STOP_LOSS": 157,
+          "TAKE_PROFIT": 188,
+          "BREAKEVEN_STOP": 19,
+          "TIME_EXIT": 6
+        }
+      },
+      "long": {
+        "trades": 175,
+        "wins": 110,
+        "losses": 65,
+        "winRate": 62.857142857142854,
+        "netPnl": -3.850717670004729,
+        "grossProfit": 2.748797778255463,
+        "grossLoss": 6.599515448260192,
+        "profitFactor": 0.41651509111629087,
+        "avgWin": 0.0249890707114133,
+        "avgLoss": 0.10153100689631064,
+        "expectancy": -0.022004100971455595,
+        "expectancyR": -0.15857667876540613,
+        "maxDrawdown": 4.021420914580734,
+        "maxDrawdownPct": 19.957130915884026,
+        "stopLosses": 63,
+        "stopLossRate": 36,
+        "liquidations": 0,
+        "byReason": {
+          "TAKE_PROFIT": 103,
+          "STOP_LOSS": 63,
+          "BREAKEVEN_STOP": 7,
+          "TIME_EXIT": 2
+        }
+      },
+      "short": {
+        "trades": 195,
+        "wins": 98,
+        "losses": 97,
+        "winRate": 50.256410256410255,
+        "netPnl": -15.442213801327926,
+        "grossProfit": 9.7219739757503,
+        "grossLoss": 25.164187777078226,
+        "profitFactor": 0.3863416559228642,
+        "avgWin": 0.0992038160790847,
+        "avgLoss": 0.2594246162585384,
+        "expectancy": -0.07919084000680987,
+        "expectancyR": -0.338997783986102,
+        "maxDrawdown": 17.505057992118598,
+        "maxDrawdownPct": 79.3418012688747,
+        "stopLosses": 94,
+        "stopLossRate": 48.205128205128204,
+        "liquidations": 0,
+        "byReason": {
+          "STOP_LOSS": 94,
+          "TAKE_PROFIT": 85,
+          "BREAKEVEN_STOP": 12,
+          "TIME_EXIT": 4
+        }
+      },
+      "by_regime": {
+        "TRENDING": {
+          "trades": 333,
+          "wins": 184,
+          "losses": 149,
+          "winRate": 55.25525525525525,
+          "netPnl": -17.836772098504127,
+          "grossProfit": 11.480299713945746,
+          "grossLoss": 29.31707181244987,
+          "profitFactor": 0.3915909401658077,
+          "avgWin": 0.06239293322796601,
+          "avgLoss": 0.19675887122449578,
+          "expectancy": -0.05356388017568807,
+          "expectancyR": -0.2615102369617757,
+          "maxDrawdown": 19.903025307543572,
+          "maxDrawdownPct": 90.21060537540019,
+          "stopLosses": 144,
+          "stopLossRate": 43.24324324324324,
+          "liquidations": 0,
+          "byReason": {
+            "STOP_LOSS": 144,
+            "TAKE_PROFIT": 171,
+            "BREAKEVEN_STOP": 13,
+            "TIME_EXIT": 5
+          }
+        },
+        "SIDEWAYS": {
+          "trades": 34,
+          "wins": 22,
+          "losses": 12,
+          "winRate": 64.70588235294117,
+          "netPnl": -1.4370701184776724,
+          "grossProfit": 0.9637891330690068,
+          "grossLoss": 2.400859251546679,
+          "profitFactor": 0.4014350830637471,
+          "avgWin": 0.043808596957682126,
+          "avgLoss": 0.2000716042955566,
+          "expectancy": -0.04226676819051978,
+          "expectancyR": -0.18447509409480925,
+          "maxDrawdown": 1.6605727272427337,
+          "maxDrawdownPct": 8.302863636213669,
+          "stopLosses": 12,
+          "stopLossRate": 35.294117647058826,
+          "liquidations": 0,
+          "byReason": {
+            "STOP_LOSS": 12,
+            "TAKE_PROFIT": 15,
+            "BREAKEVEN_STOP": 6,
+            "TIME_EXIT": 1
+          }
+        },
+        "HIGH_VOLATILITY": {
+          "trades": 3,
+          "wins": 2,
+          "losses": 1,
+          "winRate": 66.66666666666666,
+          "netPnl": -0.01908925435086734,
+          "grossProfit": 0.026682906991001707,
+          "grossLoss": 0.045772161341869046,
+          "profitFactor": 0.5829505579102755,
+          "avgWin": 0.013341453495500854,
+          "avgLoss": 0.045772161341869046,
+          "expectancy": -0.006363084783622446,
+          "expectancyR": -0.16680818458036642,
+          "maxDrawdown": 0.04577216134186912,
+          "maxDrawdownPct": 0.22855587994500465,
+          "stopLosses": 1,
+          "stopLossRate": 33.33333333333333,
+          "liquidations": 0,
+          "byReason": {
+            "TAKE_PROFIT": 2,
+            "STOP_LOSS": 1
+          }
+        }
+      },
+      "net_balance_roi_pct": -96.46465735666335,
+      "marked_max_drawdown_pct": 97.02830276735219,
+      "excursion_roi": {
+        "mean_mae": -21.61554295284126,
+        "mean_mfe": 4.7011361998950285,
+        "units": "Net ROI percentage points on original position margin; closed-candle bounds, stop-first ordering, not historical executable book ticks"
+      },
+      "open_positions_at_end": 0,
+      "execution_rejections": {
+        "Margin budget full (70% cap)": 5,
+        "Price moved away before fill": 954,
+        "Stop too wide at fill price": 459,
+        "Order rejected: below minimum quantity": 3836,
+        "Order rejected: below 20 USDT minimum notional": 2950,
+        "Order rejected: below 5 USDT minimum notional": 21813
+      }
+    },
+    {
+      "label": "Confirmed sweep \u00b7 net reward/risk\u22650.75",
+      "strategy": "LIQUIDITY_SWEEP_V1",
+      "period_start": "2026-11-02T03:06:00.000Z",
+      "period_end": "2026-11-16T17:06:00.000Z",
+      "start_balance": 20,
+      "end_balance": 19.563175091167974,
+      "all": {
+        "trades": 4,
+        "wins": 1,
+        "losses": 3,
+        "winRate": 25,
+        "netPnl": -0.43682490883202585,
+        "grossProfit": 0.2777795382460123,
+        "grossLoss": 0.7146044470780382,
+        "profitFactor": 0.3887178975471412,
+        "avgWin": 0.2777795382460123,
+        "avgLoss": 0.23820148235934605,
+        "expectancy": -0.10920622720800646,
+        "expectancyR": -0.5931235574210894,
+        "maxDrawdown": 0.4767943442774012,
+        "maxDrawdownPct": 2.383971721387006,
+        "stopLosses": 3,
+        "stopLossRate": 75,
+        "liquidations": 0,
+        "byReason": {
+          "STOP_LOSS": 3,
+          "TAKE_PROFIT": 1
+        }
+      },
+      "long": {
+        "trades": 2,
+        "wins": 0,
+        "losses": 2,
+        "winRate": 0,
+        "netPnl": -0.400901637163483,
+        "grossProfit": 0,
+        "grossLoss": 0.400901637163483,
+        "profitFactor": 0,
+        "avgWin": 0,
+        "avgLoss": 0.2004508185817415,
+        "expectancy": -0.2004508185817415,
+        "expectancyR": -1.1020440555002242,
+        "maxDrawdown": 0.40090163716348215,
+        "maxDrawdownPct": 2.0045081858174107,
+        "stopLosses": 2,
+        "stopLossRate": 100,
+        "liquidations": 0,
+        "byReason": {
+          "STOP_LOSS": 2
+        }
+      },
+      "short": {
+        "trades": 2,
+        "wins": 1,
+        "losses": 1,
+        "winRate": 50,
+        "netPnl": -0.03592327166854292,
+        "grossProfit": 0.2777795382460123,
+        "grossLoss": 0.31370280991455524,
+        "profitFactor": 0.8854862929715946,
+        "avgWin": 0.2777795382460123,
+        "avgLoss": 0.31370280991455524,
+        "expectancy": -0.01796163583427146,
+        "expectancyR": -0.08420305934195427,
+        "maxDrawdown": 0.313702809914556,
+        "maxDrawdownPct": 1.5685140495727798,
+        "stopLosses": 1,
+        "stopLossRate": 50,
+        "liquidations": 0,
+        "byReason": {
+          "STOP_LOSS": 1,
+          "TAKE_PROFIT": 1
+        }
+      },
+      "by_regime": {
+        "SIDEWAYS": {
+          "trades": 3,
+          "wins": 1,
+          "losses": 2,
+          "winRate": 33.33333333333333,
+          "netPnl": -0.27373337446918045,
+          "grossProfit": 0.2777795382460123,
+          "grossLoss": 0.5515129127151928,
+          "profitFactor": 0.5036682402927901,
+          "avgWin": 0.2777795382460123,
+          "avgLoss": 0.2757564563575964,
+          "expectancy": -0.09124445815639348,
+          "expectancyR": -0.42100993075277066,
+          "maxDrawdown": 0.313702809914556,
+          "maxDrawdownPct": 1.5685140495727798,
+          "stopLosses": 2,
+          "stopLossRate": 66.66666666666666,
+          "liquidations": 0,
+          "byReason": {
+            "STOP_LOSS": 2,
+            "TAKE_PROFIT": 1
+          }
+        },
+        "TRENDING": {
+          "trades": 1,
+          "wins": 0,
+          "losses": 1,
+          "winRate": 0,
+          "netPnl": -0.1630915343628455,
+          "grossProfit": 0,
+          "grossLoss": 0.1630915343628455,
+          "profitFactor": 0,
+          "avgWin": 0,
+          "avgLoss": 0.1630915343628455,
+          "expectancy": -0.1630915343628455,
+          "expectancyR": -1.1094644374260452,
+          "maxDrawdown": 0.16309153436284518,
+          "maxDrawdownPct": 0.8154576718142259,
+          "stopLosses": 1,
+          "stopLossRate": 100,
+          "liquidations": 0,
+          "byReason": {
+            "STOP_LOSS": 1
+          }
+        }
+      },
+      "net_balance_roi_pct": -2.1841245441601265,
+      "marked_max_drawdown_pct": 3.12840136030685,
+      "excursion_roi": {
+        "mean_mae": -10.175932342622474,
+        "mean_mfe": 0.11155639955032368,
+        "units": "Net ROI percentage points on original position margin; closed-candle bounds, stop-first ordering, not historical executable book ticks"
+      },
+      "open_positions_at_end": 0,
+      "execution_rejections": {
+        "Final fill would chase signal": 10,
+        "Net reward too small at executable fill": 8
+      }
+    },
+    {
+      "label": "Later Nov12\u201316 slice \u00b7 sweep\u22650.75",
+      "strategy": "LIQUIDITY_SWEEP_V1",
+      "period_start": "2026-11-02T03:06:00.000Z",
+      "period_end": "2026-11-16T17:06:00.000Z",
+      "start_balance": 20,
+      "end_balance": 20,
+      "all": {
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "winRate": 0,
+        "netPnl": 0,
+        "grossProfit": 0,
+        "grossLoss": 0,
+        "profitFactor": 0,
+        "avgWin": 0,
+        "avgLoss": 0,
+        "expectancy": 0,
+        "expectancyR": 0,
+        "maxDrawdown": 0,
+        "maxDrawdownPct": 0,
+        "stopLosses": 0,
+        "stopLossRate": 0,
+        "liquidations": 0,
+        "byReason": {}
+      },
+      "long": {
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "winRate": 0,
+        "netPnl": 0,
+        "grossProfit": 0,
+        "grossLoss": 0,
+        "profitFactor": 0,
+        "avgWin": 0,
+        "avgLoss": 0,
+        "expectancy": 0,
+        "expectancyR": 0,
+        "maxDrawdown": 0,
+        "maxDrawdownPct": 0,
+        "stopLosses": 0,
+        "stopLossRate": 0,
+        "liquidations": 0,
+        "byReason": {}
+      },
+      "short": {
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "winRate": 0,
+        "netPnl": 0,
+        "grossProfit": 0,
+        "grossLoss": 0,
+        "profitFactor": 0,
+        "avgWin": 0,
+        "avgLoss": 0,
+        "expectancy": 0,
+        "expectancyR": 0,
+        "maxDrawdown": 0,
+        "maxDrawdownPct": 0,
+        "stopLosses": 0,
+        "stopLossRate": 0,
+        "liquidations": 0,
+        "byReason": {}
+      },
+      "by_regime": {},
+      "net_balance_roi_pct": 0,
+      "marked_max_drawdown_pct": 0,
+      "excursion_roi": {
+        "mean_mae": null,
+        "mean_mfe": null,
+        "units": "Net ROI percentage points on original position margin; closed-candle bounds, stop-first ordering, not historical executable book ticks"
+      },
+      "open_positions_at_end": 0,
+      "execution_rejections": {
+        "Final fill would chase signal": 2
+      }
+    },
+    {
+      "label": "Sensitivity only \u00b7 net reward/risk\u22650.50",
+      "strategy": "LIQUIDITY_SWEEP_V1",
+      "period_start": "2026-11-02T03:06:00.000Z",
+      "period_end": "2026-11-16T17:06:00.000Z",
+      "start_balance": 20,
+      "end_balance": 10.106575509702939,
+      "all": {
+        "trades": 116,
+        "wins": 48,
+        "losses": 68,
+        "winRate": 41.37931034482759,
+        "netPnl": -9.893424490297047,
+        "grossProfit": 6.024200278706417,
+        "grossLoss": 15.917624769003464,
+        "profitFactor": 0.37846100571722213,
+        "avgWin": 0.12550417247305035,
+        "avgLoss": 0.23408271719122742,
+        "expectancy": -0.08528814215773316,
+        "expectancyR": -0.3855742472542059,
+        "maxDrawdown": 10.488530080431032,
+        "maxDrawdownPct": 52.44265040215515,
+        "stopLosses": 68,
+        "stopLossRate": 58.620689655172406,
+        "liquidations": 0,
+        "byReason": {
+          "STOP_LOSS": 68,
+          "TAKE_PROFIT": 42,
+          "TIME_EXIT": 1,
+          "BREAKEVEN_STOP": 5
+        }
+      },
+      "long": {
+        "trades": 36,
+        "wins": 15,
+        "losses": 21,
+        "winRate": 41.66666666666667,
+        "netPnl": -2.403355756088527,
+        "grossProfit": 1.9738125374220217,
+        "grossLoss": 4.3771682935105485,
+        "profitFactor": 0.450933664202113,
+        "avgWin": 0.13158750249480144,
+        "avgLoss": 0.20843658540526422,
+        "expectancy": -0.06675988211357019,
+        "expectancyR": -0.37540196243823293,
+        "maxDrawdown": 2.4381107617065005,
+        "maxDrawdownPct": 12.169406419109324,
+        "stopLosses": 21,
+        "stopLossRate": 58.333333333333336,
+        "liquidations": 0,
+        "byReason": {
+          "BREAKEVEN_STOP": 1,
+          "STOP_LOSS": 21,
+          "TAKE_PROFIT": 14
+        }
+      },
+      "short": {
+        "trades": 80,
+        "wins": 33,
+        "losses": 47,
+        "winRate": 41.25,
+        "netPnl": -7.490068734208523,
+        "grossProfit": 4.050387741284394,
+        "grossLoss": 11.540456475492917,
+        "profitFactor": 0.3509729229416285,
+        "avgWin": 0.12273902246316344,
+        "avgLoss": 0.24554162713814717,
+        "expectancy": -0.09362585917760655,
+        "expectancyR": -0.39015177542139406,
+        "maxDrawdown": 8.38302033745717,
+        "maxDrawdownPct": 41.91510168728585,
+        "stopLosses": 47,
+        "stopLossRate": 58.75,
+        "liquidations": 0,
+        "byReason": {
+          "STOP_LOSS": 47,
+          "TAKE_PROFIT": 28,
+          "TIME_EXIT": 1,
+          "BREAKEVEN_STOP": 4
+        }
+      },
+      "by_regime": {
+        "TRENDING": {
+          "trades": 68,
+          "wins": 28,
+          "losses": 40,
+          "winRate": 41.17647058823529,
+          "netPnl": -5.9812878218911845,
+          "grossProfit": 3.374866312482395,
+          "grossLoss": 9.356154134373579,
+          "profitFactor": 0.3607108502075091,
+          "avgWin": 0.1205309397315141,
+          "avgLoss": 0.23390385335933947,
+          "expectancy": -0.08796011502781154,
+          "expectancyR": -0.39678587343378513,
+          "maxDrawdown": 5.9812878218911845,
+          "maxDrawdownPct": 29.906439109455924,
+          "stopLosses": 40,
+          "stopLossRate": 58.82352941176471,
+          "liquidations": 0,
+          "byReason": {
+            "STOP_LOSS": 40,
+            "TIME_EXIT": 1,
+            "TAKE_PROFIT": 23,
+            "BREAKEVEN_STOP": 4
+          }
+        },
+        "SIDEWAYS": {
+          "trades": 48,
+          "wins": 20,
+          "losses": 28,
+          "winRate": 41.66666666666667,
+          "netPnl": -3.9121366684058647,
+          "grossProfit": 2.6493339662240216,
+          "grossLoss": 6.561470634629886,
+          "profitFactor": 0.40377136677888414,
+          "avgWin": 0.1324666983112011,
+          "avgLoss": 0.23433823695106737,
+          "expectancy": -0.08150284725845551,
+          "expectancyR": -0.36969111016646944,
+          "maxDrawdown": 4.578288777829362,
+          "maxDrawdownPct": 22.891443889146814,
+          "stopLosses": 28,
+          "stopLossRate": 58.333333333333336,
+          "liquidations": 0,
+          "byReason": {
+            "STOP_LOSS": 28,
+            "TAKE_PROFIT": 19,
+            "BREAKEVEN_STOP": 1
+          }
+        }
+      },
+      "net_balance_roi_pct": -49.4671224514853,
+      "marked_max_drawdown_pct": 52.85792240875523,
+      "excursion_roi": {
+        "mean_mae": -13.844377090878027,
+        "mean_mfe": 1.270044866391063,
+        "units": "Net ROI percentage points on original position margin; closed-candle bounds, stop-first ordering, not historical executable book ticks"
+      },
+      "open_positions_at_end": 0,
+      "execution_rejections": {
+        "Net reward too small at executable fill": 45,
+        "Final fill would chase signal": 46,
+        "Opposing liquidity too close at final fill": 10,
+        "Order rejected: below minimum quantity": 6,
+        "Price moved away before fill": 2
+      }
+    }
+  ],
+  "live": {
+    "observed_at": "2026-11-16T18:05:58.875Z",
+    "scope": "Real Binance; isolated in-memory PostgreSQL; no hosted writes; Telegram messages recorded locally only, NEVER sent",
+    "coins": 40,
+    "live_feeds": 40,
+    "positions": 0,
+    "evaluated": 240,
+    "qualified": 0,
+    "rejected": 240,
+    "reasons": {
+      "Abnormal spread": 12,
+      "Low rolling liquidity": 6,
+      "Sweep too weak or too deep": 6,
+      "No recent meaningful liquidity sweep": 150,
+      "Swept level not reclaimed on two closes": 37,
+      "Short-term momentum does not confirm reclaim": 4,
+      "No directional rejection or convincing confirmation": 16,
+      "Net reward too small relative to structural stop and costs": 9
+    },
+    "signals": [
+      {
+        "symbol": "INJUSDT",
+        "direction": "LONG",
+        "setup": "SWEEP_RECLAIM",
+        "decision": "REJECTED",
+        "reason": "Net reward too small relative to structural stop and costs",
+        "candle_time": "2026-11-16T18:03:00.000Z"
+      },
+      {
+        "symbol": "INJUSDT",
+        "direction": "LONG",
+        "setup": "SWEEP_RECLAIM",
+        "decision": "REJECTED",
+        "reason": "Net reward too small relative to structural stop and costs",
+        "candle_time": "2026-11-16T18:04:00.000Z"
+      },
+      {
+        "symbol": "LINKUSDT",
+        "direction": "LONG",
+        "setup": "SWEEP_RECLAIM",
+        "decision": "REJECTED",
+        "reason": "Net reward too small relative to structural stop and costs",
+        "candle_time": "2026-11-16T18:04:00.000Z"
+      },
+      {
+        "symbol": "ARBUSDT",
+        "direction": "LONG",
+        "setup": "SWEEP_RECLAIM",
+        "decision": "REJECTED",
+        "reason": "Net reward too small relative to structural stop and costs",
+        "candle_time": "2026-11-16T18:04:00.000Z"
+      },
+      {
+        "symbol": "XLMUSDT",
+        "direction": "LONG",
+        "setup": "SWEEP_RECLAIM",
+        "decision": "REJECTED",
+        "reason": "Net reward too small relative to structural stop and costs",
+        "candle_time": "2026-11-16T18:04:00.000Z"
+      },
+      {
+        "symbol": "SUIUSDT",
+        "direction": "LONG",
+        "setup": "SWEEP_RECLAIM",
+        "decision": "REJECTED",
+        "reason": "Net reward too small relative to structural stop and costs",
+        "candle_time": "2026-11-16T18:04:00.000Z"
+      },
+      {
+        "symbol": "DOTUSDT",
+        "direction": "LONG",
+        "setup": "SWEEP_RECLAIM",
+        "decision": "REJECTED",
+        "reason": "Net reward too small relative to structural stop and costs",
+        "candle_time": "2026-11-16T18:04:00.000Z"
+      },
+      {
+        "symbol": "LTCUSDT",
+        "direction": "LONG",
+        "setup": "SWEEP_RECLAIM",
+        "decision": "REJECTED",
+        "reason": "Net reward too small relative to structural stop and costs",
+        "candle_time": "2026-11-16T18:04:00.000Z"
+      },
+      {
+        "symbol": "XMRUSDT",
+        "direction": "SHORT",
+        "setup": "SWEEP_RECLAIM",
+        "decision": "REJECTED",
+        "reason": "Net reward too small relative to structural stop and costs",
+        "candle_time": "2026-11-16T18:05:00.000Z"
+      }
+    ],
+    "telegram_sent": 0
+  }
+}
