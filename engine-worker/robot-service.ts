@@ -212,8 +212,8 @@ export class RobotService {
       balance_before: Math.max(0, this.balance), target_roi_pct: TARGET_NET_ROI_PCT, tick_size: p.tick };
   }
 
-  private signalRows(): RobotCommit['signals'] {
-    return this.core.takeSignals(100).map(({ id, candidate: c, decision, reason }) => ({ id, symbol: c.symbol, direction: c.direction,
+  private signalRows(raw: ReturnType<RobotCore['takeSignals']>): RobotCommit['signals'] {
+    return raw.map(({ id, candidate: c, decision, reason }) => ({ id, symbol: c.symbol, direction: c.direction,
       setup: c.setup as RobotCommit['signals'][number]['setup'], score: Math.max(0, Math.min(100, c.score)), parts: c.parts as unknown as Record<string, number>,
       entry_price: c.entry, stop_loss: c.stop, tp1: c.tp, tp2: c.tp, liquidity: c.liquidity.slice(0, 160), decision, reason: reason?.slice(0, 160) ?? null,
       candle_time: iso(c.time + MINUTE) }));
@@ -267,7 +267,8 @@ export class RobotService {
     if (this.flushing || this.observeOnly || !this.ownsLease() || this.paused) return;
     this.flushing = true;
     const counts = this.core.takeCounters();
-    const signals = this.signalRows();
+    const rawSignals = this.core.takeSignals(100);
+    const signals = this.signalRows(rawSignals);
     try {
       const updates: RobotCommit['updates'] = []; const sent = new Map<string, number>();
       for (const p of this.core.open) {
@@ -279,7 +280,7 @@ export class RobotService {
         updates.push(this.updateRow(p, expected, fills));
       }
       const r = await this.app<RobotCommitResult>('robot-commit', { instance_id: this.instance(), markets: this.marketRows(), updates, signals, scanner: this.scanner(counts) });
-      if (r.paused) { this.core.counters = addCounters(this.core.counters, counts); return; }
+      if (r.paused) { this.core.counters = addCounters(this.core.counters, counts); this.core.signals.unshift(...rawSignals); return; }
       let closed = false;
       for (const u of updates) {
         if (!r.applied?.includes(u.id)) continue;
@@ -295,7 +296,7 @@ export class RobotService {
       }
       if (closed) void this.fillQueue('position closed');
     } catch (e) {
-      this.core.counters = addCounters(this.core.counters, counts); this.core.signals.unshift(...[]);
+      this.core.counters = addCounters(this.core.counters, counts); this.core.signals.unshift(...rawSignals);
       throw e;
     } finally { this.flushing = false; }
   }
