@@ -60,13 +60,13 @@ export const marketSchema = z.object({
 });
 export const heartbeatSchema = z.object({
   instance_id: z.string().uuid(), websocket_connected: z.boolean(), binance_connected: z.boolean(),
-  available_symbols: z.number().int().min(0).max(60), status: z.enum(["STARTING", "RUNNING", "RECOVERING", "ERROR", "STOPPED"]),
+  available_symbols: z.number().int().min(0).max(21), status: z.enum(["STARTING", "RUNNING", "RECOVERING", "ERROR", "STOPPED"]),
   error: z.string().max(500).nullable(),
   runtime_mode: z.enum(['production','temporary']).default('production'),
   host_kind: z.enum(['unknown','windows_pc','hosted','temporary']).default('unknown'),
   started_at: z.string().datetime().nullable().default(null),
   uptime_seconds: z.number().int().nonnegative().default(0),
-  scanned_symbols: z.number().int().min(0).max(60).default(0),
+  scanned_symbols: z.number().int().min(0).max(21).default(0),
   last_scan_at: z.string().datetime().nullable().default(null),
   feed_health: feedHealthSchema.nullable().default(null),
 });

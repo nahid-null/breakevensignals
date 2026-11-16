@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { fmtTime, useSettings, useStatuses, useTelegramLogs, useMarkets, useStats } from "@/lib/data";
 import { formatUptime } from '@/lib/engine/health';
-import { ROBOT_SYMBOLS } from '@/lib/robot/config';
+import { SYMBOLS } from '@/lib/config';
 import { StatusBadge } from "@/components/terminal/StatusBadge";
 import { contractFeedStatus } from '@/lib/engine/market-policy';
 
@@ -58,11 +58,11 @@ function Health() {
           <Row label="Coins with saved candle commits">{h?.recoveredSymbols ?? '—'} / {h?.engine?.available_symbols ?? '—'}</Row>
           <Row label="Next scan · expected candle close">{fmtTime(h?.nextScanAt, tz)}</Row>
           <Row label="Successful candle scans">{h?.successfulScans ?? '—'}</Row>
-          <Row label="Total coins scanned">{h?.scannedSymbols ?? '—'} / {ROBOT_SYMBOLS.length}</Row>
+          <Row label="Total coins scanned">{h?.scannedSymbols ?? '—'} / {SYMBOLS.length}</Row>
           <Row label="Last heartbeat">{fmtTime(h?.engine?.last_heartbeat_at, tz)}</Row>
           <Row label="Last confirmed candle">{fmtTime(h?.lastCandleAt, tz)}</Row>
           <Row label="Last generated signal">{fmtTime(h?.lastSignalAt, tz)}</Row>
-          <Row label="Available / configured coins">{h?.engine?.available_symbols ?? '—'} / {ROBOT_SYMBOLS.length}</Row>
+          <Row label="Available / configured coins">{h?.engine?.available_symbols ?? '—'} / {SYMBOLS.length}</Row>
           <Row label="Active positions">{h?.activePositions ?? '—'}</Row>
           <Row label="Active LONG signals">{stats?.activeLong ?? '—'}</Row>
           <Row label="Active SHORT signals">{stats?.activeShort ?? '—'}</Row>
@@ -82,7 +82,7 @@ function Health() {
       {h?.engine?.error && <p className="break-words border-l-2 border-short bg-short/10 p-3 text-sm text-short">{h.engine.error}</p>}
       {h?.lastAccessIssue && <p className="border-l-2 border-waiting bg-waiting/5 p-3 text-sm text-waiting">Market processing is paused. Prices and candles are last saved values. Confirm permitted Binance access before restarting the Railway service.</p>}
       {!h?.engine && <p className="border-l-2 border-waiting bg-waiting/5 p-3 text-sm text-waiting">Always-on monitoring has not started. Engine deployment is pending.</p>}
-      <section className="border-t border-border pt-5"><h2 className="mb-3 text-xs uppercase text-muted-foreground">Contract feeds</h2><div className="grid gap-x-8 sm:grid-cols-2 lg:grid-cols-3">{ROBOT_SYMBOLS.map((symbol) => {
+      <section className="border-t border-border pt-5"><h2 className="mb-3 text-xs uppercase text-muted-foreground">Contract feeds</h2><div className="grid gap-x-8 sm:grid-cols-2 lg:grid-cols-3">{SYMBOLS.map((symbol) => {
         const m = markets.data?.find((row) => row.symbol === symbol);
         return <Row key={symbol} label={symbol}><StatusBadge value={contractFeedStatus(m, h, s.healthQuery.isError || markets.isError)} /></Row>;
       })}</div></section>
