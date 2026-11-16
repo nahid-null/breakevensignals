@@ -1,7 +1,7 @@
 import { INDICATORS, type Direction } from "../config";
 import { ema, rma, relativeStrength, trueRange, confirmedPivot } from "./calculations";
 import { pineGt as gt, pineLt as lt, pineGe as ge, pineLe as le } from './pine-numbers';
-import { alignment, snapshot, updateMtf } from "./mtf-trend";
+import { alignment, signalStrength, snapshot, updateMtf } from "./mtf-trend";
 import { MINUTE, PARAMETERS as P, validateCandle, type EngineState, type Candle, type Trade, type Signal, type SideState, type Analysis } from "./model";
 
 export function calculate(state: EngineState, c: Candle): Analysis {
@@ -65,7 +65,8 @@ function signal(state: EngineState, trade: Trade, event: Signal["event"], time: 
     stop_loss: trade.stop, take_profit: trade.target, fee_rate_percent: P.feePercent,
     timestamp: new Date(time + MINUTE).toISOString(), ...(exit === undefined ? {} : { exit_price: exit }),
     ...(net === undefined ? {} : { net_result_r: net }),
-    ...(trade.entryTrend ? { trend_aligned: true, mtf_trend: trade.entryTrend } : {}) };
+    ...(trade.entryTrend ? { trend_aligned: true, mtf_trend: trade.entryTrend } : {}),
+    ...(trade.entryStrength ? { signal_strength: trade.entryStrength } : {}) };
 }
 export function manageTrade(state: EngineState, side: SideState, c: Candle): Signal | null {
   const t = side.trade;
@@ -121,7 +122,8 @@ export function processCandle(state: EngineState, c: Candle, allowEntries = true
       const risk = Math.abs(c.close - stop);
       const trade: Trade = { id: `native-${state.symbol}-${direction}-${c.time}`, direction, entry: c.close,
         stop, originalStop: stop, target: c.close + (direction === "LONG" ? 1 : -1) * risk * P.rrMultiplier,
-        risk, entryTime: c.time, breakeven: false, breakevenTime: null, ...(trend ? { entryTrend: trend } : {}) };
+        risk, entryTime: c.time, breakeven: false, breakevenTime: null,
+        ...(trend && state.mtf ? { entryTrend: trend, entryStrength: signalStrength(state.mtf, direction) } : {}) };
       side.trade = trade;
       signals.push(signal(state, trade, "entry_confirmed", c.time));
     }
