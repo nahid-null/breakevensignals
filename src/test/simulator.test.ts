@@ -16,7 +16,7 @@ async function migrate() {
   await db.query('select engine_heartbeat($1::jsonb)', [JSON.stringify({ instance_id: instance, status: 'RUNNING', websocket_connected: true, binance_connected: true, available_symbols: 20, error: null })]);
   revision = {}; minute = 60_000;
 }
-const ev = (event: string, trade: string, extra: Record<string, unknown> = {}) => ({ event, event_id: `${trade}-${event}`, trade_id: trade,
+const ev = (event: string, trade: string, extra: Record<string, unknown> = {}) => ({ telegram_message: 'SIGNAL', event, event_id: `${trade}-${event}`, trade_id: trade,
   symbol: 'NEARUSDT', direction: 'LONG', indicator: 'PRO LONG SCALPER', timeframe: '1', entry_price: 100,
   stop_loss: 99, take_profit: 101.5, timestamp: new Date(minute + 60_000).toISOString(), fee_rate_percent: 0.04, trend_aligned: true, ...extra });
 async function candle(events: unknown[], low = 99.5, high = 100.5, symbol = 'NEARUSDT', mode = 'live') {
@@ -98,6 +98,13 @@ describe('simulator trading (isolated PostgreSQL)', () => {
     await db.query('select sim_set_enabled(false)');
     await candle([ev('entry_confirmed', 't3')]);
     expect((await db.query<{ n: number }>('select count(*)::int n from sim_trades')).rows[0]?.n).toBe(0);
+  });
+
+  it('skips entries whose Telegram alert is switched off in Settings', async () => {
+    await db.query('select sim_deposit(1000)');
+    await db.query('update app_settings set long_entry_enabled=false');
+    await candle([ev('entry_confirmed', 't1')]);
+    expect(await trade('t1')).toBeUndefined();
   });
 
   it('does not trade without a balance', async () => {
