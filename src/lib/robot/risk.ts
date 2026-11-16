@@ -52,3 +52,13 @@ export function portfolioGate(c: Pick<Candidate, 'symbol' | 'direction'>, open: 
   if (open.filter((p) => p.direction === c.direction).length >= s.max_same_direction) return 'Too many positions in one direction';
   return null;
 }
+
+type ExchangeFilter = { filterType: string; tickSize?: string; stepSize?: string; minQty?: string; maxQty?: string; notional?: string };
+/** Contract precision and minimums from Binance exchangeInfo filters. */
+export function rulesFromFilters(filters: ExchangeFilter[]): SymbolRules {
+  const f = (t: string) => filters.find((x) => x.filterType === t);
+  const n = (v: string | undefined, d: number) => (Number(v) > 0 ? Number(v) : d);
+  return { tickSize: n(f('PRICE_FILTER')?.tickSize, DEFAULT_RULES.tickSize), stepSize: n(f('LOT_SIZE')?.stepSize, DEFAULT_RULES.stepSize),
+    minQty: n(f('LOT_SIZE')?.minQty, DEFAULT_RULES.minQty), maxQty: n(f('MARKET_LOT_SIZE')?.maxQty, DEFAULT_RULES.maxQty),
+    minNotional: n(f('MIN_NOTIONAL')?.notional, DEFAULT_RULES.minNotional) };
+}

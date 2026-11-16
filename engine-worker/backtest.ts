@@ -8,7 +8,7 @@ import { DEFAULT_SETTINGS, PAPER_LEVERAGE, ROBOT_SYMBOLS } from '../src/lib/robo
 import { MINUTE } from '../src/lib/robot/series';
 import { RobotCore, exposure, type Queued } from '../src/lib/robot/engine';
 import { computeMetrics, type ClosedTrade } from '../src/lib/robot/metrics';
-import { DEFAULT_RULES, type SymbolRules } from '../src/lib/robot/risk';
+import { DEFAULT_RULES, rulesFromFilters } from '../src/lib/robot/risk';
 import type { Position } from '../src/lib/robot/paper';
 
 const [dir = '/tmp/diag/bars', infoPath = '/tmp/diag/exchangeInfo.json', outPath = '/tmp/diag/result.json', startArg = '20'] = process.argv.slice(2);
@@ -17,21 +17,14 @@ Object.assign(TUNING, JSON.parse(process.env['ROBOT_TUNING'] ?? '{}'));
 const FROM = Number(process.env['BT_FROM'] ?? 0); const TO = Number(process.env['BT_TO'] ?? Infinity);
 const s = { ...DEFAULT_SETTINGS, ...JSON.parse(process.env['ROBOT_SETTINGS'] ?? '{}') };
 const START = Number(startArg);
-type F = { filterType: string; tickSize?: string; stepSize?: string; minQty?: string; maxQty?: string; notional?: string };
-const info = JSON.parse(readFileSync(infoPath, 'utf8')) as { symbols: { symbol: string; filters: F[] }[] };
-export function rulesFrom(filters: F[]): SymbolRules {
-  const f = (t: string) => filters.find((x) => x.filterType === t);
-  return { tickSize: Number(f('PRICE_FILTER')?.tickSize ?? DEFAULT_RULES.tickSize), stepSize: Number(f('LOT_SIZE')?.stepSize ?? DEFAULT_RULES.stepSize),
-    minQty: Number(f('LOT_SIZE')?.minQty ?? DEFAULT_RULES.minQty), maxQty: Number(f('MARKET_LOT_SIZE')?.maxQty ?? DEFAULT_RULES.maxQty),
-    minNotional: Number(f('MIN_NOTIONAL')?.notional ?? DEFAULT_RULES.minNotional) };
-}
+const info = JSON.parse(readFileSync(infoPath, 'utf8')) as { symbols: { symbol: string; filters: Parameters<typeof rulesFromFilters>[0] }[] };
 
 const core = new RobotCore(s);
 const data = new Map<string, number[][]>(); const cursor = new Map<string, number>();
 for (const sym of ROBOT_SYMBOLS) {
   const p = `${dir}/${sym}.json`; if (!existsSync(p)) continue;
   const rows = JSON.parse(readFileSync(p, 'utf8')) as number[][]; if (!rows.length) continue;
-  const meta = info.symbols.find((x) => x.symbol === sym); core.addSymbol(sym, meta ? rulesFrom(meta.filters) : DEFAULT_RULES);
+  const meta = info.symbols.find((x) => x.symbol === sym); core.addSymbol(sym, meta ? rulesFromFilters(meta.filters) : DEFAULT_RULES);
   data.set(sym, rows); cursor.set(sym, 0);
 }
 let start = Infinity; let end = -Infinity;
