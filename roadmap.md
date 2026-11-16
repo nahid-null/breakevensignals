@@ -1,5 +1,10 @@
 # Independent Crypto Signal Terminal
 
+## Restriction flow sweep (2026-11-16)
+- [ ] Read every screen, worker path, notification entry point and database function for paused-market safety and truthful saved-state display.
+- [ ] Fix uncovered forward behavior without changing settled history, permissions, preferences or market calculations.
+- [ ] Run isolated regressions and browser flows; update chat.md with coverage and remaining hosted-access blockers.
+
 ## Railway Binance access investigation (2026-11-16)
 - [x] Inspect public Futures endpoints, startup failures, hosting configuration and dashboard status: sandbox requests return 200; isolated 451 fails before heartbeat; 13 targeted tests pass; preview/published retain STOPPED status and four genuine SHORT positions. Official current regional permission remains unverified; official archives are historical-only and live provider candidates exceed the $0 budget.
 - [x] Prepare a safe proposal and read-only Railway verification procedure; no production code, hosting settings, strategy, history or Telegram changes.
