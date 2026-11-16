@@ -57,10 +57,12 @@ export type Level = { side: 'high' | 'low'; price: number; tf: number; time: num
   sweptAt: number | null; sweepExtreme: number | null; sweepBar: Bar | null };
 
 export class SymbolState {
-  m1 = new Timeframe(1); m5 = new Timeframe(5); m15 = new Timeframe(15);
+  m1 = new Timeframe(1); m5 = new Timeframe(5); m15 = new Timeframe(15); m60 = new Timeframe(60);
+  /** True when this update closed a 5m signal bar. */
+  signalClosed = false;
   levels: Level[] = [];
   lastTime: number | null = null; count = 0;
-  private buckets: { 5: Bar | null; 15: Bar | null } = { 5: null, 15: null };
+  private buckets: { 5: Bar | null; 15: Bar | null; 60: Bar | null } = { 5: null, 15: null, 60: null };
   private qv: number[] = []; quoteVolume24h = 0;
   constructor(readonly symbol: string, public tickSize: number) {}
 
@@ -69,16 +71,17 @@ export class SymbolState {
     this.lastTime = c.time; this.count++;
     const q = c.close * c.volume; this.qv.push(q); this.quoteVolume24h += q;
     if (this.qv.length > 1440) this.quoteVolume24h -= this.qv.shift() ?? 0;
+    this.signalClosed = false;
     this.markSweeps(c);
     this.addPivots(this.m1, this.m1.update(c));
-    for (const tf of [this.m5, this.m15]) {
+    for (const tf of [this.m5, this.m15, this.m60]) {
       const span = tf.minutes * MINUTE; const start = Math.floor(c.time / span) * span;
-      const key = tf.minutes as 5 | 15;
+      const key = tf.minutes as 5 | 15 | 60;
       let bucket = this.buckets[key];
       if (bucket && bucket.time !== start) { this.addPivots(tf, tf.update(bucket)); bucket = null; }
       bucket = bucket ? { ...bucket, high: Math.max(bucket.high, c.high), low: Math.min(bucket.low, c.low), close: c.close, volume: bucket.volume + c.volume }
         : { time: start, open: c.open, high: c.high, low: c.low, close: c.close, volume: c.volume };
-      if (c.time + MINUTE === start + span) { this.addPivots(tf, tf.update(bucket)); bucket = null; }
+      if (c.time + MINUTE === start + span) { this.addPivots(tf, tf.update(bucket)); bucket = null; if (tf.minutes === 5) this.signalClosed = true; }
       this.buckets[key] = bucket;
     }
     return true;
@@ -113,7 +116,7 @@ export class SymbolState {
     }
   }
   ready() {
-    return this.m1.ema50.value !== null && this.m5.ema50.value !== null && this.m15.ema21.value !== null
-      && this.m1.macd.hist !== null && this.m1.atr.value !== null && this.m1.vol.value !== null;
+    return this.m5.ema50.value !== null && this.m15.ema50.value !== null && this.m60.ema50.value !== null
+      && this.m5.macd.hist !== null && this.m5.atr.value !== null && this.m5.vol.value !== null && this.m1.atr.value !== null;
   }
 }
