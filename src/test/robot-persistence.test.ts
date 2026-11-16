@@ -77,6 +77,11 @@ describe('paper robot persistence (isolated PostgreSQL, no production rows)', ()
     expect(await one("select count(*)::int n from robot_positions where id='e'")).toEqual({ n: 0 });
     await db.query('update engine_health set error = null where id = 1');
   });
+  it('does not count PAPER ROBOT receipts as sent signal alerts', async () => {
+    const before = (await one<{ s: { telegramSent: number } }>('select terminal_statistics() s')).s.telegramSent;
+    await db.query("update telegram_logs set delivery_status = 'SENT' where event_id in ('a-open', 'a-close', 'b-open')");
+    expect((await one<{ s: { telegramSent: number } }>('select terminal_statistics() s')).s.telegramSent).toBe(before);
+  });
   it('adds paper deposits to the main balance', async () => {
     const before = (await one<{ b: number }>('select balance::float8 b from robot_account')).b;
     await db.query('select robot_deposit(250)');
