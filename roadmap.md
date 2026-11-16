@@ -1,5 +1,13 @@
 # Independent Crypto Signal Terminal
 
+## Paper trading robot (prompt-14, 2026-11-16)
+- [x] Runs alongside existing signals, Telegram and Simulator (unchanged); own paper account (1,000 USDT start), 40 coins (20 existing available + 20 top-volume; WILD unavailable).
+- [x] Independent liquidity-sweep / pullback strategy on 5m with 15m/1h trend, 0-100 score (75 trade, 85 high quality), risk-based sizing, dynamic leverage max 50x, 70% total margin cap, TP1 half + breakeven, early/time exits, daily loss limit, loss-streak pause, correlation limit.
+- [x] 3-month backtest (Aug-Oct 2026, fees + slippage, October unseen): 127 trades, net -13.11 USDT, PF 0.95 — no proven edge; saved and shown on Robot Backtest page.
+- [x] Database-guarded commits, STOP ALL, resume, deposits, settings; PAPER ROBOT Telegram receipts on open, TP1 and close; 18 new tests, 153 total pass.
+- [ ] Publish website, then redeploy Railway worker so the robot starts — needs the user.
+- [ ] Real-money execution — only after the user reviews paper results and explicitly approves.
+
 ## MTF trend filter (prompt-12, 2026-11-16)
 - [x] Native 15M/5M/1M trend detector from user's Trend_Identify_Indicator; LONG entries only when all three BULLISH, SHORT only when all three BEARISH; mixed/sideways = no signal.
 - [x] Telegram labels NORMAL SIGNAL (entry) and BREAKEVEN; only trend-approved trades are sent; entry alerts enabled.
