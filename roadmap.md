@@ -1,10 +1,10 @@
 # Independent Crypto Signal Terminal
 
 ## Entry audit and liquidity sweep (prompt-17, 2026-11-16)
-- [ ] Audit actual entry/execution/accounting code and up to 20 genuine positions; distinguish missing historical telemetry.
-- [ ] Show findings before replacing entries; add ENTRY AUDIT & LIQUIDITY SWEEP REPORT with evidence and trade explanations.
-- [ ] Implement confirmed sweep-only entries, fresh executable-price checks, cost-aware stops/targets and durable entry/MAE/MFE diagnostics; preserve existing systems/history.
-- [ ] Compare old/new LONG/SHORT historical replays with costs, test rules/persistence and isolated live paper execution, verify desktop/mobile report.
+- [x] Audit actual entry/execution/accounting code: five genuine LONG pullbacks at initial observation; source-derived fees/sign/quantity/ROI reconcile; entry quote/MAE/MFE absent. Retrospective candles labelled separately.
+- [x] Show findings before replacing entries; add ENTRY AUDIT & LIQUIDITY SWEEP REPORT with old conditions, real frozen evidence and latest up-to20 trades.
+- [x] Implement confirmed sweep-only entries, fresh executable-price checks, cost-aware structural stops/targets and atomic entry/MAE/MFE/funding diagnostics; preserve existing systems/history. Exactly40 configurable coins, open coins protected.
+- [x] Compare old/new LONG/SHORT historical replays with costs (old370 trades−19.29, sweep4 trades−0.44; both unprofitable, later slice0; loose0.5 sensitivity116 trades−9.89). Isolated real40/40 live feeds,240 decisions all rejected, no qualifying trade or message fabricated.178 tests and desktop/602/390 report read-back passed.
 - [ ] Verify deployed new-strategy paper outcomes — requires updated Railway deployment and genuinely qualified future entries.
 
 ## Paper robot rebuild (prompt-16, 2026-11-16)
