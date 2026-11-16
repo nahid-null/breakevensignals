@@ -138,19 +138,19 @@ export function evaluateLegacy(st: SymbolState, direction: Direction, s: RobotSe
 
   // --- Weighted score -----------------------------------------------------------------------
   const parts: ScoreParts = { trend: 0, structure: 0, setup: 0, trigger: 0, momentum: 0, volume: 0, execution: 0 };
-  parts.trend = t15 === 2 ? 20 : t15 === 1 ? 14 : t15 === 0 ? 8 : 0;
-  parts.structure = structure === 2 ? 10 : structure === 1 ? 7 : structure === 0 ? 4 : structure === -1 ? 2 : 0;
-  parts.setup = fam.quality;
-  parts.trigger = ((price - e9m1) * sign > 0 ? 5 : 0) + (range > 0 && body >= 0.5 * range ? 5 : 0) + ((price - (long ? prev.high : prev.low)) * sign > 0 ? 5 : 0);
+  parts["trend"] = t15 === 2 ? 20 : t15 === 1 ? 14 : t15 === 0 ? 8 : 0;
+  parts["structure"] = structure === 2 ? 10 : structure === 1 ? 7 : structure === 0 ? 4 : structure === -1 ? 2 : 0;
+  parts["setup"] = fam.quality;
+  parts["trigger"] = ((price - e9m1) * sign > 0 ? 5 : 0) + (range > 0 && body >= 0.5 * range ? 5 : 0) + ((price - (long ? prev.high : prev.low)) * sign > 0 ? 5 : 0);
   const rsiOk = long ? rsi >= 42 && rsi <= 70 : rsi <= 58 && rsi >= 30;
   const rsiRising = (rsi - (m5.prevRsi ?? rsi)) * sign > 0;
-  parts.momentum = (rsiOk ? 3 : 0) + (rsiRising ? 2 : 0) + ((hist - prevHist) * sign > 0 ? 3 : 0) + (hist * sign > 0 ? 2 : 0);
+  parts["momentum"] = (rsiOk ? 3 : 0) + (rsiRising ? 2 : 0) + ((hist - prevHist) * sign > 0 ? 3 : 0) + (hist * sign > 0 ? 2 : 0);
   const avgVol = m1.vol.value ?? 0; const vr = avgVol > 0 ? Math.max(bar.volume, prev.volume) / avgVol : 0;
-  parts.volume = vr >= 1.5 ? 10 : vr >= 1.1 ? 6 : vr >= 0.7 ? 3 : 0;
+  parts["volume"] = vr >= 1.5 ? 10 : vr >= 1.1 ? 6 : vr >= 0.7 ? 3 : 0;
   const opposing = pools5.filter((l) => l.sweptAt === null && l.side === (long ? 'high' : 'low') && (l.price - price) * sign > 0)
     .sort((a, b) => (a.price - b.price) * sign)[0];
   const room = opposing ? Math.abs(opposing.price - price) : Infinity;
-  parts.execution = (book.spreadBps === null ? 3 : book.spreadBps <= s.max_spread_bps / 2 ? 5 : 2)
+  parts["execution"] = (book.spreadBps === null ? 3 : book.spreadBps <= s.max_spread_bps / 2 ? 5 : 2)
     + (book.imbalance === null ? 2 : book.imbalance * sign >= 0.1 ? 3 : book.imbalance * sign >= -0.3 ? 2 : 0) + (room >= 2 * tpDist ? 2 : 0);
   const score = Math.round(Object.values(parts).reduce((a, b) => a + b, 0));
   const tier = score >= s.high_score ? 'STRONG' : score >= s.min_score ? 'QUALIFIED' : 'WEAK';
