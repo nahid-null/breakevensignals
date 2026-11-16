@@ -1,45 +1,161 @@
-import type { RobotSettings } from './config';
-import { managePosition, type Fill, type Position } from './paper';
-import { portfolioGate, type Account, type OpenExposure } from './risk';
-import type { Bar, SymbolState } from './series';
-import { evaluate, type BookContext, type Candidate, type Evaluation } from './strategy';
+/**
+ * RobotCore: the complete paper pipeline without I/O, shared by the live worker, the replay/backtest and the tests.
+ * Market data -> analysis -> signal -> validation -> opportunity queue -> simulated order -> fill -> monitoring -> exit -> next opportunity.
+ */
+import { MINUTE, SymbolState, type Bar } from './series';
+import { evaluate, maxStopFraction, type BookContext, type Candidate, type Direction, type Evaluation } from './strategy';
+import { allocationLimits, DEFAULT_RULES, planMargin, portfolioGate, sizeOrder, type OpenExposure, type SymbolRules } from './risk';
+import { managePosition, manageTick, openPosition, simulateMarketFill, type DepthBook, type Fill, type Position } from './paper';
+import { groupOf, type RobotSettings } from './config';
 
-export const WARMUP_BARS = 3300;
-const NO_BOOK: BookContext = { spreadBps: null, imbalance: null, depthUsd: null };
+export const WARMUP_BARS = 900;
+/** A qualified setup stays executable for two minutes after its 1m signal bar closed. */
+export const QUEUE_TTL_MS = 3 * MINUTE;
+export const NO_BOOK: BookContext = { spreadBps: null, imbalance: null, depthUsd: null };
 
-/** Shared by the backtest and the live worker: update state on a closed bar, then manage that coin's positions. */
-export function stepSymbol(st: SymbolState, bar: Bar, open: Position[], s: RobotSettings): { accepted: boolean; fills: { position: Position; fill: Fill }[] } {
-  if (!st.update(bar)) return { accepted: false, fills: [] };
-  const fills: { position: Position; fill: Fill }[] = [];
-  for (const p of open) if (p.symbol === st.symbol && p.status === 'OPEN') for (const f of managePosition(p, bar, st, s)) fills.push({ position: p, fill: f });
-  return { accepted: true, fills };
-}
+export type Counters = {
+  evaluated: number; long_candidates: number; short_candidates: number; rejected: number; qualified: number;
+  orders_submitted: number; orders_partial: number; orders_rejected: number;
+  reasons: Record<string, number>; exec_failures: Record<string, number>; setups: Record<string, { seen: number; qualified: number }>;
+};
+export const emptyCounters = (): Counters => ({ evaluated: 0, long_candidates: 0, short_candidates: 0, rejected: 0, qualified: 0,
+  orders_submitted: 0, orders_partial: 0, orders_rejected: 0, reasons: {}, exec_failures: {}, setups: {} });
+export type SignalLog = { id: string; candidate: Candidate; decision: 'TAKEN' | 'SKIPPED' | 'REJECTED'; reason: string | null };
+export type Queued = { c: Candidate; rank: number; expires: number; spreadBps: number | null; lastReason: string | null };
+export type Note = { long: string | null; short: string | null; longScore: number | null; shortScore: number | null };
+export type PositionFill = { position: Position; fill: Fill };
 
-export function evaluateBoth(st: SymbolState, s: RobotSettings, book: BookContext = NO_BOOK): Evaluation[] {
-  if (st.count < WARMUP_BARS || !st.signalClosed) return [];
-  return [evaluate(st, 'LONG', s, book), evaluate(st, 'SHORT', s, book)];
-}
-
-/** Abnormal market conditions: a violent BTC minute or a fast 5-minute move suspends new entries. */
-export function abnormalMarket(btc: SymbolState | undefined): string | null {
-  const bars = btc?.m1.bars; const last = bars?.at(-1); const back = bars?.at(-6);
-  if (!last || !back) return null;
-  if ((last.high - last.low) / last.close > 0.012) return 'BTC minute range above 1.2%';
-  if (Math.abs(last.close - back.close) / back.close > 0.02) return 'BTC moved more than 2% in 5 minutes';
-  return null;
-}
-
+const bump = (m: Record<string, number>, k: string) => { m[k] = (m[k] ?? 0) + 1; };
+/** Collapse score-specific reasons so the diagnostic table groups them. */
+export const reasonKey = (r: string) => r.startsWith('Score ') ? 'Score below threshold' : r.startsWith('Structural stop too wide') ? 'Structural stop too wide for 50x' : r;
 export const exposure = (open: Position[]): OpenExposure[] => open.filter((p) => p.status === 'OPEN')
-  .map((p) => ({ symbol: p.symbol, direction: p.direction, margin: p.margin, riskUsdt: p.riskUsdt, notional: p.qtyOpen * p.entry }));
+  .map((p) => ({ symbol: p.symbol, direction: p.direction, margin: p.margin, notional: p.qtyOpen * p.entry }));
+export const signalId = (c: Pick<Candidate, 'symbol' | 'direction' | 'time'>) => `${c.symbol}-${c.direction}-${c.time + MINUTE}`;
 
-/** Best qualified candidate that passes every portfolio gate. One clean setup beats several weak ones. */
-export function pickEntry(evals: Evaluation[], open: Position[], acct: Account, s: RobotSettings, now: number) {
-  const qualified = evals.flatMap((e) => (e.candidate && !e.rejected ? [e.candidate] : [])).sort((a, b) => b.score - a.score);
-  const skipped: { candidate: Candidate; reason: string }[] = [];
-  for (const c of qualified) {
-    const reason = portfolioGate(c, exposure(open), acct, s, now);
-    if (!reason) return { chosen: c, skipped };
-    skipped.push({ candidate: c, reason });
+export class RobotCore {
+  readonly states = new Map<string, SymbolState>();
+  readonly rules = new Map<string, SymbolRules>();
+  readonly notes = new Map<string, Note>();
+  readonly queue = new Map<string, Queued>();
+  open: Position[] = [];
+  counters = emptyCounters();
+  signals: SignalLog[] = [];
+  constructor(public settings: RobotSettings) {}
+
+  addSymbol(symbol: string, rules: SymbolRules = DEFAULT_RULES) {
+    this.states.set(symbol, new SymbolState(symbol, rules.tickSize)); this.rules.set(symbol, rules);
   }
-  return { chosen: null, skipped };
+
+  /** Consume one closed 1m bar. Live bars are evaluated and can queue entries; replayed bars only rebuild state and manage positions. */
+  onBar(symbol: string, bar: Bar, live: boolean, book: BookContext = NO_BOOK): { accepted: boolean; fills: PositionFill[]; evals: Evaluation[] } {
+    const st = this.states.get(symbol);
+    if (!st || !st.update(bar)) return { accepted: false, fills: [], evals: [] };
+    const fills: PositionFill[] = [];
+    for (const p of this.open) if (p.symbol === symbol && p.status === 'OPEN') for (const f of managePosition(p, bar, st, this.settings)) fills.push({ position: p, fill: f });
+    if (st.count < WARMUP_BARS) return { accepted: true, fills, evals: [] };
+    const evals = (['LONG', 'SHORT'] as Direction[]).map((d) => evaluate(st, d, this.settings, book));
+    const note: Note = { long: null, short: null, longScore: null, shortScore: null };
+    for (const e of evals) {
+      const key = e.direction === 'LONG' ? 'long' : 'short';
+      note[key] = e.rejected ?? `Qualified ${e.candidate!.tier === 'STRONG' ? 'strong ' : ''}${e.candidate!.setup.replace(/_/g, ' ').toLowerCase()}`;
+      note[`${key}Score`] = e.candidate?.score ?? null;
+      if (!live) continue;
+      this.counters.evaluated++;
+      if (e.candidate) {
+        if (e.direction === 'LONG') this.counters.long_candidates++; else this.counters.short_candidates++;
+        const k = this.counters.setups[e.candidate.setup] ??= { seen: 0, qualified: 0 }; k.seen++; if (!e.rejected) k.qualified++;
+      }
+      if (e.rejected) {
+        this.counters.rejected++; bump(this.counters.reasons, reasonKey(e.rejected));
+        if (e.candidate && e.candidate.score >= 60) this.signals.push({ id: signalId(e.candidate), candidate: e.candidate, decision: 'REJECTED', reason: e.rejected });
+        continue;
+      }
+      const c = e.candidate!;
+      this.counters.qualified++;
+      this.queue.set(`${c.symbol}|${c.direction}`, { c, rank: this.rank(c, book), expires: c.time + QUEUE_TTL_MS, spreadBps: book.spreadBps, lastReason: null });
+      this.signals.push({ id: signalId(c), candidate: c, decision: 'SKIPPED', reason: 'Queued for execution' });
+    }
+    this.notes.set(symbol, note);
+    return { accepted: true, fills, evals };
+  }
+
+  onTick(symbol: string, bid: number, ask: number, time: number): PositionFill[] {
+    const out: PositionFill[] = [];
+    for (const p of this.open) if (p.symbol === symbol && p.status === 'OPEN') for (const f of manageTick(p, bid, ask, time, this.settings)) out.push({ position: p, fill: f });
+    return out;
+  }
+
+  /** Ranking: quality first, then liquidity, spread, volatility fit, risk distance and correlated exposure. */
+  rank(c: Candidate, book: BookContext) {
+    const st = this.states.get(c.symbol)!; const qv = st.quoteVolume24h;
+    const groupOpen = this.open.some((p) => p.status === 'OPEN' && groupOf(p.symbol) === groupOf(c.symbol));
+    return c.score + (qv >= 100e6 ? 3 : qv >= 20e6 ? 1.5 : 0) - (book.spreadBps ?? 2) * 0.5 + (c.atrPct >= 0.15 && c.atrPct <= 0.8 ? 2 : 0)
+      + 5 * (1 - c.stopPct / maxStopFraction(this.settings)) - (groupOpen ? 6 : 0);
+  }
+
+  /** Drop expired entries (logging why they never executed) and return the rest best-first. */
+  rankedQueue(now: number): Queued[] {
+    for (const [k, q] of this.queue) if (q.expires <= now) {
+      this.queue.delete(k);
+      this.signals.push({ id: signalId(q.c), candidate: q.c, decision: 'SKIPPED', reason: `Expired: ${q.lastReason ?? 'no slot or margin in time'}` });
+    }
+    return [...this.queue.values()].sort((a, b) => b.rank - a.rank);
+  }
+
+  /** Next queue entry that passes the portfolio gates, recording the reason on every entry it passes over. */
+  nextCandidate(now: number, balance: number): Queued | null {
+    for (const q of this.rankedQueue(now)) {
+      const gate = portfolioGate(q.c, exposure(this.open), balance, this.settings);
+      const margin = gate ? null : planMargin(q.c, balance, exposure(this.open), this.settings);
+      const reason = gate ?? (margin !== null && typeof margin === 'object' ? margin.rejected : null);
+      if (!reason) return q;
+      q.lastReason = reason;
+    }
+    return null;
+  }
+
+  /**
+   * Validate against the current price, size at exactly 50x, simulate the market fill through the book and build the position.
+   * The caller only treats the position as open after the database confirms the commit.
+   */
+  execute(q: Queued, depth: DepthBook, balance: number, now: number): PositionFill | { rejected: string } {
+    const c = q.c; const sign = c.direction === 'LONG' ? 1 : -1; const rules = this.rules.get(c.symbol) ?? DEFAULT_RULES;
+    this.counters.orders_submitted++;
+    const fail = (why: string) => { this.counters.orders_rejected++; bump(this.counters.exec_failures, why); this.queue.delete(`${c.symbol}|${c.direction}`);
+      this.signals.push({ id: signalId(c), candidate: c, decision: 'REJECTED', reason: `Execution: ${why}` }); return { rejected: why }; };
+    const bid = depth.bids[0]?.[0]; const ask = depth.asks[0]?.[0];
+    if (!bid || !ask || ask < bid) return fail('No valid order book');
+    const touch = sign > 0 ? ask : bid;
+    if (Math.abs(touch - c.entry) > 0.3 * c.atr) return fail('Price moved away before fill');
+    if ((touch - c.stop) * sign < 0.3 * c.atr) return fail('Price too close to stop at fill time');
+    if (((touch - c.stop) * sign) / touch > maxStopFraction(this.settings)) return fail('Stop too wide at fill price');
+    const margin = planMargin(c, balance, exposure(this.open), this.settings);
+    if (typeof margin === 'object') return fail(margin.rejected);
+    const sized = sizeOrder(margin, touch, rules);
+    if ('rejected' in sized) return fail(sized.rejected);
+    const fill = simulateMarketFill(c.direction, sized.qty, depth, this.settings, rules);
+    if ('rejected' in fill) return fail(fill.rejected);
+    const opened = openPosition({ id: signalId(c), symbol: c.symbol, direction: c.direction, setup: c.setup, score: c.score, tier: c.tier, stop: c.stop, liquidity: c.liquidity },
+      fill, rules, now, this.settings);
+    if ('rejected' in opened) return fail(opened.rejected);
+    const { available } = allocationLimits(balance, exposure(this.open), this.settings);
+    if (opened.position.margin > available + 1e-9) return fail('Margin budget full (70% cap)');
+    if (fill.partial) this.counters.orders_partial++;
+    this.queue.delete(`${c.symbol}|${c.direction}`);
+    return opened;
+  }
+
+  /** Called after the database confirmed (or refused) an open. */
+  confirmOpen(r: PositionFill, ok: boolean, reason?: string) {
+    if (ok) { this.open.push(r.position); this.signals.push({ id: r.position.id, candidate: this.candidateOf(r.position), decision: 'TAKEN', reason: null }); }
+    else { this.counters.orders_rejected++; bump(this.counters.exec_failures, `Database: ${reason ?? 'rejected'}`); }
+  }
+  private candidateOf(p: Position): Candidate {
+    return { symbol: p.symbol, direction: p.direction, time: Math.floor(p.id.split('-').pop() as unknown as number) - MINUTE, setup: p.setup, score: p.score,
+      tier: 'QUALIFIED', parts: { trend: 0, structure: 0, setup: 0, trigger: 0, momentum: 0, volume: 0, execution: 0 }, entry: p.entry, stop: p.initialStop, tp: p.tp,
+      atr: 0, atrPct: 0, stopPct: 0, tpPct: 0, liquidity: p.liquidity };
+  }
+
+  takeCounters(): Counters { const c = this.counters; this.counters = emptyCounters(); return c; }
+  takeSignals(max = 100): SignalLog[] { return this.signals.splice(0, max); }
 }
