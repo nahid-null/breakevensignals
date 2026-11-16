@@ -47,7 +47,7 @@ export class SignalService {
   private async heartbeat(status = this.lastError ? 'ERROR' : this.connected && this.initialized && this.recovery.size === 0 ? 'RUNNING' : 'RECOVERING') {
     if (this.observeOnly) return;
     const r = await this.app<{ acquired: boolean }>('heartbeat', { instance_id: this.instance,
-      websocket_connected: this.connected, binance_connected: Date.now() - this.lastRestAt < 90_000,
+      websocket_connected: this.connected && !this.marketPaused, binance_connected: !this.marketPaused && this.lastRestAt > 0 && Date.now() - this.lastRestAt < 90_000,
       available_symbols: this.available.size, status, error: this.lastError, runtime_mode: this.runtimeMode,
       ...this.telemetry() });
     if (!this.running) return;
@@ -60,6 +60,7 @@ export class SignalService {
       short_score: a?.shortScore ?? 0, error: null };
   }
   private async commit(symbol: Symbol, tentative: EngineState, market: Market, events: Signal[], mode: 'live' | 'warmup' | 'recovery') {
+    if (!this.running || this.marketPaused) return;
     const previous = this.checkpoints.get(symbol);
     if (this.observeOnly) {
       this.checkpoints.set(symbol, { state: tentative, revision: (previous?.revision ?? 0) + 1 });

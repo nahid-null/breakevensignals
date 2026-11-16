@@ -42,11 +42,11 @@ function Health() {
       <div className="grid gap-4 lg:grid-cols-2">
         <section className="py-4 lg:pr-8">
           <h2 className="mb-2 text-xs uppercase tracking-widest text-muted-foreground">Signal pipeline</h2>
-          <Row label="Cloud scanner (Render)"><StatusBadge value={s.cloud} /></Row>
+          <Row label="Cloud service"><StatusBadge value={s.cloud} /></Row>
           <Row label="Binance REST"><StatusBadge value={s.binance} /></Row>
           <Row label="Binance WebSocket"><StatusBadge value={s.websocket} /></Row>
           <Row label="Scanner Engine"><StatusBadge value={s.scanner} /></Row>
-          <Row label="Service hosting">{h?.engine?.runtime_mode === 'temporary' ? 'TEMPORARY VERIFICATION' : h?.engine?.host_kind === 'hosted' ? 'RENDER CLOUD' : 'NOT CONFIRMED'}</Row>
+          <Row label="Service hosting">{h?.engine?.runtime_mode === 'temporary' ? 'TEMPORARY VERIFICATION' : h?.engine?.host_kind === 'hosted' ? 'HOSTED CLOUD' : 'NOT CONFIRMED'}</Row>
           <Row label="Engine uptime · last reported">{formatUptime(h?.uptimeSeconds)}</Row>
           <Row label="Last successful scan">{fmtTime(h?.lastScanAt, tz)}</Row>
           <Row label="Next scan · expected candle close">{fmtTime(h?.nextScanAt, tz)}</Row>
@@ -60,6 +60,7 @@ function Health() {
           <Row label="Active LONG signals">{stats?.activeLong ?? '—'}</Row>
           <Row label="Active SHORT signals">{stats?.activeShort ?? '—'}</Row>
           <Row label="Last error">{s.healthQuery.isError ? 'Health unavailable' : h?.engine?.error ?? '—'}</Row>
+          {h?.lastAccessIssue && <Row label="Last recorded Binance access issue">{h.lastAccessIssue}{!h.heartbeatFresh ? ' · last reported, cloud offline' : ''}</Row>}
           <Row label="Database"><StatusBadge value={s.healthQuery.isError ? "ERROR" : h ? (h.databaseOk ? "CONNECTED" : "ERROR") : "WAITING"} /></Row>
         </section>
         <section className="py-4">
@@ -71,11 +72,12 @@ function Health() {
           <Row label="Last failed delivery">{fmtTime(lastFailed?.updated_at, tz)}</Row>
         </section>
       </div>
-      {h?.engine?.error && <p className="border-l-2 border-short bg-short/10 p-3 text-sm text-short">{h.engine.error}</p>}
+      {h?.engine?.error && <p className="break-words border-l-2 border-short bg-short/10 p-3 text-sm text-short">{h.engine.error}</p>}
+      {h?.lastAccessIssue && <p className="border-l-2 border-waiting bg-waiting/5 p-3 text-sm text-waiting">Market processing is paused. Prices and candles are last saved values. Confirm permitted Binance access before restarting the Railway service.</p>}
       {!h?.engine && <p className="border-l-2 border-waiting bg-waiting/5 p-3 text-sm text-waiting">Always-on monitoring has not started. Engine deployment is pending.</p>}
       <section className="border-t border-border pt-5"><h2 className="mb-3 text-xs uppercase text-muted-foreground">Contract feeds</h2><div className="grid gap-x-8 sm:grid-cols-2 lg:grid-cols-3">{SYMBOLS.map((symbol) => {
         const m = markets.data?.find((row) => row.symbol === symbol);
-        return <Row key={symbol} label={symbol}><StatusBadge value={m?.status === 'UNAVAILABLE' ? 'UNAVAILABLE' : !h?.heartbeatFresh || h.engine?.status === 'STOPPED' ? 'OFFLINE' : m?.status ?? 'WAITING'} /></Row>;
+        return <Row key={symbol} label={symbol}><StatusBadge value={m?.status === 'UNAVAILABLE' ? 'UNAVAILABLE' : !h?.heartbeatFresh || h.engine?.status === 'STOPPED' ? 'OFFLINE' : h.lastAccessIssue ?? (s.scanner !== 'RUNNING' ? 'STALE' : m?.status ?? 'WAITING')} /></Row>;
       })}</div></section>
     </div>
   );

@@ -86,7 +86,7 @@ export const useStats = () => useQuery({ queryKey: ['terminal_statistics'], quer
   return data as unknown as TerminalStats;
 }, refetchInterval: 15000 });
 
-export type Status = "ONLINE" | "OFFLINE" | "CONNECTED" | "DISCONNECTED" | "NOT CONFIGURED" | "ERROR" | "WAITING" | "MANUAL VERIFICATION REQUIRED";
+export type Status = "ONLINE" | "OFFLINE" | "CONNECTED" | "DISCONNECTED" | "ACCESS RESTRICTED" | "IP BANNED" | "NOT CONFIGURED" | "ERROR" | "WAITING" | "MANUAL VERIFICATION REQUIRED";
 
 export function useStatuses() {
   const health = useHealth();
@@ -101,7 +101,7 @@ export function useStatuses() {
   const h = health.data && now !== null ? { ...health.data, ...engineHealth(health.data.engine, health.data.databaseOk && !health.isError, now) } : health.data;
   const lastTg = logs.data?.find((l) => l.delivery_status !== "PENDING");
   const system: Status = health.isError ? "OFFLINE" : !h ? "WAITING" : h.databaseOk && h.scanner === 'RUNNING' ? "ONLINE" : "OFFLINE";
-  const binance: Status = health.isError ? 'DISCONNECTED' : !h ? 'WAITING' : h.binance === 'CONNECTED' ? 'CONNECTED' : 'DISCONNECTED';
+  const binance: Status = health.isError ? 'DISCONNECTED' : !h ? 'WAITING' : h.binance === 'ACCESS RESTRICTED' ? 'ACCESS RESTRICTED' : h.binance === 'IP BANNED' ? 'IP BANNED' : h.binance === 'CONNECTED' ? 'CONNECTED' : 'DISCONNECTED';
   const websocket: Status = health.isError ? 'DISCONNECTED' : !h ? 'WAITING' : h.websocket === 'CONNECTED' ? 'CONNECTED' : 'DISCONNECTED';
   const telegram: Status = health.isError || logs.isError ? 'ERROR' : !h ? "WAITING" : !h.botConfigured || !h.chatConfigured ? "NOT CONFIGURED" : !lastTg ? "WAITING" : lastTg.delivery_status === "SENT" ? "CONNECTED" : "ERROR";
   return { system, cloud: health.isError ? 'OFFLINE' : h?.cloud ?? 'OFFLINE', scanner: health.isError ? 'STOPPED' : h?.scanner ?? 'STOPPED', binance, websocket, telegram, health: h, healthQuery: health };

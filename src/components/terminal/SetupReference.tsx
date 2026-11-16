@@ -2,7 +2,7 @@ import { Copy, LockKeyhole } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { CLOUD_SETUP, RENDER_SETUP, setupCopyText, type SetupEntry } from '@/lib/setup-reference';
+import { CLOUD_SETUP, WORKER_SETUP, setupCopyText, type SetupEntry } from '@/lib/setup-reference';
 
 type Configuration = { engineConfigured?: boolean; botConfigured?: boolean; chatConfigured?: boolean };
 
@@ -32,17 +32,17 @@ function ReferenceRow({ entry, configuration }: { entry: SetupEntry; configurati
 }
 
 export function SetupReference({ configuration }: { configuration: Configuration | undefined }) {
-  return <TooltipProvider><section aria-labelledby="render-values" className="border-y border-border py-5">
-    <h2 id="render-values" className="font-mono text-sm">RENDER SETUP VALUES</h2>
-    <div>{RENDER_SETUP.map((entry) => <ReferenceRow key={entry.name} entry={entry} configuration={configuration} />)}</div>
+  return <TooltipProvider><section aria-labelledby="worker-values" className="border-y border-border py-5">
+    <h2 id="worker-values" className="font-mono text-sm">RAILWAY SETUP VALUES</h2>
+    <div>{WORKER_SETUP.map((entry) => <ReferenceRow key={entry.name} entry={entry} configuration={configuration} />)}</div>
     <div className="mt-4 border-l-2 border-waiting bg-waiting/5 p-4 text-sm">
       <h3 className="mb-2 font-semibold">Forgot the private engine key?</h3>
-      <p className="text-muted-foreground">Saved private keys cannot be retrieved here. Ask for a secure ENGINE_SHARED_SECRET replacement in Lovable. Copy the new value from that secure form into Render, save it in both places, then republish this website. Never paste the key into chat.</p>
+      <p className="text-muted-foreground">Saved private keys cannot be retrieved here. Ask for a secure ENGINE_SHARED_SECRET replacement in Lovable. Copy the new value from that secure form into Railway, save it in both places, then republish this website. Never paste the key into chat.</p>
     </div>
   </section>
     <section aria-labelledby="cloud-values" className="border-b border-border pb-5">
       <h2 id="cloud-values" className="font-mono text-sm">LOVABLE-ONLY KEYS</h2>
-      <p className="mt-2 text-sm text-muted-foreground">These stay in Lovable. Do not add them to Render. Binance market data needs no trading API key, and Render needs no database key.</p>
+      <p className="mt-2 text-sm text-muted-foreground">These stay in Lovable. Do not add them to Railway. Binance market data needs no trading API key, and Railway needs no database key.</p>
       <div>{CLOUD_SETUP.map((entry) => <ReferenceRow key={entry.name} entry={entry} configuration={configuration} />)}</div>
     </section></TooltipProvider>;
 }

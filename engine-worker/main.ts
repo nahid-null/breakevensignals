@@ -7,12 +7,12 @@ const url = process.env['ENGINE_APP_URL'];
 const secret = process.env['ENGINE_SHARED_SECRET'];
 if (!observe && (!url || !secret)) throw new Error('Set ENGINE_APP_URL and ENGINE_SHARED_SECRET in the worker hosting settings');
 if (url && !url.startsWith('https://') && !url.startsWith('http://localhost:')) throw new Error('Engine app URL must use HTTPS');
-const kind = process.env['ENGINE_HOST_KIND'] ?? (process.env['RENDER'] ? 'hosted' : undefined);
+const kind = process.env['ENGINE_HOST_KIND'] ?? (process.env['RENDER'] || process.env['RAILWAY_ENVIRONMENT_ID'] ? 'hosted' : undefined);
 const hostKind = kind === 'windows_pc' || kind === 'hosted' || kind === 'temporary' ? kind : 'unknown';
 const runtimeMode = observe || process.env['ENGINE_RUNTIME_MODE'] === 'temporary' ? 'temporary' : 'production';
 const service = new SignalService((url ?? '').replace(/\/$/, ''), secret ?? '', observe, runtimeMode, hostKind);
 const healthSecret = process.env['LOCAL_HEALTH_SECRET'] ?? '';
-// Worker scripts run on Bun, outside SSR. Render web services must bind PORT before deploys succeed.
+// Worker scripts run on Bun, outside SSR. Cloud web services bind their assigned PORT.
 const cloudPort = hostKind === 'hosted' ? Number(process.env['PORT'] ?? 0) : 0;
 const local = cloudPort > 0 ? Bun.serve({ hostname: '0.0.0.0', port: cloudPort,
   fetch: (request) => cloudHealthResponse(request, healthSecret, () => service.snapshot()),
