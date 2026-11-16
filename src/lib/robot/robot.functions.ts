@@ -1,6 +1,6 @@
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
-import { ABSOLUTE_MAX_ALLOCATION_PCT, ABSOLUTE_MAX_LEVERAGE } from './config';
+import { ABSOLUTE_MAX_ALLOCATION_PCT } from './config';
 
 /** Adds practice money to the paper robot's main balance. */
 export const robotDeposit = createServerFn({ method: 'POST' })
@@ -27,18 +27,17 @@ export const robotResume = createServerFn({ method: 'POST' }).handler(async () =
   return { ok: true };
 });
 
+/** Editable paper settings. Leverage is fixed at 50x and is not editable; there is no daily loss limit or loss-streak pause. */
 export const robotSettingsSchema = z.object({
   enabled: z.boolean(),
   min_score: z.number().int().min(50).max(100), high_score: z.number().int().min(50).max(100),
-  risk_per_trade_pct: z.number().positive().max(2), max_concurrent: z.number().int().min(1).max(5),
-  max_same_direction: z.number().int().min(1).max(5), max_allocation_pct: z.number().positive().max(ABSOLUTE_MAX_ALLOCATION_PCT),
-  max_leverage: z.number().int().min(1).max(ABSOLUTE_MAX_LEVERAGE), daily_loss_limit_pct: z.number().positive().max(20),
-  loss_streak_cooldown: z.number().int().min(1).max(10), cooldown_minutes: z.number().int().min(0).max(1440),
-  max_hold_minutes: z.number().int().min(10).max(1440), fee_pct: z.number().min(0).max(1), slippage_bps: z.number().min(0).max(100),
-  max_spread_bps: z.number().positive().max(100), min_quote_volume_musd: z.number().min(0).max(100_000),
+  max_concurrent: z.number().int().min(1).max(10), max_same_direction: z.number().int().min(1).max(10),
+  max_allocation_pct: z.number().positive().max(ABSOLUTE_MAX_ALLOCATION_PCT),
+  max_hold_minutes: z.number().int().min(10).max(1440), fee_pct: z.number().min(0).max(1), maker_fee_pct: z.number().min(0).max(1),
+  slippage_bps: z.number().min(0).max(100), max_spread_bps: z.number().positive().max(100), min_quote_volume_musd: z.number().min(0).max(100_000),
 }).strict().refine((s) => s.high_score >= s.min_score, { message: 'High-quality score must be at or above the minimum score' });
 
-/** Saves robot settings. The database re-checks every hard limit (70% margin, 50x leverage). */
+/** Saves robot settings. The database re-checks every hard limit (70% margin, exactly 50x leverage). */
 export const robotSaveSettings = createServerFn({ method: 'POST' })
   .inputValidator((d: unknown) => robotSettingsSchema.parse(d))
   .handler(async ({ data }) => {

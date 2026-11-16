@@ -12,6 +12,8 @@ Publish the corresponding website update and deploy the matching worker revision
 ### Missing robot module on redeployment
 The Docker image must include `engine-worker`, `src/lib/config.ts`, `src/lib/engine` **and** `src/lib/robot`. An image built before the robot COPY line was added exits with `Cannot find module '../src/lib/robot/config'`; restarting that same image cannot fix it. Publish the website, then deploy the updated connected source revision in Railway with the repository root as the build context and `engine-worker/Dockerfile` as the Dockerfile path. Keep existing keys, region, port and single-instance settings. Check the new deployment's logs and `/healthz`, then confirm fresh dashboard feeds separately; liveness alone is not proof of live scanning.
 
+The paper robot simulates every position at exactly 50x and closes at 10% net ROI on margin (after taker entry, maker exit and funding). Combined margin never exceeds 70% of the balance; there is no daily loss limit or loss-streak pause in paper mode. Fills walk the live public order book (`/fapi/v1/depth`), honour exchangeInfo tick/step/min-notional rules and can be partial. Pipeline counters and rejection reasons are saved to `robot_scanner`. Replay with `bun engine-worker/backtest.ts <bars-dir> <exchangeInfo.json> <out.json> [startBalance]`, which runs the same `RobotCore`. No exchange order code exists.
+
 The paper robot starts with 10 USDT. A correction to an unused initial allocation is recorded separately from deposits, preserves existing history and never resets an account with recorded trades. Existing backtests retain their original tested starting capital.
 
 ### Binance access restrictions

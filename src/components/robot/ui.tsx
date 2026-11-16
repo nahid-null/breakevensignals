@@ -8,9 +8,10 @@ export const signed = (n: number | null | undefined) => n === null || n === unde
 export const pct = (n: number | null | undefined, d = 1) => n === null || n === undefined || !Number.isFinite(Number(n)) ? '—' : `${Number(n).toFixed(d)}%`;
 export const px = (n: number | null | undefined) => n === null || n === undefined || !Number.isFinite(Number(n)) ? '—' : Number(Number(n).toPrecision(7)).toString();
 
-export const EXIT: Record<string, string> = { TAKE_PROFIT: 'Take profit', STOP_LOSS: 'Stop loss', BREAKEVEN_STOP: 'Breakeven stop', EARLY_EXIT: 'Early exit',
-  PROFIT_EXIT: 'Profit protection', TIME_EXIT: 'Time exit', LIQUIDATION: 'Liquidation', EMERGENCY_STOP: 'Emergency stop' };
-export const SETUP: Record<string, string> = { SWEEP_RECLAIM: 'Sweep + reclaim', PULLBACK_RECLAIM: 'Pullback reclaim' };
+export const EXIT: Record<string, string> = { TAKE_PROFIT: 'Take profit', STOP_LOSS: 'Stop loss', BREAKEVEN_STOP: 'Profit-lock stop', EARLY_EXIT: 'Early exit',
+  PROFIT_EXIT: 'Early profit exit', TIME_EXIT: 'Time exit', LIQUIDATION: 'Liquidation', EMERGENCY_STOP: 'Emergency stop' };
+export const SETUP: Record<string, string> = { SWEEP_RECLAIM: 'Sweep + reclaim', TREND_PULLBACK: 'Trend pullback', EMA_RETEST: 'EMA retest', VWAP_RECLAIM: 'VWAP reclaim',
+  SR_REJECTION: 'S/R rejection', BREAKOUT_RETEST: 'Breakout retest', PULLBACK_RECLAIM: 'Pullback reclaim' };
 
 export function Tile({ label, value, tone: t, hint }: { label: string; value: string; tone?: string | undefined; hint?: string | undefined }) {
   return (
