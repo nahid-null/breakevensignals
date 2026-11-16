@@ -28,7 +28,9 @@ export type CandleDecision = { symbol: string; direction: Direction; time: numbe
 
 const bump = (m: Record<string, number>, k: string) => { m[k] = (m[k] ?? 0) + 1; };
 /** Collapse score-specific reasons so the diagnostic table groups them. */
-export const reasonKey = (r: string) => r.startsWith('Score ') ? 'Score below threshold' : r.startsWith('Structural stop too wide') ? 'Structural stop too wide for 50x' : r;
+export const reasonKey = (r: string) => r.startsWith('Score ') ? 'Score below threshold' : r.startsWith('Structural stop too wide') ? 'Structural stop too wide for 50x'
+  : r.startsWith('Retracement ') && r.includes('outside OTE') ? 'Retracement outside the OTE band'
+  : r.startsWith('Waiting for bullish MSS') ? 'Waiting for bullish MSS' : r.startsWith('Waiting for bearish MSS') ? 'Waiting for bearish MSS' : r;
 export const exposure = (open: Position[]): OpenExposure[] => open.filter((p) => p.status === 'OPEN')
   .map((p) => ({ symbol: p.symbol, direction: p.direction, margin: p.margin, notional: p.qtyOpen * p.entry }));
 export const signalId = (c: Pick<Candidate, 'symbol' | 'direction' | 'time'>) => `${c.symbol}-${c.direction}-${c.time + MINUTE}`;
