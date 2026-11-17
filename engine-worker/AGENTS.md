@@ -1,0 +1,2 @@
+- Run Simulator report comparisons offline through the pure decimal replay module; never send replay trades to hosted APIs or Telegram, so history remains genuine.
+- Freeze reports to a named UTC window, save raw candle hashes and reconcile each breakeven; abort on SQL-equivalent arithmetic failures rather than count zero-margin phantom trades.
