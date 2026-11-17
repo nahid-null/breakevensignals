@@ -67,7 +67,7 @@ function Simulator() {
   const live = open && Number.isFinite(price) ? unrealizedPnl(open, price) : null;
   const session = simSessionTrades(list, account.data?.session_started_at);
   const sum = simSummary(session);
-  const today = todayPnl(list, new Date(), tz);
+  const today = todayPnl(session, new Date(), tz);
   const balance = Number(account.data?.balance ?? 0);
   const accountReady = account.isSuccess && account.data !== null;
   const performanceReady = accountReady && trades.isSuccess;
@@ -96,7 +96,7 @@ function Simulator() {
     try {
       await adjust({ data: { balance: n, restart: edit === 'RESET' } });
       await qc.invalidateQueries({ queryKey: ['sim_account'] });
-      toast.success(edit === 'RESET' ? 'Simulator restarted at $5; history retained' : 'Practice balance updated'); setEdit(null);
+      toast.success(edit === 'RESET' ? 'Simulator restarted at $5; session totals cleared, history retained' : 'Practice balance updated'); setAmount(''); setEdit(null);
     } catch (e) { toast.error(e instanceof Error ? e.message : 'Could not change balance'); }
     finally { setBusy(false); }
   }
@@ -115,9 +115,9 @@ function Simulator() {
       </div>
 
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        <Tile label="Balance" value={fmtUsd(account.data?.balance)} hint={`Added in total ${fmtUsd(account.data?.total_deposited)}`} />
+        <Tile label="Balance" value={fmtUsd(account.data?.balance)} hint={`Lifetime added ${fmtUsd(account.data?.total_deposited)}`} />
         <Tile label="Equity" value={performanceReady && (!open || live !== null) ? fmtUsd(balance + (live ?? 0)) : '—'} hint={open ? 'Includes open trade' : undefined} />
-        <Tile label="Today's P&L" value={trades.isSuccess ? fmtSignedUsd(today) : '—'} tone={pnlTone(today)} />
+        <Tile label="Today's P&L" value={performanceReady ? fmtSignedUsd(today) : '—'} tone={pnlTone(today)} />
         <Tile label="Session P&L" value={performanceReady ? fmtSignedUsd(sum.totalPnl) : '—'} tone={pnlTone(sum.totalPnl)} />
         <Tile label="Win rate" value={!performanceReady || sum.winRate === null ? '—' : `${sum.winRate.toFixed(1)}%`} hint={performanceReady ? `${sum.wins} won · ${sum.losses} lost` : undefined} />
         <Tile label="Session trades" value={performanceReady ? String(session.length) : '—'} hint={performanceReady ? `${sum.closed} closed` : undefined} />
@@ -200,7 +200,7 @@ function Simulator() {
       <AlertDialog open={edit !== null} onOpenChange={(v) => { if (!v && !busy) setEdit(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>{edit === 'RESET' ? 'Restart simulator at $5?' : 'Edit practice balance?'}</AlertDialogTitle>
-            <AlertDialogDescription>{edit === 'RESET' ? 'Starts a new $5 practice session. All previous trades, deposits and results remain in history.' : 'This is a recorded capital adjustment, not trading profit or a deposit. Existing history stays unchanged.'}</AlertDialogDescription></AlertDialogHeader>
+            <AlertDialogDescription>{edit === 'RESET' ? 'Restores $5 and enables new practice trades: 50x leverage, 80% margin and +10% net margin target. Today’s P&L, session P&L and trade counters start at zero. Previous trades, lifetime deposits and results stay in history.' : 'This is a recorded capital adjustment, not trading profit or a deposit. Existing history stays unchanged.'}</AlertDialogDescription></AlertDialogHeader>
           {edit === 'EDIT' && <Input aria-label="New practice balance" type="number" min="0" step="0.01" value={newBalance} onChange={(e) => setNewBalance(e.target.value)} />}
           <AlertDialogFooter><AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel><Button disabled={busy} onClick={() => void changeBalance()}>{edit === 'RESET' ? 'Restart at $5' : 'Save balance'}</Button></AlertDialogFooter>
         </AlertDialogContent>

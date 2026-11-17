@@ -54,6 +54,7 @@ use the editor.
 - Keep bounded validated feed telemetry in owning heartbeats; show oldest saved recovery progress separately from a completed live scan, because startup commits are genuine but not live-message evidence.
 - Apply only original Pine entry/management conditions; legacy checkpoint MTF metadata is inert, because extra approval must not change source signals.
 - Keep Simulator entries, independent cost-adjusted targets, next-bar Pine stop moves, results and capital audits inside atomic candle commits; preserve legacy trades and reject balance adjustments while open to prevent accounting drift.
+- Restart restores account defaults; all performance tiles use the reset session cutoff, while lifetime deposits and trades remain intact to preserve financial evidence.
 - Retire RobotService from worker startup and remove robot/chart routes without dropping their stored records, because feature retirement must preserve financial evidence.
 - Fail closed for hosted balance controls until Invite-only access is verified; localhost checks never authorize remote callers.
 - Ship both pure engine trees in the worker Docker image and smoke-test that COPY set; audit unused initial-capital corrections separately from deposits to preserve ledger history.

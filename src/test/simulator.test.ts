@@ -111,6 +111,18 @@ describe('original Pine practice trading (isolated PostgreSQL)', () => {
     await db.query('select sim_change_balance(999,true)'); expect(await balance()).toBe(5);
     expect(await count('sim_trades')).toBe(1);expect(await count('sim_deposits')).toBe(deposits);expect(await count('sim_balance_events')).toBe(2);
   });
+  it('restores default enabled state only on restart and preserves lifetime deposits', async () => {
+    await db.query('select sim_deposit(2)');
+    await db.exec('update sim_account set enabled=false');
+    await db.query('select sim_change_balance(12,false)');
+    expect((await db.query<{ enabled: boolean }>('select enabled from sim_account')).rows[0]?.enabled).toBe(false);
+    await db.query('select sim_change_balance(999,true)');
+    const a = (await db.query<{ balance: string; enabled: boolean; total_deposited: string }>('select balance,enabled,total_deposited from sim_account')).rows[0];
+    expect(Number(a?.balance)).toBe(5);
+    expect(a?.enabled).toBe(true);
+    expect(Number(a?.total_deposited)).toBe(2);
+    expect(await count('sim_deposits')).toBe(1);
+  });
   it('never fabricates a trade when the practice balance is zero', async () => {
     await db.exec('update sim_account set balance=0');await candle([ev('entry_confirmed','t1')]);expect(await count('sim_trades')).toBe(0);
   });

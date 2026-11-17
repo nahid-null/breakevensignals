@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { emptyTimeframe, signalStrength, type MtfState } from '@/lib/engine/mtf-trend';
 import { sentSignalSummary } from '@/lib/signal-summary';
-import { SIM_RULES, simSessionTrades, todayPnl, unrealizedPnl } from '@/lib/simulator';
+import { SIM_RULES, simSessionTrades, simSummary, todayPnl, unrealizedPnl } from '@/lib/simulator';
 import { simulatorControlsAllowed } from '@/lib/simulator-control-policy';
 
 const tf = (minutes: number, bull: number, bear: number, adx: number) => ({ ...emptyTimeframe(minutes), bullScore: bull, bearScore: bear, adxValue: adx });
@@ -53,6 +53,24 @@ describe('simulator display numbers', () => {
     const history = [{ opened_at: '2026-11-17T04:59:59Z' }, { opened_at: '2026-11-17T05:00:00Z' }, { opened_at: '2026-11-17T05:01:00Z' }];
     expect(simSessionTrades(history, '2026-11-17T05:00:00Z')).toEqual(history.slice(1));
     expect(history).toHaveLength(3);
+  });
+  it('zeros today’s P&L and all performance counters on restart, retaining same-day results in history', () => {
+    const history = [
+      { opened_at: '2026-11-17T04:00:00Z', closed_at: '2026-11-17T04:30:00Z', status: 'CLOSED', pnl: 0.4 },
+      { opened_at: '2026-11-17T04:40:00Z', closed_at: '2026-11-17T04:50:00Z', status: 'CLOSED', pnl: -0.2 },
+    ];
+    const session = simSessionTrades(history, '2026-11-17T05:00:00Z');
+    expect(todayPnl(history, new Date('2026-11-17T05:01:00Z'), 'UTC')).toBeCloseTo(0.2);
+    expect(todayPnl(session, new Date('2026-11-17T05:01:00Z'), 'UTC')).toBe(0);
+    expect(simSummary(session)).toEqual({ closed: 0, wins: 0, losses: 0, winRate: null, totalPnl: 0 });
+    expect(history).toHaveLength(2);
+  });
+  it('counts a genuine new result after restart without carrying over the earlier same-day profit', () => {
+    const history = [
+      { opened_at: '2026-11-17T04:00:00Z', closed_at: '2026-11-17T04:30:00Z', status: 'CLOSED', pnl: 1 },
+      { opened_at: '2026-11-17T05:00:00Z', closed_at: '2026-11-17T05:01:00Z', status: 'CLOSED', pnl: 0.4 },
+    ];
+    expect(todayPnl(simSessionTrades(history, '2026-11-17T05:00:00Z'), new Date('2026-11-17T05:02:00Z'), 'Asia/Dhaka')).toBe(0.4);
   });
 });
 
