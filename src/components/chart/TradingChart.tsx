@@ -30,7 +30,7 @@ export default function TradingChart(p: Props) {
     const rsi = line(c.breakeven, 1, 1); const macd = line(c.active, 1, 2); const signal = line(c.waiting, 1, 2);
     const hist = chart.addSeries(HistogramSeries, { priceLineVisible: false, lastValueVisible: false }, 2);
     rsi.createPriceLine({ price: 50, color: c.alpha(c.muted, 0.5), lineWidth: 1, lineStyle: 2, axisLabelVisible: false, title: '' });
-    const panes = chart.panes(); panes[0]?.setHeight(420); panes[1]?.setHeight(90); panes[2]?.setHeight(110);
+    const panes = chart.panes(); panes[1]?.setHeight(90); panes[2]?.setHeight(110);
     const overlay = new OverlayPrimitive(); candles.attachPrimitive(overlay);
     const markers = createSeriesMarkers(candles, []);
     chart.subscribeCrosshairMove((e) => cb.current?.(e.time === undefined ? null : Number(e.time) * 1000));
