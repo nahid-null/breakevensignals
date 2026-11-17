@@ -34,7 +34,8 @@ export function pineBreakeven(t: { direction: Direction; entry: number; original
     activation: `${L ? 'High' : 'Low'} reaches entry ${L ? '+' : '−'} ${P.breakevenTrigger.toFixed(1)}R, checked after stop/target on the same bar; new stop applies from the next bar.`,
     trigger, stop: t.entry, feeAdjusted, exchangeStop: roundToTick(t.entry, tick, L ? 'up' : 'down'),
     notes: ['Pine moves the stop to the exact entry price (gross break-even). It is not fee-adjusted.',
-      `A stop-out at the entry still loses fees and slippage; net zero needs ${L ? 'above' : 'below'} the fee-adjusted price.`] };
+      `A stop-out at the entry still loses fees and slippage; net zero needs ${L ? 'above' : 'below'} the fee-adjusted price.`,
+      `Fee-adjusted price uses the Pine engine's own costs: ${feePct}% fee per side and ${slipTicks} tick slippage.`] };
 }
 
 export type RobotCostSettings = { fee_pct: number; slippage_bps: number; breakeven_trigger_roi_pct: number };
