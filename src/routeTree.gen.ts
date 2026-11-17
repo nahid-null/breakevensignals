@@ -10,8 +10,10 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ChartRouteImport } from './routes/chart'
 import { Route as HealthRouteImport } from './routes/health'
 import { Route as MarketsRouteImport } from './routes/markets'
+import { Route as ParityRouteImport } from './routes/parity'
 import { Route as PositionsRouteImport } from './routes/positions'
 import { Route as RobotRouteImport } from './routes/robot'
 import { Route as RobotBacktestRouteImport } from './routes/robot-backtest'
@@ -29,6 +31,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ChartRoute = ChartRouteImport.update({
+  id: '/chart',
+  path: '/chart',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HealthRoute = HealthRouteImport.update({
   id: '/health',
   path: '/health',
@@ -37,6 +44,11 @@ const HealthRoute = HealthRouteImport.update({
 const MarketsRoute = MarketsRouteImport.update({
   id: '/markets',
   path: '/markets',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ParityRoute = ParityRouteImport.update({
+  id: '/parity',
+  path: '/parity',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PositionsRoute = PositionsRouteImport.update({
@@ -98,8 +110,10 @@ const ApiPublicTradingviewWebhookRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/chart': typeof ChartRoute
   '/health': typeof HealthRoute
   '/markets': typeof MarketsRoute
+  '/parity': typeof ParityRoute
   '/positions': typeof PositionsRoute
   '/robot': typeof RobotRoute
   '/robot-backtest': typeof RobotBacktestRoute
@@ -114,8 +128,10 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/chart': typeof ChartRoute
   '/health': typeof HealthRoute
   '/markets': typeof MarketsRoute
+  '/parity': typeof ParityRoute
   '/positions': typeof PositionsRoute
   '/robot': typeof RobotRoute
   '/robot-backtest': typeof RobotBacktestRoute
@@ -131,8 +147,10 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/chart': typeof ChartRoute
   '/health': typeof HealthRoute
   '/markets': typeof MarketsRoute
+  '/parity': typeof ParityRoute
   '/positions': typeof PositionsRoute
   '/robot': typeof RobotRoute
   '/robot-backtest': typeof RobotBacktestRoute
@@ -149,8 +167,10 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/chart'
     | '/health'
     | '/markets'
+    | '/parity'
     | '/positions'
     | '/robot'
     | '/robot-backtest'
@@ -165,8 +185,10 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/chart'
     | '/health'
     | '/markets'
+    | '/parity'
     | '/positions'
     | '/robot'
     | '/robot-backtest'
@@ -181,8 +203,10 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/chart'
     | '/health'
     | '/markets'
+    | '/parity'
     | '/positions'
     | '/robot'
     | '/robot-backtest'
@@ -198,8 +222,10 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ChartRoute: typeof ChartRoute
   HealthRoute: typeof HealthRoute
   MarketsRoute: typeof MarketsRoute
+  ParityRoute: typeof ParityRoute
   PositionsRoute: typeof PositionsRoute
   RobotRoute: typeof RobotRoute
   RobotBacktestRoute: typeof RobotBacktestRoute
@@ -222,6 +248,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/chart': {
+      id: '/chart'
+      path: '/chart'
+      fullPath: '/chart'
+      preLoaderRoute: typeof ChartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/health': {
       id: '/health'
       path: '/health'
@@ -234,6 +267,13 @@ declare module '@tanstack/react-router' {
       path: '/markets'
       fullPath: '/markets'
       preLoaderRoute: typeof MarketsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/parity': {
+      id: '/parity'
+      path: '/parity'
+      fullPath: '/parity'
+      preLoaderRoute: typeof ParityRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/positions': {
@@ -318,8 +358,10 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ChartRoute: ChartRoute,
   HealthRoute: HealthRoute,
   MarketsRoute: MarketsRoute,
+  ParityRoute: ParityRoute,
   PositionsRoute: PositionsRoute,
   RobotRoute: RobotRoute,
   RobotBacktestRoute: RobotBacktestRoute,

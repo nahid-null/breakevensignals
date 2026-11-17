@@ -134,3 +134,8 @@
 - [ ] Publish, then redeploy Railway so the worker runs SMC_V1 (new fingerprint bdaa7c7c…) — waits on user
 - [ ] Decide whether to press Resume (robot still stopped) — waits on user
 - [ ] 30 genuine SMC_V1 completed paper trades — waits on market (0/30)
+## Chart & parity (prompt-21)
+- [x] /chart live + bar replay, Pine/SMC/robot overlays, comparison and break-even panels
+- [x] /parity PineTS vs internal per-candle report, TradingView CSV import, verification script download
+- [ ] Upload a TradingView export on Parity Report for real TradingView certification — waits on user
+- [ ] Publish, then redeploy Railway so the version check matches again (fingerprint c8036706…; package files only) — waits on user
