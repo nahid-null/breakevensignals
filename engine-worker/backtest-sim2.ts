@@ -41,6 +41,6 @@ const report = (name: string, rules: Rules) => {
   return r;
 };
 console.log(`Window ${new Date(start).toISOString()} -> ${new Date(end).toISOString()} (${days} days, ${Object.keys(data).length} coins)`);
-report('Training 1, 80% margin (current live)', { trend: false, realistic: false });
-report('Training 3, 80% margin', { trend: true, realistic: true });
-report('Training 3, 20% margin, 50x (requested)', { trend: true, realistic: true, share: 0.2 });
+const sh = Number(process.argv[3] ?? 0.2);
+report(`Training 3, ${sh*100}% margin, 50x, +10%/-5% of MARGIN`, { trend: true, realistic: true, share: sh, base: 'margin' });
+report(`Training 1 breakout only, ${sh*100}% margin, +10%/-5% of MARGIN`, { trend: false, realistic: false, share: sh, base: 'margin' });

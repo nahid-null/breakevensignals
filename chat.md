@@ -216,3 +216,8 @@
 - User chose less margin: 20% of balance, 50x, $5, Training 3 filters, +$0.50/−$0.25 net. Backtest-only; nothing live/published changed.
 - Replay now accepts margin share; trades whose stop is impossible after costs are skipped (not blocking other coins), which changed earlier counts slightly.
 - 3 days real Binance 1m (11-14 08:3x → 11-17 08:3x, 20 coins): 20% margin → 4 trades, 1 win, 3 losses, 0 TP, 1 SL, 3 one-candle exits, $5 → $4.74, max drawdown 5.3%. Avg TP distance 1.115%, SL 0.385%. 80% margin Training 3: 223 trades, 10 wins, $5 → $0. Sample far too small for conclusions.
+
+## 2026-11-17 08:46 UTC — prompt-29 margin-based target backtest (live unchanged)
+- Corrected per user: net TP = +10% of margin used, max net loss = −5% of margin used, after fees+slippage. Replay option base='margin' added; live untouched.
+- 7-day real Binance 1m backtest, 20 coins, 20% margin, 50x: 0 trades (both with Training 3 filters and breakout-only). All 61,883 breakout signals skipped because the stop cannot be placed.
+- Reason: at 50x, 0.05%/side fees = 0.1% of notional = 5% of margin, so the −5% margin loss is used up by fees; stop would sit at entry. TP needs ~0.30% move. Awaiting user decision (lower leverage or higher loss limit).
