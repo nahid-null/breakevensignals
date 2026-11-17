@@ -47,7 +47,7 @@ function Dashboard() {
   return (
     <div className="space-y-8">
       <div>
-        <div className="mb-2 flex items-center gap-2 font-mono text-[10px] text-primary"><Activity className="size-3" /> BINANCE USD-M FUTURES · TREND-APPROVED SIGNALS</div>
+        <div className="mb-2 flex items-center gap-2 font-mono text-[10px] text-primary"><Activity className="size-3" /> BINANCE USD-M FUTURES · PINE BREAKEVEN SIGNALS</div>
         <h1 className="text-2xl font-semibold">Dashboard</h1>
       </div>
 

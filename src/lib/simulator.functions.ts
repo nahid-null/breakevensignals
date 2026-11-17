@@ -20,3 +20,13 @@ export const setSimEnabled = createServerFn({ method: 'POST' })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+/** Audited capital adjustment; database serializes it against open trades. */
+export const changeSimBalance = createServerFn({ method: 'POST' })
+  .inputValidator((d: unknown) => z.object({ balance: z.number().finite().min(0).max(1_000_000_000), restart: z.boolean() }).parse(d))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+    const { data: result, error } = await supabaseAdmin.rpc('sim_change_balance', { new_balance: data.balance, restart: data.restart });
+    if (error) throw new Error(error.message);
+    return result as { balance: number };
+  });

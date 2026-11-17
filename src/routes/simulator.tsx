@@ -1,24 +1,26 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from '@tanstack/react-start';
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Plus, Wallet } from "lucide-react";
+import { Plus, Wallet, Pencil, RotateCcw } from "lucide-react";
 import { fmtPrice, fmtTime, useMarkets, useSettings } from "@/lib/data";
 import { fmtSignedUsd, fmtUsd, SIM_RULES, simSummary, todayPnl, unrealizedPnl, useSimAccount, useSimTrades } from "@/lib/simulator";
-import { addSimBalance, setSimEnabled } from "@/lib/simulator.functions";
+import { addSimBalance, setSimEnabled, changeSimBalance } from "@/lib/simulator.functions";
 import { StatusBadge } from "@/components/terminal/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
+import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 export const Route = createFileRoute("/simulator")({
   head: () => ({
     meta: [
       { title: "Simulator Trading — Crypto Signal Terminal" },
-      { name: "description", content: "Practice balance that automatically trades every trend-approved Telegram signal, with P&L and trade history." },
+      { name: "description", content: "Original Pine entries with fixed 50x practice trades, 80% margin and 10% net margin-profit targets, plus preserved history." },
       { property: "og:title", content: "Simulator Trading — Crypto Signal Terminal" },
-      { property: "og:description", content: "Practice balance that automatically trades every trend-approved Telegram signal, with P&L and trade history." },
+      { property: "og:description", content: "Original Pine entries, fixed 50x, 80% margin, 10% net margin ROI and audited practice balance controls." },
       { property: 'og:type', content: 'website' },
       { name: 'twitter:card', content: 'summary_large_image' },
     ],
@@ -41,6 +43,7 @@ function Tile({ label, value, tone, hint }: { label: string; value: string; tone
 
 function Simulator() {
   const qc = useQueryClient();
+  const addBalance = useServerFn(addSimBalance); const enable = useServerFn(setSimEnabled); const adjust = useServerFn(changeSimBalance);
   const account = useSimAccount();
   const trades = useSimTrades();
   const markets = useMarkets();
@@ -48,12 +51,15 @@ function Simulator() {
   const tz = settings.data?.display_timezone ?? "UTC";
   const [amount, setAmount] = useState("");
   const [busy, setBusy] = useState(false);
+  const [edit, setEdit] = useState<'EDIT' | 'RESET' | null>(null);
+  const [newBalance, setNewBalance] = useState('');
   const list = trades.data ?? [];
   const open = list.find((t) => t.status === 'OPEN');
   const closed = list.filter((t) => t.status === 'CLOSED');
   const price = open ? Number(markets.data?.find((m) => m.symbol === open.symbol)?.price ?? NaN) : NaN;
   const live = open && Number.isFinite(price) ? unrealizedPnl(open, price) : null;
-  const sum = simSummary(list);
+  const session = list.filter((t) => !account.data?.session_started_at || Date.parse(t.opened_at) >= Date.parse(account.data.session_started_at));
+  const sum = simSummary(session);
   const today = todayPnl(list, new Date(), tz);
   const balance = Number(account.data?.balance ?? 0);
 
@@ -62,7 +68,7 @@ function Simulator() {
     if (!Number.isFinite(n) || n <= 0) { toast.error("Enter an amount above 0"); return; }
     setBusy(true);
     try {
-      await addSimBalance({ data: { amount: n } });
+      await addBalance({ data: { amount: n } });
       setAmount("");
       toast.success(`${fmtUsd(n)} added to the simulator`);
       await qc.invalidateQueries({ queryKey: ['sim_account'] });
@@ -70,8 +76,20 @@ function Simulator() {
     finally { setBusy(false); }
   }
   async function toggle(enabled: boolean) {
-    try { await setSimEnabled({ data: { enabled } }); await qc.invalidateQueries({ queryKey: ['sim_account'] }); }
+    try { await enable({ data: { enabled } }); await qc.invalidateQueries({ queryKey: ['sim_account'] }); }
     catch (e) { toast.error(e instanceof Error ? e.message : "Could not change the simulator"); }
+  }
+
+  async function changeBalance() {
+    const n = edit === 'RESET' ? SIM_RULES.defaultBalance : Number(newBalance);
+    if (edit === null || !Number.isFinite(n) || n < 0 || (edit === 'EDIT' && newBalance.trim() === '')) { toast.error('Enter a valid balance'); return; }
+    setBusy(true);
+    try {
+      await adjust({ data: { balance: n, restart: edit === 'RESET' } });
+      await qc.invalidateQueries({ queryKey: ['sim_account'] });
+      toast.success(edit === 'RESET' ? 'Simulator restarted at $5; history retained' : 'Practice balance updated'); setEdit(null);
+    } catch (e) { toast.error(e instanceof Error ? e.message : 'Could not change balance'); }
+    finally { setBusy(false); }
   }
 
   return (
@@ -91,9 +109,9 @@ function Simulator() {
         <Tile label="Balance" value={fmtUsd(account.data?.balance)} hint={`Added in total ${fmtUsd(account.data?.total_deposited)}`} />
         <Tile label="Equity" value={fmtUsd(balance + (live ?? 0))} hint={open ? 'Includes open trade' : undefined} />
         <Tile label="Today's P&L" value={fmtSignedUsd(today)} tone={pnlTone(today)} />
-        <Tile label="Total P&L" value={fmtSignedUsd(sum.totalPnl)} tone={pnlTone(sum.totalPnl)} />
+        <Tile label="Session P&L" value={fmtSignedUsd(sum.totalPnl)} tone={pnlTone(sum.totalPnl)} />
         <Tile label="Win rate" value={sum.winRate === null ? '—' : `${sum.winRate.toFixed(1)}%`} hint={`${sum.wins} won · ${sum.losses} lost`} />
-        <Tile label="Trades" value={String(list.length)} hint={`${sum.closed} closed`} />
+        <Tile label="Session trades" value={String(session.length)} hint={`${sum.closed} closed`} />
       </section>
 
       <section className="grid gap-4 lg:grid-cols-[1fr_1.4fr]">
@@ -103,22 +121,28 @@ function Simulator() {
             <Input type="number" inputMode="decimal" min="1" step="0.01" placeholder="Amount in USDT" value={amount} onChange={(e) => setAmount(e.target.value)} className="font-mono" aria-label="Amount in USDT" />
             <Button type="submit" disabled={busy}><Plus className="size-4" /> Add</Button>
           </form>
-          <ul className="space-y-1 text-xs text-muted-foreground">
-            <li>• Uses {SIM_RULES.marginShare * 100}% of the balance on every trade.</li>
-            <li>• Strong signal: {SIM_RULES.strongLeverage}x. Normal signal: {SIM_RULES.normalLeverage}x.</li>
-            <li>• Strong = 15M, 5M and 1M trend all at full score with ADX {SIM_RULES.strongAdx} or higher.</li>
-            <li>• {SIM_RULES.feePercent}% fee on entry and exit; liquidation is included.</li>
-            <li>• Only one trade at a time; signals during an open trade are skipped.</li>
-            <li>• Trades only the live, trend-approved signals sent to Telegram.</li>
-          </ul>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" disabled={busy || !!open || !account.data} onClick={() => { setNewBalance(balance.toFixed(2)); setEdit('EDIT'); }}><Pencil className="size-4" /> Edit balance</Button>
+            <Button variant="outline" disabled={busy || !!open || !account.data} onClick={() => setEdit('RESET')}><RotateCcw className="size-4" /> Restart simulator</Button>
+          </div>
+          {open && <p className="text-xs text-waiting">Balance changes are locked until the open trade finishes.</p>}
+          <dl className="grid grid-cols-2 gap-x-3 gap-y-2 border-t border-border pt-3 text-xs">
+            <dt className="text-muted-foreground">New trade leverage</dt><dd className="font-mono">{SIM_RULES.leverage}x</dd>
+            <dt className="text-muted-foreground">Allocated margin</dt><dd className="font-mono">{SIM_RULES.marginShare * 100}% of balance</dd>
+            <dt className="text-muted-foreground">Net profit target</dt><dd className="font-mono text-long">+{SIM_RULES.targetNetRoiPercent}% on margin</dd>
+            <dt className="text-muted-foreground">Entry</dt><dd>Original Pine signal</dd>
+            <dt className="text-muted-foreground">Telegram</dt><dd>Breakeven + trade results</dd>
+            <dt className="text-muted-foreground">Costs</dt><dd>{SIM_RULES.feePercent}% per side + 1 tick per side</dd>
+            <dt className="text-muted-foreground">Concurrent trades</dt><dd>1</dd>
+          </dl>
         </div>
         <div className="space-y-3 border border-border bg-card/40 p-4">
           <h2 className="text-xs uppercase tracking-widest text-muted-foreground">Open position</h2>
-          {!open ? <p className="text-sm text-muted-foreground">{balance > 0 ? 'Waiting for the next trend-approved signal.' : 'Add a balance to start simulating.'}</p> : (
+          {!open ? <p className="text-sm text-muted-foreground">{balance > 0 ? 'Waiting for the next original Pine entry.' : 'Add a balance or restart at $5.'}</p> : (
             <div className="grid grid-cols-2 gap-x-6 gap-y-2 font-mono text-sm sm:grid-cols-3">
               <div><div className="text-[10px] text-muted-foreground">COIN</div>{open.symbol}</div>
               <div><div className="text-[10px] text-muted-foreground">SIDE</div><StatusBadge value={open.direction} /></div>
-              <div><div className="text-[10px] text-muted-foreground">LEVERAGE</div>{open.leverage}x · {open.strength}</div>
+              <div><div className="text-[10px] text-muted-foreground">LEVERAGE</div>{open.leverage}x · {open.rule_version === 'LEGACY' ? 'PREVIOUS RULES' : 'PINE'}</div>
               <div><div className="text-[10px] text-muted-foreground">MARGIN</div>{fmtUsd(open.margin)}</div>
               <div><div className="text-[10px] text-muted-foreground">ENTRY</div>{fmtPrice(open.entry_price)}</div>
               <div><div className="text-[10px] text-muted-foreground">PRICE</div>{Number.isFinite(price) ? fmtPrice(price) : '—'}</div>
@@ -162,6 +186,14 @@ function Simulator() {
           </table>
         </div>
       </section>
+      <AlertDialog open={edit !== null} onOpenChange={(v) => { if (!v && !busy) setEdit(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader><AlertDialogTitle>{edit === 'RESET' ? 'Restart simulator at $5?' : 'Edit practice balance?'}</AlertDialogTitle>
+            <AlertDialogDescription>{edit === 'RESET' ? 'Starts a new $5 practice session. All previous trades, deposits and results remain in history.' : 'This is a recorded capital adjustment, not trading profit or a deposit. Existing history stays unchanged.'}</AlertDialogDescription></AlertDialogHeader>
+          {edit === 'EDIT' && <Input aria-label="New practice balance" type="number" min="0" step="0.01" value={newBalance} onChange={(e) => setNewBalance(e.target.value)} />}
+          <AlertDialogFooter><AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel><Button disabled={busy} onClick={() => void changeBalance()}>{edit === 'RESET' ? 'Restart at $5' : 'Save balance'}</Button></AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

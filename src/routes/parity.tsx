@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 import { Download, Upload } from 'lucide-react';
 import type { Direction } from '@/lib/config';
@@ -78,7 +78,7 @@ function ParityPage() {
       <div>
         <div className="mb-1 font-mono text-[10px] text-active">VERIFY · PINE PARITY</div>
         <h1 className="text-2xl font-semibold">Pine parity report</h1>
-        <p className="mt-1 max-w-3xl text-sm text-muted-foreground">Compares every candle of the internal engine (the code the live Pine signals use, also drawn on the <Link to="/chart" className="underline">Chart</Link>) with a reference run on the identical candles, settings and start bar. Mismatches are listed, never hidden.</p>
+        <p className="mt-1 max-w-3xl text-sm text-muted-foreground">Original LONG/SHORT Pine scripts versus the signal engine on identical candles, inputs and starting state.</p>
       </div>
 
       <div className="border border-waiting/40 bg-waiting/5 p-3 text-sm">
@@ -124,7 +124,7 @@ function ParityPage() {
         <ul className="list-disc space-y-1 pl-5 text-muted-foreground">
           <li><b className="text-foreground">Implemented exactly:</b> ta.ema, ta.rsi (Wilder), ta.macd, ta.atr (Wilder), ta.sma, ta.highest/lowest with [1] history, ta.pivotlow/pivothigh, persistent <span className="font-mono">var</span> trade state, 5-bar cooldown, stop-before-target, break-even after exits.</li>
           <li><b className="text-foreground">Candle close only:</b> entries and trade management run on <span className="font-mono">barstate.isconfirmed</span> bars; the forming candle is never used.</li>
-          <li><b className="text-foreground">No repainting from the originals:</b> they use no request.security or lookahead. The separate live 15M/5M/1M trend filter reads only completed higher-timeframe bars.</li>
+          <li><b className="text-foreground">No repainting from the originals:</b> they use no request.security or lookahead. No extra multi-timeframe approval filter is applied.</li>
           <li><b className="text-foreground">Not reproduced as Pine objects:</b> label/line/table drawings and alert()/alertcondition. The chart draws equivalents; events are stored and sent by Telegram instead.</li>
           <li><b className="text-foreground">Inputs:</b> default values only (as uploaded); changing inputs in TradingView will break parity.</li>
           <li><b className="text-foreground">Unverified against TradingView:</b> how TradingView's built-in ta.ema seeds its first value. The engine follows Pine's documented formula (first value = source). Averages started on different bars disagree until they converge.</li>

@@ -162,6 +162,13 @@
       "when": 1794855405630,
       "tag": "0022_robot_smc_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1794891067602,
+      "tag": "0023_pine_breakeven_simulator",
+      "breakpoints": true
     }
   ]
 }
