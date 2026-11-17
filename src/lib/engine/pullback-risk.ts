@@ -63,11 +63,11 @@ export const slipOf = (price: number, tick: number) => Math.max(tick, price * PR
 
 /** Confirmed 15-minute swing pools (pivot length 2) built from 1-minute candles; known only after the confirming bar closes. */
 export function swingPools(bars: Candle[], len = 2): { lows: Pool[]; highs: Pool[] } {
-  const span = 15 * MINUTE; const q: Candle[] = []; let cur: Candle | null = null;
+  const span = 15 * MINUTE; const q: Candle[] = []; let cur = null as Candle | null;
   for (const c of bars) {
     const st = Math.floor(c.time / span) * span;
-    if (!cur || cur.time !== st) { cur = { ...c, time: st }; }
-    else cur = { ...cur, high: Math.max(cur.high, c.high), low: Math.min(cur.low, c.low), close: c.close };
+    const prev = cur as Candle | null;
+    cur = !prev || prev.time !== st ? { ...c, time: st } : { ...prev, high: Math.max(prev.high, c.high), low: Math.min(prev.low, c.low), close: c.close };
     if (c.time + MINUTE === st + span) { q.push(cur); cur = null; }
   }
   const lows: Pool[] = []; const highs: Pool[] = [];
