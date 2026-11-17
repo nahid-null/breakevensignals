@@ -107,10 +107,10 @@ export function replayExperimental(feeds: ExperimentalFeed[], from: number, to: 
       else if(stopHit){raw=s===1?Math.min(c.open,p.stop):Math.max(c.open,p.stop);reason='STOP_LOSS';}
       else if(targetHit){raw=p.target;reason='TAKE_PROFIT';}
       else if(time===to-MINUTE){raw=c.close;reason='PARTITION_END';}
-      const marked=balance+p.quantity*(c.close-p.entry)*s-p.entryFee-p.funding-p.quantity*c.close*cost.fee;
-      peak=Math.max(peak,marked); maxDd=Math.max(maxDd,(peak-marked)/peak*100);
       if(raw!==null){const t=settleExperimental(p,raw,reason,time+MINUTE,f.rules,balance,cost); trades.push(t); balance=t.balanceAfter; open=null;
         peak=Math.max(peak,balance);maxDd=Math.max(maxDd,(peak-balance)/peak*100);}
+      else {const marked=balance+p.quantity*(c.close-p.entry)*s-p.entryFee-p.funding-p.quantity*c.close*cost.fee;
+        peak=Math.max(peak,marked);maxDd=Math.max(maxDd,(peak-marked)/peak*100);}
     }
   }
   const wins=trades.filter(t=>t.pnl>0);const losses=trades.filter(t=>t.pnl<0);const sum=(ts:ExperimentalTrade[],key:'pnl'|'entryFee'|'exitFee'|'funding'|'slippage')=>ts.reduce((v,t)=>v+t[key],0);
