@@ -1,5 +1,10 @@
 # Independent Crypto Signal Terminal
 
+## Current prompt-23 verification and reset
+- [ ] Verify removal of the added trend gate, original LONG/SHORT parity, current hosted feed count and why fewer alerts appear.
+- [ ] Make restart restore default Simulator state and zero all current-session P&L/counters without deleting lifetime history; test in isolated PostgreSQL.
+- [ ] Check the reported mobile-hook diagnostic, verify relevant pages, and update chat.md with results and remaining deployment/privacy blockers.
+
 ## Current prompt-22 delivery
 - [x] Read full uploaded LONG/SHORT scripts and screenshots; original sources byte-identical. Reported mobile-hook UMD text/error absent; no workaround added.
 - [x] User clarified original confirmed Pine entry, exactly50x,80%balance,10%NET margin ROI after costs,5USDT default/restart; retain Pine stop/target conditions and financial history.
