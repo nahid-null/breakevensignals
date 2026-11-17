@@ -1,10 +1,11 @@
 # Independent Crypto Signal Terminal
 
 ## Current prompt-36 — read-only Simulator audit
-- [ ] Check reported hook error and reconcile the Nov10–17 replay with genuine hosted history, including every breakeven decision and zero-P&L trade.
-- [ ] Run fee/slippage-inclusive leverage, margin, stop and net-target comparisons on identical real Binance candles, without applying experimental settings.
-- [ ] Save a complete detailed report and source ledgers; verify configured Simulator rules without changing settings/history or publishing/deploying.
-- [ ] Run audit/accounting regression tests and report exactly what was applied and any unavailable data.
+- [x] Hook already imports React; automatic check OK. Separate genuine $2.10626 account/18 trades from replay; old report contained26zero-margin phantom closes+1open;37older native skip outcomes absent from saved ledger and explicitly disclosed.
+- [x] Run60fee/slippage-inclusive configurations on201600verified real candles, same Nov10 10:15→Nov17 10:15UTC;52complete/8dust failures; best completed20x/10%/net20 ends$3.28127,still negative; no alternatives applied.
+- [x] Save detailed v2 report,13-tab workbook and86-entry evidence ZIP; current50x/80%/net10/trend rules already configured; settings/history untouched; no publish/deploy.
+- [x] 64targeted accounting/trend/Pine tests pass; zero-balance skips and positive-dust SQL rollback reproduced in isolated PostgreSQL; real Simulator UI shows$2.11and18retained trades,no runtime errors; spreadsheet formulas reconcile to0.
+- [ ] Correct positive-dust rounded-margin division only after user approval; current practice strategy remains unchanged as requested.
 
 ## Current prompt-25 — Simulator 2
 - [x] Add independent 1m candle-breakout practice account: 50x, 80% margin, 10% net balance target, 5% modeled balance risk and one-candle exit; leave existing Simulator/Pine/Telegram unchanged.
