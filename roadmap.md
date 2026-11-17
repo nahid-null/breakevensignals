@@ -1,9 +1,9 @@
 # Independent Crypto Signal Terminal
 
 ## Current prompt-23 verification and reset
-- [ ] Verify removal of the added trend gate, original LONG/SHORT parity, current hosted feed count and why fewer alerts appear.
-- [ ] Make restart restore default Simulator state and zero all current-session P&L/counters without deleting lifetime history; test in isolated PostgreSQL.
-- [ ] Check the reported mobile-hook diagnostic, verify relevant pages, and update chat.md with results and remaining deployment/privacy blockers.
+- [x] Verify removal of the added trend gate, original LONG/SHORT parity, current hosted feed count and why fewer alerts appear: 20/20 fresh feeds, all saved MTF fields null, four native entries since worker restart; one genuine50x UNI practice trade, no new breakeven yet.
+- [x] Make restart restore default enabled Simulator state and zero all current-session P&L/counters including today's without deleting lifetime history; migration0025 and isolated PostgreSQL tests pass. No live reset submitted.
+- [x] Check the reported mobile-hook diagnostic (absent), desktop/current/phone Simulator/dashboard/markets/health, and update chat.md with results and remaining deployment/privacy blockers;227tests pass/buildOK.
 
 ## Current prompt-22 delivery
 - [x] Read full uploaded LONG/SHORT scripts and screenshots; original sources byte-identical. Reported mobile-hook UMD text/error absent; no workaround added.
@@ -18,8 +18,8 @@
 
 ## Blocking follow-up
 - [ ] User chooses Publish→Invite only and names themselves; current site isPUBLIC. Verify actual hosted privacy and implement secure hosted account authorization before unlocking deposit/pause/edit/reset. Controls currently localhost-only; visibility change alone does not unlock them.
-- [ ] Publish matching website source and redeploy current single Railway service with existing keys/region/Dockerfile; user/service access required. No deployment performed this turn.
-- [ ] Verify genuinely new50x original-Pine practice entry→fee-inclusive result→Telegram in the deployed system; requires matching worker and naturally qualified live signals. No forced/sample trades.
+- [ ] Publish current reset display updates. Website was published05:12 outside this turn and hosted worker restarted05:13 with20livefeeds/noMTF; exact Railway source/commit remains unverified without service access. No deployment performed this turn.
+- [ ] Verify genuine new50x original-Pine practice result→Telegram: UNI LONG opened05:30 at exact Pine5.277,4USDTmargin/50x, still OPEN at05:32. Entry verified through UI; settled result/delivery awaits natural market outcome. No forced/sample trades.
 - [ ] Upload identical-candle TradingView output to Parity Report for independent certification; local PineTS/native agreement is not TradingView certification.
 - [ ] Verify unattended hosted recovery/uptime, lawful Binance access and zero-cost hosting eligibility; sandbox results do not establish these.
 
