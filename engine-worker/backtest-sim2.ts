@@ -41,6 +41,9 @@ const report = (name: string, rules: Rules) => {
   return r;
 };
 console.log(`Window ${new Date(start).toISOString()} -> ${new Date(end).toISOString()} (${days} days, ${Object.keys(data).length} coins)`);
-const sh = Number(process.argv[3] ?? 0.2);
-report(`Training 3, ${sh*100}% margin, 50x, +10%/-5% of MARGIN`, { trend: true, realistic: true, share: sh, base: 'margin' });
-report(`Training 1 breakout only, ${sh*100}% margin, +10%/-5% of MARGIN`, { trend: false, realistic: false, share: sh, base: 'margin' });
+const sh = Number(process.argv[3] ?? 0.2), lv = Number(process.argv[4] ?? 20);
+const res = report(`Training 3, ${sh*100}% margin, ${lv}x, +10%/-5% of MARGIN`, { trend: true, realistic: true, share: sh, base: 'margin', lev: lv });
+const n = res.trades.length, hit = (k: string) => res.trades.filter(t => t.reason === k).length;
+console.log(`TP hit rate ${n ? (hit('TAKE_PROFIT')/n*100).toFixed(1) : '-'}% | SL hit rate ${n ? (hit('STOP_LOSS')/n*100).toFixed(1) : '-'}% | one-candle ${n ? (hit('ONE_CANDLE')/n*100).toFixed(1) : '-'}%`);
+console.log(`total fees+slippage approx $${res.trades.reduce((a,t)=>a + (t as any).cost, 0).toFixed(2)}`);
+for (const t of res.trades.slice(10)) console.log(`  ${new Date(t.signalTime).toISOString().slice(5,16)} ${t.symbol} ${t.direction} ${t.reason} ${t.pnl.toFixed(3)} -> $${t.balanceAfter.toFixed(2)}`);

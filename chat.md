@@ -221,3 +221,6 @@
 - Corrected per user: net TP = +10% of margin used, max net loss = −5% of margin used, after fees+slippage. Replay option base='margin' added; live untouched.
 - 7-day real Binance 1m backtest, 20 coins, 20% margin, 50x: 0 trades (both with Training 3 filters and breakout-only). All 61,883 breakout signals skipped because the stop cannot be placed.
 - Reason: at 50x, 0.05%/side fees = 0.1% of notional = 5% of margin, so the −5% margin loss is used up by fees; stop would sit at entry. TP needs ~0.30% move. Awaiting user decision (lower leverage or higher loss limit).
+
+## 2026-11-17 08:55 UTC — prompt-30 backtest 20% margin, 20x (live unchanged)
+- 7-day real Binance 1m (11-10 08:51 → 11-17 08:51, 20 coins), Training 3 filters, +10%/−5% of margin net: 90 trades, 16 wins/74 losses, TP 5 (5.6%), SL 67 (74.4%), one-candle 18; net −$2.06, $5 → $2.94, max drawdown 41.2%, fees+slippage ≈$1.78. Avg TP distance 0.625%, SL 0.125%. Awaiting approval; live and publish untouched.
