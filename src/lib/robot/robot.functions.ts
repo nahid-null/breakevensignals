@@ -6,18 +6,12 @@ import { ABSOLUTE_MAX_ALLOCATION_PCT, ROBOT_SYMBOL_PATTERN } from './config';
 export const robotDeposit = createServerFn({ method: 'POST' })
   .inputValidator((d: unknown) => z.object({ amount: z.number().finite().positive().max(1_000_000_000) }).parse(d))
   .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
-    const { data: r, error } = await supabaseAdmin.rpc('robot_deposit', { amount: Math.round(data.amount * 100) / 100 });
-    if (error) throw new Error(error.message);
-    return { balance: Number(r) };
+    throw new Error('Paper Robot account controls have been retired.');
   });
 
 /** Emergency STOP ALL: blocks new entries and closes every paper position at the last saved price. */
 export const robotStopAll = createServerFn({ method: 'POST' }).handler(async () => {
-  const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
-  const { data, error } = await supabaseAdmin.rpc('robot_emergency_stop');
-  if (error) throw new Error(error.message);
-  return { closed: Number(data) };
+  throw new Error('Paper Robot is already retired and stopped.');
 });
 
 export const robotResume = createServerFn({ method: 'POST' }).handler(async () => {

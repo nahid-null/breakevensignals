@@ -18,7 +18,8 @@ beforeAll(async () => {
   db = new PGlite();
   await db.exec('CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role;');
   const dir = new URL('../../drizzle/migrations/', import.meta.url);
-  for (const name of (await readdir(dir)).filter((f) => f.endsWith('.sql') && !f.startsWith('0001')).sort())
+  // Archived pre-retirement behavior; current retirement guards are tested in simulator.test.ts.
+  for (const name of (await readdir(dir)).filter((f) => f.endsWith('.sql') && !f.startsWith('0001') && !f.startsWith('0024')).sort())
     await db.exec((await readFile(new URL(name, dir), 'utf8')).replace(/^ALTER PUBLICATION.*$/gm, ''));
   await db.query('select engine_heartbeat($1::jsonb)', [JSON.stringify({ instance_id: instance, status: 'RUNNING', websocket_connected: true,
     binance_connected: true, available_symbols: 40, scanned_symbols: 40, error: null })]);
