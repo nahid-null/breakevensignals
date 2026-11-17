@@ -5,8 +5,8 @@ import type { Database } from '@/integrations/supabase/types';
 export type SimAccount = Database['public']['Tables']['sim_account']['Row'];
 export type SimTrade = Database['public']['Tables']['sim_trades']['Row'];
 /** New practice trades use original Pine entries; the signal engine's targets stay unchanged. */
-/** prompt-43: 1-minute Pine entries, 2 slots x 10% margin, no stop loss, +25% margin target or 1h close, cross margin. */
-export const SIM_RULES = { marginShare: 0.1, leverage: 50, defaultBalance: 10, feePercent: 0.05 } as const;
+/** prompt-44: 1-minute Pine entries, 3 slots x 10% margin, no stop loss, +25% margin target or manual close, cross margin. */
+export const SIM_RULES = { marginShare: 0.1, leverage: 50, defaultBalance: 10, slots: 3, feePercent: 0.05 } as const;
 
 export const useSimAccount = () => useQuery({ queryKey: ['sim_account'], refetchInterval: 15000, queryFn: () => readSimAccount() as Promise<SimAccount | null> });
 export const useSimTrades = () => useQuery({ queryKey: ['sim_trades'], refetchInterval: 15000, queryFn: () => readSimTrades() as Promise<SimTrade[]> });

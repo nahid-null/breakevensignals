@@ -7,7 +7,7 @@ const sig = (direction: 'LONG' | 'SHORT', symbol = 'LINKUSDT', trend = { m15: 1,
   mtf_trend: trend }) as unknown as Signal;
 const bar = (time: number, low: number, high: number, close: number) => ({ time, open: 100, high, low, close, volume: 1 });
 
-describe('prompt-43 Simulator: 1m Pine + trend, 2 slots x 10%, 50x, no stop, +25% target, 1h close', () => {
+describe('prompt-43 Simulator: 1m Pine + trend, 3 slots x 10%, 50x, no stop, +25% target, no time limit', () => {
   it('uses 10% of balance per slot at 50x', () => {
     const p = openPine1(sig('LONG'), 0, 0, 10);
     expect(Number(p.margin)).toBe(1);
@@ -27,14 +27,17 @@ describe('prompt-43 Simulator: 1m Pine + trend, 2 slots x 10%, 50x, no stop, +25
   it('closes at market after 1 hour, not before', () => {
     const p = openPine1(sig('LONG'), 0, 0, 10);
     expect(pine1Exit(p, bar(58 * 60_000, 99, 100.1, 100))).toBeNull();
-    expect(pine1Exit(p, bar(59 * 60_000, 99, 100.1, 100))).toBe('TIME_EXIT');
+    expect(pine1Exit(p, bar(59 * 60_000, 99, 100.1, 100))).toBeNull();
+    expect(pine1Exit(p, bar(30 * 86_400_000, 99, 100.1, 100))).toBeNull();
   });
-  it('allows 2 slots, never the same coin twice', () => {
+  it('allows 3 slots, never the same coin twice', () => {
     const open = openPine1(sig('LONG'), 0, 0, 10);
     expect(pine1Skip(sig('LONG', 'XRPUSDT'), 10, [open])).toBeNull();
     expect(pine1Skip(sig('LONG'), 10, [open])).toBe('COIN_ALREADY_OPEN');
     const second = openPine1(sig('LONG', 'XRPUSDT'), 0, 0, 10);
-    expect(pine1Skip(sig('LONG', 'SUIUSDT'), 10, [open, second])).toBe('BOTH_SLOTS_IN_USE');
+    expect(pine1Skip(sig('LONG', 'SUIUSDT'), 10, [open, second])).toBeNull();
+    const third = openPine1(sig('LONG', 'SUIUSDT'), 0, 0, 10);
+    expect(pine1Skip(sig('LONG', 'INJUSDT'), 10, [open, second, third])).toBe('ALL_SLOTS_IN_USE');
   });
   it('needs 15m and 5m on the signal side, 1m sideways or same', () => {
     expect(pine1Skip(sig('LONG', 'A', { m15: 1, m5: 1, m1: 1 }), 10, [])).toBeNull();

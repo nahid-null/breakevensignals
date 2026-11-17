@@ -260,6 +260,13 @@
       "when": 1794930909271,
       "tag": "0036_simulator_ten_percent_one_hour",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1794932602300,
+      "tag": "0037_simulator_three_slots_manual_close",
+      "breakpoints": true
     }
   ]
 }

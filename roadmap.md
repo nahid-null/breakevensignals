@@ -61,3 +61,4 @@ Paper Robot30-trade collection, SMC/sweep rollout, chart rollout and MTF-filter 
 - [ ] Publish site, then redeploy Railway worker so live 5-minute signals reach the Simulator (user action on Railway).
 - [ ] Redeploy Railway scanner so 1m entries carry trend readings (prompt-40) — waits on user
 - [x] prompt-43: 2 slots x 10%, 1-hour close, 7-day report saved.
+- [x] prompt-44: no auto-close, manual Close button, 3 slots x 10%, live check, 7-day report

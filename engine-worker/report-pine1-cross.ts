@@ -1,5 +1,5 @@
 /**
- * Previous-N-day offline replay of the prompt-40 Simulator rule (1m Pine, 50x, 10% per slot, 1h max hold, no stop, +25% target, cross margin) on real Binance USD-M candles.
+ * Previous-N-day offline replay of the prompt-40 Simulator rule (1m Pine, 50x, 10% per slot, 3 slots, no time limit, no stop, +25% target, cross margin) on real Binance USD-M candles.
  * Same pure code as the live worker (processMinute + Trend Identify) and the same settlement as
  * public.simulate_engine_candle (src/lib/engine/pine1-cross.ts). Read-only: no database, no Telegram.
  * Usage: bun engine-worker/report-pine1-cross.ts [days=7] [outDir=/tmp/pine1-report]
@@ -12,7 +12,7 @@ import { initialState, MINUTE, FIVE_MINUTES, type Candle, type Signal } from '..
 import { initMtf } from '../src/lib/engine/mtf-trend';
 import { buildFive, bucketStart, processMinute } from '../src/lib/engine/five-minute';
 import { PINE1, closePine1, openPine1, pine1Exit, pine1Skip, type Pine1Position, type Pine1Trade } from '../src/lib/engine/pine1-cross';
-const receiptStatus = (r: string) => r === 'TAKE_PROFIT' ? 'Take profit hit' : r === 'TIME_EXIT' ? 'Closed after 1 hour' : 'Stop loss hit';
+const receiptStatus = (r: string) => r === 'TAKE_PROFIT' ? 'Take profit hit' : r === 'TIME_EXIT' ? 'Closed after 1 hour' : r === 'LIQUIDATED' ? 'Stop loss hit (liquidated)' : 'Stop loss hit';
 import { binanceFetch, history } from './binance';
 
 const days = Number(process.argv[2] ?? 7); const outDir = process.argv[3] ?? '/tmp/pine1-report';
@@ -76,16 +76,20 @@ const skipped: Record<string, number> = {}; for (const d of decisions) if (d.dec
 const perCoin: Record<string, { trades: number; wins: number; pnl: number }> = {};
 for (const t of trades) { const p = perCoin[t.symbol] ??= { trades: 0, wins: 0, pnl: 0 }; p.trades++; if (new Decimal(t.pnl).gt(0)) p.wins++; p.pnl = n(new Decimal(p.pnl).plus(t.pnl)); }
 const status = (r: string) => trades.filter((t) => receiptStatus(t.reason) === r).length;
+const lastClose = (sym: string) => { const m = candles.get(sym)!; let t = now - MINUTE; while (t > from && !m.get(t)) t -= MINUTE; return m.get(t)?.close ?? NaN; };
+const openPositions = opens.map((o) => { const px = lastClose(o.symbol); const s = o.direction === 'LONG' ? 1 : -1;
+  const u = new Decimal(o.quantity).mul(new Decimal(px).minus(o.entry)).mul(s).minus(o.entryFee).minus(new Decimal(o.quantity).mul(px).mul(PINE1.feeRate));
+  return { symbol: o.symbol, side: o.direction, opened: new Date(o.openedCandle + MINUTE).toISOString(), entry: o.entry, margin: o.margin, lastPrice: px, unrealizedIfClosedNow: n(u) }; });
 const summary = {
   window: { from: new Date(from).toISOString(), to: new Date(now).toISOString() }, coinsTested: SYMBOLS.length - missing.length, missing,
-  rule: 'Original LONG/SHORT Pine on 1m; Trend Identify 15m=5m=side, 1m sideways/same; up to 2 open trades (one per coin); force close at market after 1h; Pine entry; no stop loss; close at +25% net of margin; cross-margin liquidation on whole balance; 50x; 10% of balance per slot; 0.05% fee/side; 1 tick slippage/side',
+  rule: 'Original LONG/SHORT Pine on 1m; Trend Identify 15m=5m=side, 1m sideways/same; up to 3 open trades (one per coin); no time limit (open trades at window end reported as still open); Pine entry; no stop loss; close at +25% net of margin; cross-margin liquidation on whole balance; 50x; 10% of balance per slot; 0.05% fee/side; 1 tick slippage/side',
   pineEntries, traded: trades.length + opens.length, skipped, closedTrades: trades.length, stillOpen: opens.length,
   wins: wins.length, losses: trades.length - wins.length, winRate: trades.length ? wins.length / trades.length * 100 : null,
-  takeProfitHit: status('Take profit hit'), stopLossHit: status('Stop loss hit'), closedAfter1h: status('Closed after 1 hour'),
+  takeProfitHit: status('Take profit hit'), stopLossHit: status('Stop loss hit (liquidated)'), closedAfter1h: status('Closed after 1 hour'),
   liquidated: trades.filter((t) => t.reason === 'LIQUIDATED').length,
   startBalance: PINE1.startBalance, endBalance: n(balance), netPnl: n(balance.minus(PINE1.startBalance)),
   grossProfit: n(sum(wins, (t) => t.pnl)), grossLoss: n(sum(trades.filter((t) => new Decimal(t.pnl).lte(0)), (t) => t.pnl)),
-  fees: n(sum(trades, (t) => new Decimal(t.entryFee).plus(t.exitFee))), maxDrawdownPct: n(maxDd), perCoin, candleHashes: hashes,
+  fees: n(sum(trades, (t) => new Decimal(t.entryFee).plus(t.exitFee))), maxDrawdownPct: n(maxDd), perCoin, openPositions, equityIfOpenClosedNow: n(openPositions.reduce((a, o) => a.plus(o.unrealizedIfClosedNow), balance)), candleHashes: hashes,
 };
 mkdirSync(outDir, { recursive: true });
 writeFileSync(`${outDir}/summary.json`, JSON.stringify(summary, null, 2));

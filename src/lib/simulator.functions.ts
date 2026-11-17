@@ -39,3 +39,14 @@ export const changeSimBalance = createServerFn({ method: 'POST' })
     if (error) throw new Error(error.message);
     return result as { balance: number };
   });
+
+/** prompt-44: close one open practice trade at the latest saved market price. */
+export const closeSimTrade = createServerFn({ method: 'POST' })
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => {
+    const { requireSimulatorControlAccess } = await import('./simulator-control.server'); requireSimulatorControlAccess();
+    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+    const { data: r, error } = await supabaseAdmin.rpc('sim_manual_close', { trade_uuid: data.id });
+    if (error) throw new Error(error.message);
+    return r as { price: number };
+  });

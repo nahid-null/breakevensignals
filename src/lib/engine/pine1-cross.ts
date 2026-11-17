@@ -5,10 +5,10 @@ import { trendSkip } from './simulator-replay';
 
 /**
  * prompt-40 Simulator rule, mirroring public.simulate_engine_candle / sim_finish_trade (PINE1_CROSS):
- * every original Pine entry from 1-minute bars (prompt-43: trend gate, two slots, 1h max hold), 50x, 10% of balance per slot as margin,
+ * every original Pine entry from 1-minute bars (prompt-44: trend gate, three slots, no time limit), 50x, 10% of balance per slot as margin,
  * no stop loss, take profit at +25% net of margin, cross-margin liquidation against the whole balance.
  */
-export const PINE1 = { leverage: 50, marginShare: 0.1, targetRoe: 0.25, feeRate: 0.0005, maintenance: 0.005, startBalance: 10, maxHoldMs: 3_600_000, slots: 2 } as const;
+export const PINE1 = { leverage: 50, marginShare: 0.1, targetRoe: 0.25, feeRate: 0.0005, maintenance: 0.005, startBalance: 10, maxHoldMs: Infinity, slots: 3 } as const;
 const dec = (n: Decimal.Value) => new Decimal(n);
 
 export interface Pine1Position { tradeId: string; symbol: string; direction: 'LONG' | 'SHORT'; openedCandle: number; entry: string;
@@ -20,7 +20,7 @@ export function pine1Skip(e: Signal, balance: Decimal.Value, open: { symbol: str
   return trendSkip(e.mtf_trend ?? null, e.direction)
     ?? (dec(balance).mul(PINE1.marginShare).toDecimalPlaces(8).lte(0) ? 'NO_BALANCE'
     : open.reduce((a, o) => a.minus((o as { margin?: string }).margin ?? 0), dec(balance)).lt(dec(balance).mul(PINE1.marginShare).toDecimalPlaces(8)) ? 'NO_BALANCE'
-    : open.some((o) => o.symbol === e.symbol) ? 'COIN_ALREADY_OPEN' : open.length >= PINE1.slots ? 'BOTH_SLOTS_IN_USE' : null);
+    : open.some((o) => o.symbol === e.symbol) ? 'COIN_ALREADY_OPEN' : open.length >= PINE1.slots ? 'ALL_SLOTS_IN_USE' : null);
 }
 
 export function openPine1(e: Signal, candleTime: number, tick: number, balance: Decimal.Value, reserved: Decimal.Value = 0): Pine1Position {

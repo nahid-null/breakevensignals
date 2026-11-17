@@ -3,10 +3,10 @@ import { useServerFn } from '@tanstack/react-start';
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Plus, Wallet, Pencil, RotateCcw } from "lucide-react";
+import { Plus, Wallet, Pencil, RotateCcw, X } from "lucide-react";
 import { fmtPrice, fmtTime, useMarkets, useSettings, useStatuses } from "@/lib/data";
 import { fmtSignedUsd, fmtUsd, SIM_RULES, simSessionTrades, simSummary, todayPnl, unrealizedPnl, useSimAccount, useSimTrades } from "@/lib/simulator";
-import { addSimBalance, setSimEnabled, changeSimBalance, readSimControlAccess } from "@/lib/simulator.functions";
+import { addSimBalance, setSimEnabled, changeSimBalance, readSimControlAccess, closeSimTrade } from "@/lib/simulator.functions";
 import { StatusBadge } from "@/components/terminal/StatusBadge";
 import { TrendWatch } from '@/components/terminal/TrendWatch';
 import { SavedMarketNotice } from '@/components/terminal/SavedMarketNotice';
@@ -21,9 +21,9 @@ export const Route = createFileRoute("/simulator")({
   head: () => ({
     meta: [
       { title: "Simulator Trading — Crypto Signal Terminal" },
-      { name: "description", content: "Practice trades on original 1-minute Pine LONG/SHORT entries that match the 15m/5m trend, up to 2 at a time, at 50x with 10% of balance per slot, no stop loss and a +25% margin target." },
+      { name: "description", content: "Practice trades on original 1-minute Pine LONG/SHORT entries that match the 15m/5m trend, up to 3 at a time, at 50x with 10% of balance per slot, no stop loss and a +25% margin target." },
       { property: "og:title", content: "Simulator Trading — Crypto Signal Terminal" },
-      { property: "og:description", content: "1-minute Pine entries filtered by the 15m/5m/1m trend, 2 slots, 50x, 10% margin each, +25% target or 1h close, cross margin." },
+      { property: "og:description", content: "1-minute Pine entries filtered by the 15m/5m/1m trend, 3 slots, 50x, 10% margin each, +25% target or manual close, cross margin." },
       { property: 'og:type', content: 'website' },
       { name: 'twitter:card', content: 'summary_large_image' },
     ],
@@ -31,10 +31,10 @@ export const Route = createFileRoute("/simulator")({
   component: Simulator,
 });
 
-const REASON: Record<string, string> = { TAKE_PROFIT: 'TAKE PROFIT HIT', STOP_LOSS: 'STOP LOSS HIT', BREAKEVEN: 'BREAKEVEN', LIQUIDATED: 'LIQUIDATED', TIME_EXIT: 'CLOSED AFTER 1H' };
+const REASON: Record<string, string> = { TAKE_PROFIT: 'TAKE PROFIT HIT', STOP_LOSS: 'STOP LOSS HIT', BREAKEVEN: 'BREAKEVEN', LIQUIDATED: 'LIQUIDATED', TIME_EXIT: 'CLOSED AFTER 1H', MANUAL_CLOSE: 'CLOSED MANUALLY' };
 /** prompt-39 trades show only the two receipt statuses; earlier trades keep their original labels. */
 const resultLabel = (t: { rule_version: string; exit_reason: string | null }) =>
-  !t.exit_reason ? '—' : (t.rule_version === 'PINE5_TREND' || t.rule_version === 'PINE1_CROSS') ? (t.exit_reason === 'TAKE_PROFIT' ? 'TAKE PROFIT HIT' : t.exit_reason === 'TIME_EXIT' ? 'CLOSED AFTER 1H' : 'STOP LOSS HIT') : REASON[t.exit_reason] ?? '—';
+  !t.exit_reason ? '—' : (t.rule_version === 'PINE5_TREND' || t.rule_version === 'PINE1_CROSS') ? (t.exit_reason === 'TAKE_PROFIT' ? 'TAKE PROFIT HIT' : t.exit_reason === 'TIME_EXIT' ? 'CLOSED AFTER 1H' : t.exit_reason === 'MANUAL_CLOSE' ? 'CLOSED MANUALLY' : 'STOP LOSS HIT') : REASON[t.exit_reason] ?? '—';
 const pnlTone = (n: number | null | undefined) => (Number(n) > 0 ? 'text-long' : Number(n) < 0 ? 'text-short' : 'text-muted-foreground');
 
 function Tile({ label, value, tone, hint }: { label: string; value: string; tone?: string | undefined; hint?: string | undefined }) {
@@ -49,7 +49,8 @@ function Tile({ label, value, tone, hint }: { label: string; value: string; tone
 
 function Simulator() {
   const qc = useQueryClient();
-  const addBalance = useServerFn(addSimBalance); const enable = useServerFn(setSimEnabled); const adjust = useServerFn(changeSimBalance);
+  const addBalance = useServerFn(addSimBalance); const enable = useServerFn(setSimEnabled); const adjust = useServerFn(changeSimBalance); const closeTrade = useServerFn(closeSimTrade);
+  const [closing, setClosing] = useState<{ id: string; symbol: string } | null>(null);
   const account = useSimAccount();
   const access = useQuery({ queryKey: ['sim_control_access'], queryFn: () => readSimControlAccess() });
   const controlsAllowed = access.data?.allowed === true;
@@ -110,6 +111,18 @@ function Simulator() {
     finally { setBusy(false); }
   }
 
+  async function confirmClose() {
+    if (!closing) return;
+    setBusy(true);
+    try {
+      const r = await closeTrade({ data: { id: closing.id } });
+      toast.success(`${closing.symbol} closed at ${fmtPrice(r.price)}`);
+      await Promise.all([qc.invalidateQueries({ queryKey: ['sim_trades'] }), qc.invalidateQueries({ queryKey: ['sim_account'] })]);
+      setClosing(null);
+    } catch (e) { toast.error(e instanceof Error ? e.message : 'Could not close trade'); }
+    finally { setBusy(false); }
+  }
+
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -151,16 +164,16 @@ function Simulator() {
             <dt className="text-muted-foreground">Signals</dt><dd>LONG/SHORT indicators on 1m chart</dd>
             <dt className="text-muted-foreground">Entry</dt><dd>Indicator entry price</dd>
             <dt className="text-muted-foreground">Trend filter</dt><dd>15m = 5m = side; 1m sideways or same</dd>
-            <dt className="text-muted-foreground">Max time open</dt><dd>1 hour, then closed at market</dd>
+            <dt className="text-muted-foreground">Max time open</dt><dd>No limit — close manually any time</dd>
             <dt className="text-muted-foreground">Take profit</dt><dd>+25% of margin after fees</dd>
             <dt className="text-muted-foreground">Stop loss</dt><dd>None — cross margin (whole balance backs the trade)</dd>
             <dt className="text-muted-foreground">Telegram</dt><dd>Trade results only</dd>
             <dt className="text-muted-foreground">Costs</dt><dd>{SIM_RULES.feePercent}% per side + 1 tick per side</dd>
-            <dt className="text-muted-foreground">Concurrent trades</dt><dd>Up to 2 (one per coin), 10% each</dd>
+            <dt className="text-muted-foreground">Concurrent trades</dt><dd>Up to {SIM_RULES.slots} (one per coin), 10% each</dd>
           </dl>
         </div>
         <div className="space-y-3 border border-border bg-card/40 p-4">
-          <h2 className="text-xs uppercase tracking-widest text-muted-foreground">Open positions · {opens.length} of 2 slots</h2>
+          <h2 className="text-xs uppercase tracking-widest text-muted-foreground">Open positions · {opens.length} of {SIM_RULES.slots} slots</h2>
           {open && <SavedMarketNotice />}
           {!performanceReady ? <p className="text-sm text-muted-foreground">{account.isError || trades.isError ? 'Could not load practice account or trades.' : 'Loading practice account…'}</p> : !open ? <p className="text-sm text-muted-foreground">{!account.data?.enabled ? 'Paused — no new practice entries.' : balance > 0 ? 'Waiting for a 1-minute indicator signal that matches the trend.' : 'Practice balance is zero.'}</p> : (
             <div className="space-y-4">{view.map(({ o: open, market, feed, price, live }) => (
@@ -176,11 +189,25 @@ function Simulator() {
               <div><div className="text-[10px] text-muted-foreground">TAKE PROFIT</div><span className="text-long">{fmtPrice(open.take_profit)}</span></div>
               <div><div className="text-[10px] text-muted-foreground">LIQUIDATION</div>{Number(open.liquidation_price).toPrecision(6)}</div>
               <div className="col-span-2 sm:col-span-3"><div className="text-[10px] text-muted-foreground">UNREALIZED P&L (LAST SAVED PRICE)</div><span className={cn('text-lg', pnlTone(live))}>{fmtSignedUsd(live)}</span></div>
+              <div className="col-span-2 sm:col-span-3"><Button variant="outline" size="sm" className="border-short/50 text-short" disabled={busy || !controlsAllowed} onClick={() => setClosing({ id: open.id, symbol: open.symbol })}><X className="size-4" /> Close trade</Button></div>
             </div>
             ))}</div>
           )}
         </div>
       </section>
+
+      <AlertDialog open={closing !== null} onOpenChange={(o) => { if (!o) setClosing(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Close {closing?.symbol} now?</AlertDialogTitle>
+            <AlertDialogDescription>The practice trade closes at the latest saved price, with fees. The result is sent to Telegram.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>Keep open</AlertDialogCancel>
+            <Button variant="destructive" disabled={busy} onClick={() => void confirmClose()}>Close trade</Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <TrendWatch tz={tz} />
 
@@ -218,7 +245,7 @@ function Simulator() {
       <AlertDialog open={edit !== null} onOpenChange={(v) => { if (!v && !busy) setEdit(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>{edit === 'RESET' ? 'Restart simulator at $10?' : 'Edit practice balance?'}</AlertDialogTitle>
-            <AlertDialogDescription>{edit === 'RESET' ? 'Restores $10 and enables new practice trades: 50x leverage, 10% of balance per trade (2 slots), take profit at +25% of margin or close after 1 hour, no stop loss (cross margin). Today’s P&L, session P&L and trade counters start at zero. Previous trades, lifetime deposits and results stay in history.' : 'This is a recorded capital adjustment, not trading profit or a deposit. Existing history stays unchanged.'}</AlertDialogDescription></AlertDialogHeader>
+            <AlertDialogDescription>{edit === 'RESET' ? 'Restores $10 and enables new practice trades: 50x leverage, 10% of balance per trade (3 slots), take profit at +25% of margin (or close manually), no stop loss (cross margin). Today’s P&L, session P&L and trade counters start at zero. Previous trades, lifetime deposits and results stay in history.' : 'This is a recorded capital adjustment, not trading profit or a deposit. Existing history stays unchanged.'}</AlertDialogDescription></AlertDialogHeader>
           {edit === 'EDIT' && <Input aria-label="New practice balance" type="number" min="0" step="0.01" value={newBalance} onChange={(e) => setNewBalance(e.target.value)} />}
           <AlertDialogFooter><AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel><Button disabled={busy} onClick={() => void changeBalance()}>{edit === 'RESET' ? 'Restart at $10' : 'Save balance'}</Button></AlertDialogFooter>
         </AlertDialogContent>

@@ -15,6 +15,6 @@ export function watchSide(t: Partial<MtfSnapshot> | null | undefined): 'LONG' | 
 export const DECISION_TEXT: Record<string, string> = {
   TREND_UNKNOWN: 'Trend not ready', NO_15M_5M_BIAS: '15m and 5m disagree', BIAS_OPPOSITE_SIGNAL: 'Against 15m/5m trend',
   ONE_MINUTE_OPPOSITE: '1m against trend', SIMULATOR_OFF: 'Simulator paused', NO_BALANCE: 'No balance',
-  TRADE_ALREADY_OPEN: 'Another trade open', BOTH_SLOTS_IN_USE: 'Both slots in use', COIN_ALREADY_OPEN: 'Coin already open', RULE_REPLACED: 'Old rule retired', CANDLE_NOT_CONFIRMED: 'Candle not confirmed (old rule)',
+  TRADE_ALREADY_OPEN: 'Another trade open', BOTH_SLOTS_IN_USE: 'Both slots in use', ALL_SLOTS_IN_USE: 'All 3 slots in use', COIN_ALREADY_OPEN: 'Coin already open', RULE_REPLACED: 'Old rule retired', CANDLE_NOT_CONFIRMED: 'Candle not confirmed (old rule)',
   NOT_LIVE: 'Not live', PINE_TRADE_CLOSED: 'Pine trade closed (old rule)',
 };

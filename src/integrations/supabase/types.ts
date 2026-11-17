@@ -1511,6 +1511,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      sim_manual_close: { Args: { trade_uuid: string }; Returns: Json }
       sim_set_enabled: { Args: { on_off: boolean }; Returns: undefined }
       simulate_engine_candle: { Args: { p: Json }; Returns: undefined }
       stop_engine: { Args: { p_instance: string }; Returns: boolean }

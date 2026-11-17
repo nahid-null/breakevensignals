@@ -57,22 +57,29 @@ describe('prompt-43 Simulator: 1m Pine entries, trend gate, 50x, 10% margin per 
     expect(await trades()).toHaveLength(0);
     expect((await decision())?.reason).toBe('ONE_MINUTE_OPPOSITE');
   });
-  it('prompt-43: a trade is closed at market after 1 hour', async () => {
+  it('prompt-44: no time limit — still open after 25 hours', async () => {
     await enter('LONG');
-    for (let k = 0; k < 3; k++) await candle([], 100, 99.5, 'live', 100, 99.4);
-    expect((await trades())[0]!.status).toBe('OPEN');
-    minute += 3_600_000 - 4 * 60_000;
+    minute += 25 * 3_600_000;
     await candle([], 99.5, 99.5, 'live', 99.6, 99.4);
-    const t = (await trades())[0]!; expect(t.status).toBe('CLOSED'); expect(t.exit_reason).toBe('TIME_EXIT'); expect(Number(t.exit_price)).toBe(99.5);
-    expect((await messages())[0]).toContain('Closed after 1 hour');
+    expect((await trades())[0]!.status).toBe('OPEN');
   });
-  it('prompt-42: two trades at once on different coins, each 10% of balance; a third is skipped', async () => {
+  it('prompt-44: manual close settles at the saved price and sends Closed manually', async () => {
+    await enter('LONG');
+    await candle([], 100, 100.2, 'live', 100.25, 99.9);
+    const id = (await db.query<{ id: string }>('select id from sim_trades')).rows[0]!.id;
+    await db.query('select sim_manual_close($1::uuid)', [id]);
+    const t = (await trades())[0]!; expect(t.status).toBe('CLOSED'); expect(t.exit_reason).toBe('MANUAL_CLOSE'); expect(Number(t.exit_price)).toBe(100.2);
+    expect((await messages())[0]).toContain('Closed manually');
+    await expect(db.query('select sim_manual_close($1::uuid)', [id])).rejects.toThrow();
+  });
+  it('prompt-44: three trades at once on different coins, each 10% of balance; a fourth is skipped', async () => {
     await enter('LONG');
     await candle([{ ...ev('entry_confirmed', 'LONG', { mtf_trend: bias('LONG'), symbol: 'LINKUSDT' }, 't2') }]);
     await candle([{ ...ev('entry_confirmed', 'LONG', { mtf_trend: bias('LONG'), symbol: 'SUIUSDT' }, 't3') }]);
+    await candle([{ ...ev('entry_confirmed', 'LONG', { mtf_trend: bias('LONG'), symbol: 'INJUSDT' }, 't4') }]);
     const open = (await trades()).filter((t) => t.status === 'OPEN');
-    expect(open).toHaveLength(2); expect(open.map((t) => Number(t.margin))).toEqual([1, 1]);
-    expect((await decision('t3'))?.reason).toBe('BOTH_SLOTS_IN_USE');
+    expect(open).toHaveLength(3); expect(open.map((t) => Number(t.margin))).toEqual([1, 1, 1]);
+    expect((await decision('t4'))?.reason).toBe('ALL_SLOTS_IN_USE');
   });
   it('prompt-42: never two trades on the same coin', async () => {
     await enter('LONG'); await enter('LONG', bias('LONG'), {}, 't2');
