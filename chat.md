@@ -205,3 +205,9 @@
 
 ## 2026-11-17 08:25 UTC — prompt-26 Simulator 2 open trade
 - Prompt-26 restates Training 1 rules (already in place: 1m, one entry per signal, LONG/SHORT breakout, +10%/−5% balance). Added an "Open trade" panel on Simulator 2 showing coin, side, signal candle, entry/close minute, margin, 50x, TP/SL amounts and last saved price. No trading logic or history changed. Hook error absent in project.
+
+## 2026-11-17 08:28–08:35 UTC — prompt-27 Simulator 2 Training 3 (backtest only)
+- User chose: trend = close vs rising/falling 20-close average; realistic filter = last-5 average range ≥ move needed for +10% net; backtest first, switch live only after approval.
+- Added pure replay `src/lib/engine/sim2-backtest.ts` (mirrors live formulas), runner `engine-worker/backtest-sim2.ts`, tests `src/test/sim2-backtest.test.ts` (4 pass). Live Simulator 2 rules NOT changed.
+- 3-day real Binance backtest (20 coins, 2026-11-14 08:30 → 11-17 08:30): Training 1: 995 trades, 75 wins, balance $5 → ~$0. Training 3: 174 trades, 8 wins, 165 stop-outs, balance → ~$0.
+- Root cause: at 50x with 80% margin, fees+slippage already cost ~4% of balance, so a −5% balance stop sits only ~0.02% from entry (above entry on coarse-tick coins → skipped). Target needs ~0.35–0.43% move. Awaiting user decision on sizing before enabling anything.

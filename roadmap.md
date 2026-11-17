@@ -34,3 +34,4 @@
 
 ## Retired requirements
 Paper Robot30-trade collection, SMC/sweep rollout, chart rollout and MTF-filter rollout are superseded by prompt-22 retirement/removal; source, prior results and financial history remain intact in project/database and chat.md. Windows/Render deployment preparation remains reference-only; Railway is the reported host. No real orders, paid resources or restriction bypasses.
+- [ ] Simulator 2 Training 3: backtest done (losing); waiting for user decision on position size vs −5% stop before enabling live
