@@ -23,7 +23,7 @@ export function TrendWatch({ tz }: { tz: string }) {
         <h2 className="flex items-center gap-2 border-b border-border px-3 py-2 text-xs uppercase tracking-widest text-muted-foreground">
           <Eye className="size-3" /> Special watch · {watched.length} of {rows.length} coins
         </h2>
-        <p className="px-3 pt-2 text-[11px] text-muted-foreground">Watched when 15m and 5m agree and 1m is sideways or the same. Only that side's 5-minute indicator signals are traded.</p>
+        <p className="px-3 pt-2 text-[11px] text-muted-foreground">Watched when 15m and 5m agree and 1m is sideways or the same. Only that side's 1-minute indicator signals are traded.</p>
         <div className="max-h-[420px] overflow-auto">
           <table className="w-full text-xs">
             <thead className="text-[10px] uppercase tracking-widest text-muted-foreground">
