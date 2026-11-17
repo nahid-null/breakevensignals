@@ -85,15 +85,17 @@ export function settleExperimental(p: ExperimentalPosition, raw: number, reason:
   const pnl=pricePnl-p.entryFee-exitFee-p.funding;
   return {...p,exitTime:time,exit,reason,pricePnl,exitFee,pnl,balanceAfter:Math.max(0,balance+pnl),slippage:p.entrySlippage+p.quantity*Math.abs(exit-raw)};
 }
+type IndexedFeed = ExperimentalFeed & { bars: Map<number,Candle>; events: Map<number,Candidate>; fundingAt: Map<number,Funding> };
+const indexCache = new WeakMap<ExperimentalFeed,IndexedFeed>();
 export function replayExperimental(feeds: ExperimentalFeed[], from: number, to: number, cfg: ExperimentalConfig, startingBalance: number, cost=EXPERIMENTAL_COST) {
-  const indexed=feeds.map(f=>({...f,bars:new Map(f.candles.map(c=>[c.time,c])),events:new Map(f.candidates.filter(c=>c.signal.direction===cfg.direction).map(c=>[c.time,c])),fundingAt:new Map(f.funding.map(x=>[x.time,x]))}));
+  const indexed=feeds.map(f=>{const saved=indexCache.get(f);if(saved)return saved;const fresh={...f,bars:new Map(f.candles.map(c=>[c.time,c])),events:new Map(f.candidates.map(c=>[c.time,c])),fundingAt:new Map(f.funding.map(x=>[x.time,x]))};indexCache.set(f,fresh);return fresh;});
   let balance=startingBalance; let peak=balance; let maxDd=0; let open: ExperimentalPosition | null=null;
   const trades: ExperimentalTrade[]=[]; const rejected: Record<string,number>={}; let candidates=0;
   const reject=(reason:string)=>{rejected[reason]=(rejected[reason]??0)+1;};
   for(let time=from;time<to;time+=MINUTE) {
     for(const f of indexed) {
       const c=f.bars.get(time); if(!c) throw new Error(`Missing ${f.symbol} ${time}`);
-      const e=f.events.get(time);
+      const found=f.events.get(time);const e=found?.signal.direction===cfg.direction?found:undefined;
       if(e){ candidates++; if(open) reject('TRADE_ALREADY_OPEN'); else { const r=experimentalPosition(e,c,f.rules,balance,cfg,cost); open=r.position; if(r.reason) reject(r.reason); } }
       if(!open || open.symbol!==f.symbol) continue;
       const p=open; const s=sign(p.direction); const funding=f.fundingAt.get(time);
