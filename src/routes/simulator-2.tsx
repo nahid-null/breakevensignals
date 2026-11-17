@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
-import { useServerFn } from '@tanstack/react-start';
+import { useHydrated, useServerFn } from '@tanstack/react-start';
 import { useState } from 'react';
 import { ArrowDownRight, ArrowUpRight, Clock3, RotateCcw, Wallet } from 'lucide-react';
 import { toast } from 'sonner';
@@ -49,6 +49,7 @@ function CandleExample({ short = false }: { short?: boolean }) {
 }
 
 function Simulator2() {
+  const hydrated = useHydrated();
   const { data, isRefetchError } = useSuspenseQuery(simulator2Options);
   const { account, trades } = data;
   const qc = useQueryClient();
@@ -70,7 +71,7 @@ function Simulator2() {
     } catch (e) { toast.error(e instanceof Error ? e.message : 'Could not update Simulator 2'); }
     finally { setBusy(false); }
   }
-  const activity = !account.enabled ? 'Paused' : status.scanner !== 'RUNNING' ? 'Waiting for live candles'
+  const activity = !hydrated ? 'Loading live status…' : !account.enabled ? 'Paused' : status.scanner !== 'RUNNING' ? 'Waiting for live candles'
     : account.pending_symbol ? `${account.pending_symbol} · ${account.pending_direction} · next candle` : 'Watching for a breakout';
   return <div className="space-y-7">
     <div className="flex flex-wrap items-end justify-between gap-4">
