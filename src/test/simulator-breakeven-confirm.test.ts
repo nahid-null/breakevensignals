@@ -85,4 +85,18 @@ describe('practice trades open only on a breakeven signal that matches the 15M/5
     await toBreakeven('LONG');
     expect(await trades()).toHaveLength(0); expect((await decision())?.reason).toBe('SIMULATOR_OFF');
   });
+  it('zero balance skips entry without inventing a trade', async () => {
+    await db.exec('update sim_account set balance=0');
+    await toBreakeven('LONG');
+    expect(await trades()).toHaveLength(0); expect((await decision())?.reason).toBe('NO_BALANCE');
+  });
+  it('a positive dust balance rounds margin to zero and rolls back the candle, unlike the old JS report', async () => {
+    await candle([ev('entry_confirmed', 'LONG')]);
+    await db.exec('SAVEPOINT dust; update sim_account set balance=0.000000005462295425681328');
+    await expect(candle([ev('breakeven_activated','LONG',{stop_loss:100,mtf_trend:{m15:1,m5:1,m1:0}})])).rejects.toThrow(/division by zero/i);
+    await db.exec('ROLLBACK TO dust');
+    expect(await trades()).toHaveLength(0);
+    expect(await decision()).toBeUndefined();
+    expect(Number((await db.query<{balance:string}>('select balance from sim_account')).rows[0]?.balance)).toBe(5);
+  });
 });

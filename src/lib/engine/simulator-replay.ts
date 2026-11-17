@@ -74,8 +74,13 @@ export function replaySimulator(feeds: ReplayFeed[], from: number, to: number, c
   let balance = '5'; let peak = dec(5); let maxDd = dec(0); let open: ReplayPosition | null = null;
   let failure: { time: number; symbol: string; tradeId: string; balance: string; reason: string } | null = null;
   const trades: ReplayTrade[] = []; const decisions: ReplayDecision[] = [];
-  const maps = feeds.map(f => ({ ...f, bars: new Map(f.candles.map(c => [c.time, c])),
-    byTime: Map.groupBy(f.events, e => e.time) }));
+  const maps = feeds.map(f => {
+    const byTime = new Map<number, ReplayEvent[]>();
+    for (const e of f.events) {
+      const group = byTime.get(e.time) ?? []; group.push(e); byTime.set(e.time, group);
+    }
+    return { ...f, bars: new Map(f.candles.map(c => [c.time, c])), byTime };
+  });
   const seen = new Set<string>();
   for (let time = from; time < to; time += 60000) {
     for (const feed of maps) {

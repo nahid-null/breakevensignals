@@ -31,7 +31,7 @@ describe('read-only Simulator report accounting',() => {
     const feeds:ReplayFeed[]=[{symbol:'NEARUSDT',tick:.01,candles,events:[event,next]}];
     const r=replaySimulator(feeds,0,120000,CURRENT_REPLAY);
     expect(r.signals).toBe(2); expect(r.executed).toBe(1); expect(r.open?.tradeId).toBe('t');
-    expect(r.skipped.TRADE_ALREADY_OPEN).toBe(1);
+    expect(r.skipped['TRADE_ALREADY_OPEN']).toBe(1);
     expect(r.closed+(r.open?1:0)+r.skippedTotal+r.errors+r.notProcessed).toBe(2);
   });
 });
