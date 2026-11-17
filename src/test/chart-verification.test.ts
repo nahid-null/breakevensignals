@@ -151,6 +151,10 @@ describe('parity page pipeline on the intact original scripts', () => {
       const rep = compareParity(nativeRows(run, d), await runPineReference(set, 'NEARUSDT', near.tickSize, d, 60_000, true));
       expect(rep.fields.filter((f) => f.pct < 100).map((f) => f.field)).toEqual([]);
       expect(rep.matches).toBe(true);
+      expect(rep.bars).toBe(700);
+      expect(rep.fields.length).toBeGreaterThan(15);
     }
+    const raw = compareParity(nativeRows(run, 'LONG'), await runPineReference(set, 'NEARUSDT', near.tickSize, 'LONG', 60_000, false));
+    expect(raw.matches).toBe(false);
   }, 120_000);
 });
