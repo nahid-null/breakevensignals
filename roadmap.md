@@ -1,5 +1,10 @@
 # Independent Crypto Signal Terminal
 
+## Current prompt-37 — independent profitability study, no live changes
+- [ ] Verify reported React diagnostic and freeze a new chronological development/validation/holdout candle window.
+- [ ] Test 10x/20x, 5%/10% margin, LONG/SHORT separately and net 1:1/1:1.5/1:2 exits with 15m Trend Identify, 5m EMA9/21 and closed-1m confirmation; include fees, slippage and exchange feasibility.
+- [ ] Reject weak samples/overfitting; save metrics, frozen selection and reproducible evidence in Files; keep current Simulator, Pine, settings/history and publication unchanged.
+
 ## Current prompt-36 — read-only Simulator audit
 - [x] Hook already imports React; automatic check OK. Separate genuine $2.10626 account/18 trades from replay; old report contained26zero-margin phantom closes+1open;37older native skip outcomes absent from saved ledger and explicitly disclosed.
 - [x] Run60fee/slippage-inclusive configurations on201600verified real candles, same Nov10 10:15→Nov17 10:15UTC;52complete/8dust failures; best completed20x/10%/net20 ends$3.28127,still negative; no alternatives applied.
