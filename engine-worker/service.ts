@@ -3,10 +3,11 @@ import { SYMBOLS, INDICATORS, type Symbol } from "../src/lib/config";
 import { initialState, ENGINE_VERSION, MINUTE, PARAMETERS, validateCandle, type EngineState, type Candle, type Analysis, type Signal } from "../src/lib/engine/model";
 import { processCandle } from "../src/lib/engine/scalper";
 import { BINANCE_WS, BinanceRequestError, binanceFetch, checkWebSocketAccess, history, delay, backoff } from "./binance";
+import { initMtf, snapshot as trendSnapshot, type MtfSnapshot } from "../src/lib/engine/mtf-trend";
 import { feedHasLiveEvidence, MESSAGE_MAX_AGE_MS, type FeedHealth } from '../src/lib/engine/feed-health';
 
 type Market = { symbol: Symbol; price: number | null; trend: string; status: string; last_candle_at: string | null;
-  long_score: number; short_score: number; error: string | null; mtf_trend?: null };
+  long_score: number; short_score: number; error: string | null; mtf_trend?: MtfSnapshot | null };
 type Checkpoint = { state: EngineState; revision: number };
 
 export class SignalService {
@@ -85,7 +86,17 @@ export class SignalService {
   private market(symbol: Symbol, state: EngineState, c: Candle, a: Analysis | null, status: string): Market {
     return { symbol, price: c.close, trend: a?.trend ?? 'WAITING', status,
       last_candle_at: new Date(c.time + MINUTE).toISOString(), long_score: a?.longScore ?? 0,
-      short_score: a?.shortScore ?? 0, error: null, mtf_trend: null };
+      short_score: a?.shortScore ?? 0, error: null, mtf_trend: state.mtf ? trendSnapshot(state.mtf) : null };
+  }
+  /** Builds the 15M/5M/1M Trend Identify state as of the close of the candle at lastTime from Binance's own candles. */
+  private async trendState(symbol: Symbol, lastTime: number) {
+    const end = lastTime + MINUTE;
+    const minutes = await history(symbol, undefined, end, this.marketAbort.signal, '1m');
+    const fives = await history(symbol, undefined, end, this.marketAbort.signal, '5m');
+    const fifteens = await history(symbol, undefined, end, this.marketAbort.signal, '15m');
+    if (this.running && !this.marketPaused) this.lastRestAt = Date.now();
+    if (fifteens.length < 200 || fives.length < 200 || minutes.length < 200) throw new Error(`${symbol}: insufficient Binance trend history`);
+    return initMtf(lastTime, minutes, fives, fifteens);
   }
   private async commit(symbol: Symbol, tentative: EngineState, market: Market, events: Signal[], mode: 'live' | 'warmup' | 'recovery') {
     if (!this.running || this.marketPaused) return;
@@ -183,6 +194,7 @@ export class SignalService {
         const state = initialState(symbol, tick);
         const first = candles[0];
         if (!first) throw new Error('Empty history');
+        state.mtf = await this.trendState(symbol, first.time - MINUTE);
         if (!this.running || this.marketPaused) return;
         let analysis: Analysis | null = null;
         for (const c of candles) analysis = processCandle(state, c).analysis;
@@ -205,6 +217,13 @@ export class SignalService {
             timestamp: new Date((t.breakevenTime ?? last.time) + MINUTE).toISOString() });
         }
         await this.commit(symbol, state, this.market(symbol, state, last, analysis, 'RECOVERING'), adopted, 'warmup');
+      }
+      const current = this.checkpoints.get(symbol);
+      if (current && !current.state.mtf && current.state.lastTime !== null) {
+        // Checkpoints saved without Trend Identify state: rebuild it at the saved candle; it is
+        // persisted atomically with the next candle commit. It never gates Pine entries.
+        current.state.mtf = await this.trendState(symbol, current.state.lastTime);
+        if (!this.running || this.marketPaused) return;
       }
       this.recovery.add(symbol);
       await this.recover(symbol, Date.now());
