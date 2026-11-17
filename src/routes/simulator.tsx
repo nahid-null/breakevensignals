@@ -119,7 +119,7 @@ function Simulator() {
         <Tile label="Equity" value={performanceReady && (!open || live !== null) ? fmtUsd(balance + (live ?? 0)) : '—'} hint={open ? 'Includes open trade' : undefined} />
         <Tile label="Today's P&L" value={trades.isSuccess ? fmtSignedUsd(today) : '—'} tone={pnlTone(today)} />
         <Tile label="Session P&L" value={performanceReady ? fmtSignedUsd(sum.totalPnl) : '—'} tone={pnlTone(sum.totalPnl)} />
-        <Tile label="Win rate" value={sum.winRate === null ? '—' : `${sum.winRate.toFixed(1)}%`} hint={`${sum.wins} won · ${sum.losses} lost`} />
+        <Tile label="Win rate" value={!performanceReady || sum.winRate === null ? '—' : `${sum.winRate.toFixed(1)}%`} hint={performanceReady ? `${sum.wins} won · ${sum.losses} lost` : undefined} />
         <Tile label="Session trades" value={performanceReady ? String(session.length) : '—'} hint={performanceReady ? `${sum.closed} closed` : undefined} />
       </section>
 

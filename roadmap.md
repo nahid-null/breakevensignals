@@ -9,6 +9,7 @@
 - [x] Add isolated rule/accounting/permission tests; verify real Binance20-feed reconnect, candle advance, durable disk recovery and restart without production fixture trades/Telegram.
 - [x] Check genuine account/history, edit/reset dialog cancellation, all remaining pages, retired404pages and desktop/mobile layout; no runtime errors or overflow.
 - [x] Update architecture, confirmed preference memory and central chat.md.
+- [x] Final request audit: all10pages,21coins LONG/SHORT/BOTH,6Simulator trades and543Pine records on desktop/phone/dark-only; fix unavailable-data figures, unify reset-session totals, mark legacy rules and saved per-feed prices. No live balance edits or new financial records.
 
 ## Blocking follow-up
 - [ ] User chooses Publish→Invite only and names themselves; current site isPUBLIC. Verify actual hosted privacy and implement secure hosted account authorization before unlocking deposit/pause/edit/reset. Controls currently localhost-only; visibility change alone does not unlock them.
