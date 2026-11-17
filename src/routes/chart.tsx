@@ -24,7 +24,7 @@ import { cn } from '@/lib/utils';
 const TradingChart = lazy(() => import('@/components/chart/TradingChart'));
 const TITLE = 'Chart & Robot Verification — Crypto Signal Terminal';
 const DESC = 'Live Binance futures candles with your Pine indicator, Smart Money structure and the Paper Robot\'s real trades and decisions on one chart, plus bar replay.';
-const search = z.object({ symbol: z.string().catch('NEARUSDT'), tf: z.string().catch('1m') });
+const search = z.object({ symbol: z.string().optional().catch(undefined), tf: z.string().optional().catch(undefined) });
 
 export const Route = createFileRoute('/chart')({
   validateSearch: (s) => search.parse(s),
@@ -41,8 +41,8 @@ const decimals = (tick: number) => Math.max(0, Math.min(8, Math.round(-Math.log1
 
 function ChartPage() {
   const s = Route.useSearch(); const nav = Route.useNavigate();
-  const symbol = CHART_SYMBOLS.includes(s.symbol) ? s.symbol : 'NEARUSDT';
-  const tf: TimeframeId = isTimeframe(s.tf) ? s.tf : '1m'; const ms = tfMs(tf);
+  const symbol = s.symbol && CHART_SYMBOLS.includes(s.symbol) ? s.symbol : 'NEARUSDT';
+  const tf: TimeframeId = s.tf && isTimeframe(s.tf) ? s.tf : '1m'; const ms = tfMs(tf);
   const [mode, setMode] = useState<'live' | 'replay'>('live');
   const [replayAt, setReplayAt] = useState(''); const [replayKey, setReplayKey] = useState(0);
   const [data, setData] = useState<{ bars: Candle[]; tick: number; key: string } | null>(null);

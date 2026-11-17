@@ -20,7 +20,7 @@ export function parseKline(row: unknown): Candle | null {
 }
 
 async function getJson(url: string, signal?: AbortSignal): Promise<unknown> {
-  const res = await fetch(url, { signal });
+  const res = await fetch(url, signal ? { signal } : {});
   if (res.status === 451 || res.status === 403) throw new MarketDataError('Binance refused market data from this location (HTTP ' + res.status + ').');
   if (res.status === 418 || res.status === 429) throw new MarketDataError('Binance rate limit reached. Wait a minute and try again.');
   const body = await res.json().catch(() => null);

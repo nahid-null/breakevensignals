@@ -1,6 +1,7 @@
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
 import type { TerminalStats } from './engine/stats';
+import type { Json } from '@/integrations/supabase/types';
 
 /**
  * Dashboard reads. Browsers no longer read the database directly; these run on the server,
@@ -48,7 +49,7 @@ export const readRobotBacktests = get.handler(async () => must(await (await db()
 const decisionWindow = z.object({ symbol: z.string().regex(/^[A-Z0-9]{2,20}USDT$/), from: z.number().int().positive(), to: z.number().int().positive() })
   .refine((v) => v.to > v.from && v.to - v.from <= 8 * 86_400_000, 'Window must be positive and at most 8 days');
 export const readRobotDecisionsFor = createServerFn({ method: 'GET' }).inputValidator((v: unknown) => decisionWindow.parse(v)).handler(async ({ data }) => {
-  const client = await db(); const rows: { candle_time: string; direction: string; phase: string; decision: string; reason: string; score: number | null; strategy: string; evidence: unknown }[] = [];
+  const client = await db(); const rows: { candle_time: string; direction: string; phase: string; decision: string; reason: string; score: number | null; strategy: string; evidence: Json | null }[] = [];
   for (let page = 0; page < 4; page++) {
     const r = must(await client.from('robot_decisions').select('candle_time,direction,phase,decision,reason,score,strategy,evidence')
       .eq('symbol', data.symbol).gte('candle_time', new Date(data.from).toISOString()).lte('candle_time', new Date(data.to).toISOString())
