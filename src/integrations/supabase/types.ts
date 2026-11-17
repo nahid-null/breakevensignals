@@ -979,6 +979,7 @@ export type Database = {
           balance: number
           enabled: boolean
           id: number
+          session_started_at: string
           total_deposited: number
           updated_at: string
         }
@@ -986,6 +987,7 @@ export type Database = {
           balance?: number
           enabled?: boolean
           id: number
+          session_started_at?: string
           total_deposited?: number
           updated_at?: string
         }
@@ -993,8 +995,33 @@ export type Database = {
           balance?: number
           enabled?: boolean
           id?: number
+          session_started_at?: string
           total_deposited?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      sim_balance_events: {
+        Row: {
+          balance_after: number
+          balance_before: number
+          created_at: string
+          id: string
+          kind: string
+        }
+        Insert: {
+          balance_after: number
+          balance_before: number
+          created_at?: string
+          id?: string
+          kind: string
+        }
+        Update: {
+          balance_after?: number
+          balance_before?: number
+          created_at?: string
+          id?: string
+          kind?: string
         }
         Relationships: []
       }
@@ -1042,11 +1069,14 @@ export type Database = {
           opened_at: string
           pnl: number | null
           quantity: number
+          rule_version: string
+          slippage_price: number
           status: string
           stop_loss: number
           strength: string
           symbol: string
           take_profit: number
+          target_net_roi_pct: number | null
           trade_id: string
         }
         Insert: {
@@ -1071,11 +1101,14 @@ export type Database = {
           opened_at: string
           pnl?: number | null
           quantity: number
+          rule_version?: string
+          slippage_price?: number
           status?: string
           stop_loss: number
           strength: string
           symbol: string
           take_profit: number
+          target_net_roi_pct?: number | null
           trade_id: string
         }
         Update: {
@@ -1100,11 +1133,14 @@ export type Database = {
           opened_at?: string
           pnl?: number | null
           quantity?: number
+          rule_version?: string
+          slippage_price?: number
           status?: string
           stop_loss?: number
           strength?: string
           symbol?: string
           take_profit?: number
+          target_net_roi_pct?: number | null
           trade_id?: string
         }
         Relationships: []
@@ -1256,7 +1292,21 @@ export type Database = {
         Returns: undefined
       }
       robot_resume: { Args: never; Returns: undefined }
+      sim_change_balance: {
+        Args: { new_balance: number; restart: boolean }
+        Returns: Json
+      }
       sim_deposit: { Args: { amount: number }; Returns: Json }
+      sim_finish_trade: {
+        Args: {
+          notify_result: boolean
+          px: number
+          reason: string
+          trade_uuid: string
+          ts: string
+        }
+        Returns: undefined
+      }
       sim_set_enabled: { Args: { on_off: boolean }; Returns: undefined }
       simulate_engine_candle: { Args: { p: Json }; Returns: undefined }
       stop_engine: { Args: { p_instance: string }; Returns: boolean }
