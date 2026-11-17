@@ -1,10 +1,11 @@
 import { createServerFn } from '@tanstack/react-start';
+import { z } from 'zod';
 import type { TerminalStats } from './engine/stats';
 
 /**
  * Dashboard reads. Browsers no longer read the database directly; these run on the server,
  * which is reachable only through the private (sign-in protected) published site.
- * Read-only, fixed queries — no caller-supplied filters.
+ * Read-only, fixed queries; the chart reads take only a validated coin symbol and a bounded time window.
  */
 async function db() {
   const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
@@ -39,3 +40,25 @@ export const readRobotScanner = get.handler(async () => must(await (await db()).
 export const readRobotRuntime = get.handler(async () => must(await (await db()).from('robot_runtime').select('*').eq('id', 1).maybeSingle()));
 export const readRobotDecisions = get.handler(async () => must(await (await db()).from('robot_decisions').select('*').order('received_at', { ascending: false }).limit(240)));
 export const readRobotBacktests = get.handler(async () => must(await (await db()).from('robot_backtests').select('*').order('created_at', { ascending: false }).limit(10)));
+
+/**
+ * Chart: one coin's robot decisions in a bounded time window (newest first, max 4000 rows).
+ * Read-only; the only caller inputs are a validated symbol and a window of at most 8 days.
+ */
+const decisionWindow = z.object({ symbol: z.string().regex(/^[A-Z0-9]{2,20}USDT$/), from: z.number().int().positive(), to: z.number().int().positive() })
+  .refine((v) => v.to > v.from && v.to - v.from <= 8 * 86_400_000, 'Window must be positive and at most 8 days');
+export const readRobotDecisionsFor = createServerFn({ method: 'GET' }).inputValidator((v: unknown) => decisionWindow.parse(v)).handler(async ({ data }) => {
+  const client = await db(); const rows: { candle_time: string; direction: string; phase: string; decision: string; reason: string; score: number | null; strategy: string; evidence: unknown }[] = [];
+  for (let page = 0; page < 4; page++) {
+    const r = must(await client.from('robot_decisions').select('candle_time,direction,phase,decision,reason,score,strategy,evidence')
+      .eq('symbol', data.symbol).gte('candle_time', new Date(data.from).toISOString()).lte('candle_time', new Date(data.to).toISOString())
+      .order('candle_time', { ascending: false }).range(page * 1000, page * 1000 + 999));
+    rows.push(...(r ?? []));
+    if ((r ?? []).length < 1000) break;
+  }
+  return rows;
+});
+/** Chart: one coin's Pine-engine signal events (live worker history), newest first. */
+export const readSignalEventsFor = createServerFn({ method: 'GET' }).inputValidator((v: unknown) => z.object({ symbol: z.string().regex(/^[A-Z0-9]{2,20}USDT$/) }).parse(v))
+  .handler(async ({ data }) => must(await (await db()).from('signal_events').select('event_type,direction,timestamp,entry_price,stop_loss,take_profit,exit_price,trade_id,source')
+    .eq('symbol', data.symbol).order('timestamp', { ascending: false }).limit(1000)));
