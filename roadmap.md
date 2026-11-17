@@ -1,5 +1,11 @@
 # Independent Crypto Signal Terminal
 
+## Current prompt-25 — Simulator 2
+- [ ] Add independent 1m candle-breakout practice account: 50x, 80% margin, 10% net balance target, 5% modeled balance risk and one-candle exit; leave existing Simulator/Pine/Telegram unchanged.
+- [ ] Reset Simulator 2 to $5 and empty its visible session history without deleting financial audit records; retain hosted control security.
+- [ ] Verify isolated settlement/reset/replay/permission rules and desktop/current/phone navigation; update central notes.
+- [ ] Observe a genuine hosted Simulator 2 result after publication; no synthetic hosted trades.
+
 ## Current prompt-23 verification and reset
 - [x] Reopen affected pages through navigation at1280/602/390 in dark theme: all21coins BOTH/LONG/SHORT/search, all7practice records,544completedPinepositions,86Telegramreceipts, both500barlocalparityreports, reset confirmation/cancel and downloadable verification. Published reset remains locked; published daily P&L uses old source and awaits republishing.
 - [x] Verify removal of the added trend gate, original LONG/SHORT parity, current hosted feed count and why fewer alerts appear: 20/20 fresh feeds, all saved MTF fields null, four native entries since worker restart; one genuine50x UNI practice trade, no new breakeven yet.
