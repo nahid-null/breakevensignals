@@ -39,10 +39,11 @@ function Dashboard() {
   const trades = useSimTrades();
   const tz = settings.data?.display_timezone ?? "UTC";
   const sig = sentSignalSummary(logs.data ?? [], events.data ?? []);
-  const sim = simSummary(simSessionTrades(trades.data ?? [], account.data?.session_started_at));
+  const session = simSessionTrades(trades.data ?? [], account.data?.session_started_at);
+  const sim = simSummary(session);
   const signalsReady = logs.isSuccess && events.isSuccess;
   const simReady = trades.isSuccess && account.isSuccess && account.data !== null;
-  const today = todayPnl(trades.data ?? [], new Date(), tz);
+  const today = todayPnl(session, new Date(), tz);
   const open = trades.data?.find((t) => t.status === 'OPEN');
   const statuses: [string, string][] = [["System", s.system], ["Cloud", s.cloud], ["Scanner", s.scanner], ["Binance", s.binance], ["WebSocket", s.websocket], ["Telegram", s.telegram]];
 
@@ -88,7 +89,7 @@ function Dashboard() {
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           <Tile label="Balance" value={fmtUsd(account.data?.balance)} />
-          <Tile label="Today's P&L" value={trades.isSuccess ? fmtSignedUsd(today) : '—'} tone={today > 0 ? 'text-long' : today < 0 ? 'text-short' : undefined} />
+          <Tile label="Today's P&L" value={simReady ? fmtSignedUsd(today) : '—'} tone={today > 0 ? 'text-long' : today < 0 ? 'text-short' : undefined} />
           <Tile label="Session P&L" value={simReady ? fmtSignedUsd(sim.totalPnl) : '—'} tone={sim.totalPnl > 0 ? 'text-long' : sim.totalPnl < 0 ? 'text-short' : undefined} />
           <Tile label="Win rate" value={!simReady || sim.winRate === null ? '—' : `${sim.winRate.toFixed(1)}%`} hint={simReady ? `${sim.closed} closed session trades` : undefined} />
           <Tile label="Open trade" value={!simReady ? '—' : open ? `${open.symbol.replace('USDT', '')} ${open.direction}` : 'None'} tone={open ? (open.direction === 'LONG' ? 'text-long' : 'text-short') : 'text-muted-foreground'} hint={open ? `${open.leverage}x · ${open.rule_version === 'LEGACY' ? 'previous rules' : 'Pine'}` : undefined} />

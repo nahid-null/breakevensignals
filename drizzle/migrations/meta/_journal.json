@@ -176,6 +176,13 @@
       "when": 1794891588546,
       "tag": "0024_retired_robot_resume_guard",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1794893431622,
+      "tag": "0025_simulator_restart_defaults",
+      "breakpoints": true
     }
   ]
 }
