@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import { Activity, BookOpen, History, Send, Settings, HeartPulse, List, Wallet, LineChart, ChevronDown, Bot, Radar, FlaskConical } from "lucide-react";
+import { Activity, BookOpen, History, Send, Settings, HeartPulse, List, Wallet, LineChart, ChevronDown, Bot, Radar, FlaskConical, CandlestickChart, GitCompare } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useRealtimeSync, useStatuses, fmtTime } from "@/lib/data";
 import { StatusBadge } from "./StatusBadge";
@@ -9,10 +9,10 @@ const NAV = [
   { to: "/", label: "Dashboard", icon: Activity },
   { to: "/simulator", label: "Simulator", icon: Wallet },
   { to: "/robot", label: "Paper Robot", icon: Bot },
+  { to: "/chart", label: "Chart", icon: CandlestickChart },
 ] as const;
 const MORE = [
   { to: "/robot-coins", label: "Robot Coins", icon: Radar },
-  { to: "/chart", label: "Chart & Verify", icon: CandlestickChart },
   { to: "/parity", label: "Parity Report", icon: GitCompare },
   { to: "/robot-backtest", label: "Robot Backtest", icon: FlaskConical },
   { to: "/markets", label: "Coin Monitor", icon: LineChart },

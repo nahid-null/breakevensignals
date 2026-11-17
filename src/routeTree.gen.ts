@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ChartRouteImport } from './routes/chart'
 import { Route as HealthRouteImport } from './routes/health'
 import { Route as MarketsRouteImport } from './routes/markets'
 import { Route as PositionsRouteImport } from './routes/positions'
@@ -27,6 +28,11 @@ import { Route as ApiPublicTradingviewWebhookRouteImport } from './routes/api/pu
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChartRoute = ChartRouteImport.update({
+  id: '/chart',
+  path: '/chart',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HealthRoute = HealthRouteImport.update({
@@ -98,6 +104,7 @@ const ApiPublicTradingviewWebhookRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/chart': typeof ChartRoute
   '/health': typeof HealthRoute
   '/markets': typeof MarketsRoute
   '/positions': typeof PositionsRoute
@@ -114,6 +121,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/chart': typeof ChartRoute
   '/health': typeof HealthRoute
   '/markets': typeof MarketsRoute
   '/positions': typeof PositionsRoute
@@ -131,6 +139,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/chart': typeof ChartRoute
   '/health': typeof HealthRoute
   '/markets': typeof MarketsRoute
   '/positions': typeof PositionsRoute
@@ -149,6 +158,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/chart'
     | '/health'
     | '/markets'
     | '/positions'
@@ -165,6 +175,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/chart'
     | '/health'
     | '/markets'
     | '/positions'
@@ -181,6 +192,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/chart'
     | '/health'
     | '/markets'
     | '/positions'
@@ -198,6 +210,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ChartRoute: typeof ChartRoute
   HealthRoute: typeof HealthRoute
   MarketsRoute: typeof MarketsRoute
   PositionsRoute: typeof PositionsRoute
@@ -220,6 +233,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/chart': {
+      id: '/chart'
+      path: '/chart'
+      fullPath: '/chart'
+      preLoaderRoute: typeof ChartRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/health': {
@@ -318,6 +338,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ChartRoute: ChartRoute,
   HealthRoute: HealthRoute,
   MarketsRoute: MarketsRoute,
   PositionsRoute: PositionsRoute,
