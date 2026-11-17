@@ -1,0 +1,24 @@
+{
+  "study": "prompt-38-entry-quality-v1",
+  "registeredBeforeRuleEvaluation": "2026-11-17T11:15:06Z",
+  "development": { "from": "2026-09-01T00:00:00Z", "to": "2026-10-13T00:00:00Z", "note": "Already exposed in prompt-37; used for loss diagnosis and one development check only." },
+  "holdout": { "from": "2026-10-13T00:00:00Z", "to": "2026-11-10T00:00:00Z", "note": "Never evaluated by any earlier study; evaluated exactly once after this file is saved." },
+  "coins": "Configured symbols currently TRADING on Binance USD-M (WILD unavailable).",
+  "costs": { "feePerSide": 0.0005, "slippageBps": 5, "slippageTicks": 1, "fillTiming": "next 1m open after the confirming candle closes; stop first on ambiguous bars; gap fills at open" },
+  "singleCandidateRule": {
+    "setup": "Original unaltered Pine entry_confirmed event (LONG or SHORT). Breakout level L = signal candle close. No entry at the signal itself.",
+    "noChase": "Within the next 15 one-minute candles, if price travels more than 1.0 original Pine risk beyond L before a retest, the setup is abandoned (missed move, never chased).",
+    "invalidation": "Abandon if any candle closes beyond the original Pine stop, or no confirmation within 15 candles.",
+    "retest": "A candle whose adverse extreme returns to within 0.10 ATR of L (LONG low <= L+0.1ATR; SHORT high >= L-0.1ATR).",
+    "rejectionConfirmation": "On the retest candle or a later candle in the window, a candle closes in the trade direction (body with direction) and back beyond L and beyond EMA9.",
+    "momentumAndTrend": "At the confirming close: completed 15m Trend Identify equals direction (sideways/opposite skipped); completed 5m EMA9 vs EMA21 agrees; 1m close beyond EMA200; RSI 50-70 LONG / 30-50 SHORT; MACD histogram in direction; candle volume >= 20-candle average.",
+    "extensionGuard": "Skip if the confirming close is more than 1.5 ATR beyond 1m EMA21.",
+    "structureStop": "Beyond the lowest low (LONG) / highest high (SHORT) since the signal candle, buffered 0.15 ATR.",
+    "costGate": "Skip if structure stop distance is below 0.40% of price (round-trip costs would exceed about a third of the risk).",
+    "roomGate": "Skip if the prior 240-candle opposing extreme lies beyond entry but within 1.0R (target blocked by nearby resistance/support).",
+    "target": "1.5R net after modeled entry/exit fees and slippage; maximum hold 240 candles, then exit at close.",
+    "portfolio": "One open trade at a time across all coins per account; earlier time then configured coin order breaks ties. Account risks 1% of equity per trade at a 000 reference balance; separately report whether  meets Binance minimum notional."
+  },
+  "acceptance": "Positive in BOTH periods: development mean net R > 0 and holdout mean net R > 0, holdout >= 100 trades, holdout profit factor >= 1.10, 95% UTC-day block-bootstrap lower bound of holdout mean net R > 0. Otherwise reported as not proven; no live change recommended. No thresholds may be changed after holdout results are read.",
+  "liveImpact": "None. Offline only; no Simulator, settings, history, Telegram or publish changes."
+}
