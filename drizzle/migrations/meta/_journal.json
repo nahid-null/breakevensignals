@@ -232,6 +232,27 @@
       "when": 1794929120076,
       "tag": "0032_simulator_no_trend_24h_exit",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1794929959617,
+      "tag": "0033_simulator_trend_back_two_slots",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1794930043238,
+      "tag": "0034_simulator_open_trade_per_coin",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1794930222625,
+      "tag": "0035_simulator_free_balance_guard",
+      "breakpoints": true
     }
   ]
 }

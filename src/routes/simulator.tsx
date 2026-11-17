@@ -21,9 +21,9 @@ export const Route = createFileRoute("/simulator")({
   head: () => ({
     meta: [
       { title: "Simulator Trading — Crypto Signal Terminal" },
-      { name: "description", content: "Practice trades on original 1-minute Pine LONG/SHORT entries with no trend filter, at 50x with 20% of balance, no stop loss and a +25% margin target." },
+      { name: "description", content: "Practice trades on original 1-minute Pine LONG/SHORT entries that match the 15m/5m trend, up to 2 at a time, at 50x with 20% of balance, no stop loss and a +25% margin target." },
       { property: "og:title", content: "Simulator Trading — Crypto Signal Terminal" },
-      { property: "og:description", content: "1-minute Pine entries with no trend filter, 50x, 20% margin, +25% target or 24h close, cross margin." },
+      { property: "og:description", content: "1-minute Pine entries filtered by the 15m/5m/1m trend, 2 slots, 50x, 20% margin, +25% target or 24h close, cross margin." },
       { property: 'og:type', content: 'website' },
       { name: 'twitter:card', content: 'summary_large_image' },
     ],
@@ -63,12 +63,17 @@ function Simulator() {
   const [edit, setEdit] = useState<'EDIT' | 'RESET' | null>(null);
   const [newBalance, setNewBalance] = useState('');
   const list = trades.data ?? [];
-  const open = list.find((t) => t.status === 'OPEN');
+  const opens = list.filter((t) => t.status === 'OPEN');
+  const open = opens[0];
   const closed = list.filter((t) => t.status === 'CLOSED');
-  const market = open ? markets.data?.find((m) => m.symbol === open.symbol) : undefined;
-  const feed = contractFeedStatus(market, status.health, status.healthQuery.isError || markets.isError);
-  const price = Number(market?.price ?? NaN);
-  const live = open && Number.isFinite(price) ? unrealizedPnl(open, price) : null;
+  const view = opens.map((o) => {
+    const market = markets.data?.find((m) => m.symbol === o.symbol);
+    const feed = contractFeedStatus(market, status.health, status.healthQuery.isError || markets.isError);
+    const price = Number(market?.price ?? NaN);
+    return { o, market, feed, price, live: Number.isFinite(price) ? unrealizedPnl(o, price) : null };
+  });
+  // prompt-42: equity includes every open slot; unknown when any open price is missing.
+  const live = view.length === 0 ? null : view.some((v) => v.live === null) ? null : view.reduce((a, v) => a + (v.live ?? 0), 0);
   const session = simSessionTrades(list, account.data?.session_started_at);
   const sum = simSummary(session);
   const today = todayPnl(session, new Date(), tz);
@@ -138,38 +143,41 @@ function Simulator() {
             <Button variant="outline" disabled={busy || !!open || !account.data || !controlsAllowed} onClick={() => { setNewBalance(balance.toFixed(2)); setEdit('EDIT'); }}><Pencil className="size-4" /> Edit balance</Button>
             <Button variant="outline" disabled={busy || !!open || !account.data || !controlsAllowed} onClick={() => setEdit('RESET')}><RotateCcw className="size-4" /> Restart simulator</Button>
           </div>
-          {open && <p className="text-xs text-waiting">Balance changes are locked until the open trade finishes.</p>}
+          {open && <p className="text-xs text-waiting">Balance changes are locked until open trades finish.</p>}
           {access.data && !controlsAllowed && <p className="text-xs text-waiting">Account controls locked: private access has not been verified.</p>}
           <dl className="grid grid-cols-2 gap-x-3 gap-y-2 border-t border-border pt-3 text-xs">
             <dt className="text-muted-foreground">New trade leverage</dt><dd className="font-mono">{SIM_RULES.leverage}x</dd>
             <dt className="text-muted-foreground">Allocated margin</dt><dd className="font-mono">{SIM_RULES.marginShare * 100}% of balance</dd>
             <dt className="text-muted-foreground">Signals</dt><dd>LONG/SHORT indicators on 1m chart</dd>
             <dt className="text-muted-foreground">Entry</dt><dd>Indicator entry price</dd>
-            <dt className="text-muted-foreground">Trend filter</dt><dd>None — every signal is used</dd>
+            <dt className="text-muted-foreground">Trend filter</dt><dd>15m = 5m = side; 1m sideways or same</dd>
             <dt className="text-muted-foreground">Max time open</dt><dd>24 hours, then closed at market</dd>
             <dt className="text-muted-foreground">Take profit</dt><dd>+25% of margin after fees</dd>
             <dt className="text-muted-foreground">Stop loss</dt><dd>None — cross margin (whole balance backs the trade)</dd>
             <dt className="text-muted-foreground">Telegram</dt><dd>Trade results only</dd>
             <dt className="text-muted-foreground">Costs</dt><dd>{SIM_RULES.feePercent}% per side + 1 tick per side</dd>
-            <dt className="text-muted-foreground">Concurrent trades</dt><dd>1</dd>
+            <dt className="text-muted-foreground">Concurrent trades</dt><dd>Up to 2 (one per coin), 20% each</dd>
           </dl>
         </div>
         <div className="space-y-3 border border-border bg-card/40 p-4">
-          <h2 className="text-xs uppercase tracking-widest text-muted-foreground">Open position</h2>
+          <h2 className="text-xs uppercase tracking-widest text-muted-foreground">Open positions · {opens.length} of 2 slots</h2>
           {open && <SavedMarketNotice />}
-          {!performanceReady ? <p className="text-sm text-muted-foreground">{account.isError || trades.isError ? 'Could not load practice account or trades.' : 'Loading practice account…'}</p> : !open ? <p className="text-sm text-muted-foreground">{!account.data?.enabled ? 'Paused — no new practice entries.' : balance > 0 ? 'Waiting for a 1-minute indicator signal on a specially watched coin.' : 'Practice balance is zero.'}</p> : (
-            <div className="grid grid-cols-2 gap-x-6 gap-y-2 font-mono text-sm sm:grid-cols-3">
+          {!performanceReady ? <p className="text-sm text-muted-foreground">{account.isError || trades.isError ? 'Could not load practice account or trades.' : 'Loading practice account…'}</p> : !open ? <p className="text-sm text-muted-foreground">{!account.data?.enabled ? 'Paused — no new practice entries.' : balance > 0 ? 'Waiting for a 1-minute indicator signal that matches the trend.' : 'Practice balance is zero.'}</p> : (
+            <div className="space-y-4">{view.map(({ o: open, market, feed, price, live }) => (
+            <div key={open.trade_id} className="grid grid-cols-2 gap-x-6 gap-y-2 border-t border-border/50 pt-3 font-mono text-sm first:border-t-0 first:pt-0 sm:grid-cols-3">
               <div><div className="text-[10px] text-muted-foreground">COIN</div>{open.symbol}</div>
               <div><div className="text-[10px] text-muted-foreground">SIDE</div><StatusBadge value={open.direction} /></div>
               <div><div className="text-[10px] text-muted-foreground">LEVERAGE</div>{open.leverage}x · {open.rule_version === 'PINE1_CROSS' ? '1M PINE · CROSS' : open.rule_version === 'PINE5_TREND' ? '5M PINE + TREND' : open.rule_version === 'PINE_BE_TREND' ? 'BE + TREND' : open.rule_version === 'LEGACY' ? 'PREVIOUS RULES' : 'PINE'}</div>
               <div><div className="text-[10px] text-muted-foreground">MARGIN</div>{fmtUsd(open.margin)}</div>
               <div><div className="text-[10px] text-muted-foreground">ENTRY</div>{fmtPrice(open.entry_price)}</div>
               <div><div className="text-[10px] text-muted-foreground">PRICE · {feed === 'LIVE' ? 'LIVE' : 'LAST SAVED'}</div>{Number.isFinite(price) ? fmtPrice(price) : '—'}{feed !== 'LIVE' && <div className="text-[10px] text-waiting">{feed} · {fmtTime(market?.last_candle_at, tz)}</div>}</div>
-              <div><div className="text-[10px] text-muted-foreground">STOP LOSS</div><span className={open.breakeven ? 'text-breakeven' : 'text-short'}>{fmtPrice(open.stop_loss)}</span></div>
+              <div><div className="text-[10px] text-muted-foreground">STOP LOSS</div>{open.rule_version === 'PINE1_CROSS' ? <span className="text-muted-foreground">None</span> : <span className={open.breakeven ? 'text-breakeven' : 'text-short'}>{fmtPrice(open.stop_loss)}</span>}</div>
+
               <div><div className="text-[10px] text-muted-foreground">TAKE PROFIT</div><span className="text-long">{fmtPrice(open.take_profit)}</span></div>
               <div><div className="text-[10px] text-muted-foreground">LIQUIDATION</div>{Number(open.liquidation_price).toPrecision(6)}</div>
               <div className="col-span-2 sm:col-span-3"><div className="text-[10px] text-muted-foreground">UNREALIZED P&L (LAST SAVED PRICE)</div><span className={cn('text-lg', pnlTone(live))}>{fmtSignedUsd(live)}</span></div>
             </div>
+            ))}</div>
           )}
         </div>
       </section>

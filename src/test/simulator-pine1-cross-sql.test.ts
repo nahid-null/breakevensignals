@@ -51,9 +51,11 @@ describe('prompt-40 Simulator: 1m Pine entries, trend gate, 50x, 20% margin, no 
     await enter('LONG', bias('LONG'), { timeframe: '5' });
     expect(await trades()).toHaveLength(0);
   });
-  it('prompt-41: no trend filter — a LONG against the trend and with no reading still opens', async () => {
-    await enter('LONG', { m15: -1, m5: -1, m1: -1 });
-    expect(await trades()).toHaveLength(1);
+  it('prompt-42: trend filter back — 1m against the trend or 15m/5m disagreeing is skipped', async () => {
+    await enter('LONG', bias('LONG', -1));
+    await enter('LONG', { m15: 1, m5: -1, m1: 0 }, {}, 't2');
+    expect(await trades()).toHaveLength(0);
+    expect((await decision())?.reason).toBe('ONE_MINUTE_OPPOSITE');
   });
   it('prompt-41: a trade is closed at market after 24 hours', async () => {
     await enter('LONG');
@@ -64,9 +66,17 @@ describe('prompt-40 Simulator: 1m Pine entries, trend gate, 50x, 20% margin, no 
     const t = (await trades())[0]!; expect(t.status).toBe('CLOSED'); expect(t.exit_reason).toBe('TIME_EXIT'); expect(Number(t.exit_price)).toBe(99.5);
     expect((await messages())[0]).toContain('Closed after 24 hours');
   });
-  it('only one trade at a time', async () => {
+  it('prompt-42: two trades at once on different coins, each 20% of balance; a third is skipped', async () => {
+    await enter('LONG');
+    await candle([{ ...ev('entry_confirmed', 'LONG', { mtf_trend: bias('LONG'), symbol: 'LINKUSDT' }, 't2') }]);
+    await candle([{ ...ev('entry_confirmed', 'LONG', { mtf_trend: bias('LONG'), symbol: 'SUIUSDT' }, 't3') }]);
+    const open = (await trades()).filter((t) => t.status === 'OPEN');
+    expect(open).toHaveLength(2); expect(open.map((t) => Number(t.margin))).toEqual([2, 2]);
+    expect((await decision('t3'))?.reason).toBe('BOTH_SLOTS_IN_USE');
+  });
+  it('prompt-42: never two trades on the same coin', async () => {
     await enter('LONG'); await enter('LONG', bias('LONG'), {}, 't2');
-    expect(await trades()).toHaveLength(1); expect((await decision('t2'))?.reason).toBe('TRADE_ALREADY_OPEN');
+    expect(await trades()).toHaveLength(1); expect((await decision('t2'))?.reason).toBe('COIN_ALREADY_OPEN');
   });
   it('a 5% move against the trade and a Pine stop event do not close it', async () => {
     await enter('LONG');

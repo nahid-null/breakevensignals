@@ -277,3 +277,8 @@
 ## prompt-41 (2026-11-17)
 - Trend filter removed (migration 0032): every 1m Pine entry is taken; a trade closes at +25% margin or at market after 24h (TIME_EXIT, "Closed after 24 hours"). Special-watch trend table removed from the Simulator page.
 - 7-day replay: 16 trades, 12 TP, 3 closed after 24h at a loss, 1 liquidated → $10 → $0.
+
+## prompt-42 (2026-11-17)
+- Trend filter restored; up to 2 open trades (one per coin, unique index per symbol), each 20% of balance; a loss never uses the other slot's margin; free-balance guard. 24h close kept. Both open trades shown on Simulator and Dashboard.
+- 7-day replay: 6 trades, 2 TP, 2 closed at 24h, 2 liquidated → $10 → $0.
+- Live trend readings still need the Railway scanner redeployed (online scanner sends none, so signals show "Trend not ready").

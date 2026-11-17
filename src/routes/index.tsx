@@ -46,7 +46,8 @@ function Dashboard() {
   const resultsReady = logs.isSuccess && trades.isSuccess;
   const simReady = trades.isSuccess && account.isSuccess && account.data !== null;
   const today = todayPnl(session, new Date(), tz);
-  const open = trades.data?.find((t) => t.status === 'OPEN');
+  const openList = trades.data?.filter((t) => t.status === 'OPEN') ?? [];
+  const open = openList[0];
   const statuses: [string, string][] = [["System", s.system], ["Cloud", s.cloud], ["Scanner", s.scanner], ["Binance", s.binance], ["WebSocket", s.websocket], ["Telegram", s.telegram]];
 
   return (
@@ -92,7 +93,7 @@ function Dashboard() {
           <Tile label="Today's P&L" value={simReady ? fmtSignedUsd(today) : '—'} tone={today > 0 ? 'text-long' : today < 0 ? 'text-short' : undefined} />
           <Tile label="Session P&L" value={simReady ? fmtSignedUsd(sim.totalPnl) : '—'} tone={sim.totalPnl > 0 ? 'text-long' : sim.totalPnl < 0 ? 'text-short' : undefined} />
           <Tile label="Win rate" value={!simReady || sim.winRate === null ? '—' : `${sim.winRate.toFixed(1)}%`} hint={simReady ? `${sim.closed} closed session trades` : undefined} />
-          <Tile label="Open trade" value={!simReady ? '—' : open ? `${open.symbol.replace('USDT', '')} ${open.direction}` : 'None'} tone={open ? (open.direction === 'LONG' ? 'text-long' : 'text-short') : 'text-muted-foreground'} hint={open ? `${open.leverage}x · ${open.rule_version === 'LEGACY' ? 'previous rules' : open.rule_version === 'PINE1_CROSS' ? '1m Pine · cross margin' : open.rule_version === 'PINE5_TREND' ? '5m Pine + trend' : 'Pine'}` : undefined} />
+          <Tile label={openList.length > 1 ? `Open trades (${openList.length})` : "Open trade"} value={!simReady ? '—' : open ? openList.map((t) => `${t.symbol.replace('USDT', '')} ${t.direction}`).join(' · ') : 'None'} tone={open ? (open.direction === 'LONG' ? 'text-long' : 'text-short') : 'text-muted-foreground'} hint={open ? `${open.leverage}x · ${open.rule_version === 'LEGACY' ? 'previous rules' : open.rule_version === 'PINE1_CROSS' ? '1m Pine · cross margin' : open.rule_version === 'PINE5_TREND' ? '5m Pine + trend' : 'Pine'}` : undefined} />
         </div>
       </section>
     </div>

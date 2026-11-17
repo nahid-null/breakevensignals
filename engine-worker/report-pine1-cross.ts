@@ -47,24 +47,26 @@ for (const symbol of SYMBOLS) {
   candles.set(symbol, map); events.set(symbol, ev);
   console.error(`${symbol}: ${bars.length} candles`);
 }
-let balance = new Decimal(PINE1.startBalance); let peak = balance; let maxDd = new Decimal(0); let open: Pine1Position | null = null;
+let balance = new Decimal(PINE1.startBalance); let peak = balance; let maxDd = new Decimal(0); let opens: Pine1Position[] = [];
 let maxOpenMin = 0;
 const trades: Pine1Trade[] = []; const decisions: { time: string; symbol: string; side: string; trend: unknown; decision: string }[] = [];
-const close = (reason: Pine1Trade['reason'], t: number, px?: number) => {
-  const done = closePine1(open!, reason, t, balance, px); trades.push(done); balance = new Decimal(done.balanceAfter);
-  peak = Decimal.max(peak, balance); maxDd = Decimal.max(maxDd, peak.minus(balance).div(peak).mul(100)); open = null;
+const close = (open: Pine1Position, reason: Pine1Trade['reason'], t: number, px?: number) => {
+  const other = opens.filter((o) => o !== open).reduce((a, o) => a.plus(o.margin), new Decimal(0));
+  const done = closePine1(open, reason, t, balance, px, other); trades.push(done); balance = new Decimal(done.balanceAfter);
+  peak = Decimal.max(peak, balance); maxDd = Decimal.max(maxDd, peak.minus(balance).div(peak).mul(100)); opens = opens.filter((o) => o !== open);
 };
 for (let t = from; t < now; t += MINUTE) for (const symbol of SYMBOLS) {
   const ev = events.get(symbol)?.get(t) ?? [];
-  if (open && open.symbol === symbol && t > open.openedCandle) {
+  const open = opens.find((o) => o.symbol === symbol);
+  if (open && t > open.openedCandle) {
     const c = candles.get(symbol)!.get(t)!;
-    const r = pine1Exit(open, c); if (r) close(r, t, c.close);
+    const r = pine1Exit(open, c); if (r) close(open, r, t, c.close);
   }
   for (const e of ev) {
     if (e.event !== 'entry_confirmed') continue;
-    const why = pine1Skip(e, balance, open !== null);
+    const why = pine1Skip(e, balance, opens);
     decisions.push({ time: new Date(t + MINUTE).toISOString(), symbol, side: e.direction, trend: e.mtf_trend, decision: why ?? 'TRADED' });
-    if (!why) open = openPine1(e, t, ticks.get(symbol)!, balance);
+    if (!why) opens.push(openPine1(e, t, ticks.get(symbol)!, balance, opens.reduce((a, o) => a.plus(o.margin), new Decimal(0))));
   }
 }
 const n = (x: Decimal.Value) => Number(new Decimal(x).toFixed(8));
@@ -76,8 +78,8 @@ for (const t of trades) { const p = perCoin[t.symbol] ??= { trades: 0, wins: 0, 
 const status = (r: string) => trades.filter((t) => receiptStatus(t.reason) === r).length;
 const summary = {
   window: { from: new Date(from).toISOString(), to: new Date(now).toISOString() }, coinsTested: SYMBOLS.length - missing.length, missing,
-  rule: 'Original LONG/SHORT Pine on 1m; no trend filter; force close at market after 24h; Pine entry; no stop loss; close at +25% net of margin; cross-margin liquidation on whole balance; 50x; 20% of balance; one trade; 0.05% fee/side; 1 tick slippage/side',
-  pineEntries, traded: trades.length + (open ? 1 : 0), skipped, closedTrades: trades.length, stillOpen: open ? 1 : 0,
+  rule: 'Original LONG/SHORT Pine on 1m; Trend Identify 15m=5m=side, 1m sideways/same; up to 2 open trades (one per coin); force close at market after 24h; Pine entry; no stop loss; close at +25% net of margin; cross-margin liquidation on whole balance; 50x; 20% of balance; 0.05% fee/side; 1 tick slippage/side',
+  pineEntries, traded: trades.length + opens.length, skipped, closedTrades: trades.length, stillOpen: opens.length,
   wins: wins.length, losses: trades.length - wins.length, winRate: trades.length ? wins.length / trades.length * 100 : null,
   takeProfitHit: status('Take profit hit'), stopLossHit: status('Stop loss hit'), closedAfter24h: status('Closed after 24 hours'),
   liquidated: trades.filter((t) => t.reason === 'LIQUIDATED').length,
