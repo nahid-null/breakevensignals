@@ -1,6 +1,7 @@
 # Independent Crypto Signal Terminal
 
 ## Current prompt-23 verification and reset
+- [ ] Reopen every affected page through navigation at desktop/current/phone widths in the available dark theme; check all coins, both directions, all retained practice trades, reset safeguards, and one step past each result.
 - [x] Verify removal of the added trend gate, original LONG/SHORT parity, current hosted feed count and why fewer alerts appear: 20/20 fresh feeds, all saved MTF fields null, four native entries since worker restart; one genuine50x UNI practice trade, no new breakeven yet.
 - [x] Make restart restore default enabled Simulator state and zero all current-session P&L/counters including today's without deleting lifetime history; migration0025 and isolated PostgreSQL tests pass. No live reset submitted.
 - [x] Check the reported mobile-hook diagnostic (absent), desktop/current/phone Simulator/dashboard/markets/health, and update chat.md with results and remaining deployment/privacy blockers;227tests pass/buildOK.
