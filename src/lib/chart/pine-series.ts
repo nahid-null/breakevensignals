@@ -37,9 +37,7 @@ const BASE = 1_000 * MINUTE;
 export function runPineSeries(candles: Candle[], tickSize: number): PineRun {
   const state = initialState('NEARUSDT', tickSize);
   const bars: PineBar[] = []; const trades = new Map<string, PineTrade>(); const order: PineTrade[] = [];
-  const real = (synthetic: number) => candles[(synthetic - BASE) / MINUTE]!.time;
   candles.forEach((c, i) => {
-    const prevRsi = state.rsi;
     const { analysis: a, signals } = processCandle(state, { ...c, time: BASE + i * MINUTE });
     if (!a) throw new Error('Duplicate candle');
     for (const s of signals) {
@@ -79,11 +77,9 @@ export function runPineSeries(candles: Candle[], tickSize: number): PineRun {
         beTrigger: t ? t.entry + (L ? 1 : -1) * t.risk * P.breakevenTrigger : null,
       };
     };
-    void prevRsi;
     bars.push({ time: c.time, close: c.close, ema9: a.ema9, ema21: a.ema21, ema200: a.ema200, rsi: a.rsi, atr: a.atr, macd: a.macd,
       macdSignal: a.macd - a.histogram, histogram: a.histogram, volumeSMA: a.volumeSMA, trend: a.trend, long: side('LONG'), short: side('SHORT') });
   });
-  void real;
   return { bars, trades: order, tickSize };
 }
 
