@@ -140,7 +140,7 @@ function Simulator() {
             <dt className="text-muted-foreground">New trade leverage</dt><dd className="font-mono">{SIM_RULES.leverage}x</dd>
             <dt className="text-muted-foreground">Allocated margin</dt><dd className="font-mono">{SIM_RULES.marginShare * 100}% of balance</dd>
             <dt className="text-muted-foreground">Net profit target</dt><dd className="font-mono text-long">+{SIM_RULES.targetNetRoiPercent}% on margin</dd>
-            <dt className="text-muted-foreground">Entry</dt><dd>Original Pine signal</dd>
+            <dt className="text-muted-foreground">Entry</dt><dd>Breakeven + next-candle confirm</dd>
             <dt className="text-muted-foreground">Telegram</dt><dd>Breakeven + trade results</dd>
             <dt className="text-muted-foreground">Costs</dt><dd>{SIM_RULES.feePercent}% per side + 1 tick per side</dd>
             <dt className="text-muted-foreground">Concurrent trades</dt><dd>1</dd>

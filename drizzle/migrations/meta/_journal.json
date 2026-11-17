@@ -183,6 +183,13 @@
       "when": 1794893431622,
       "tag": "0025_simulator_restart_defaults",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1794897325411,
+      "tag": "0026_simulator_breakeven_confirmation_entry",
+      "breakpoints": true
     }
   ]
 }

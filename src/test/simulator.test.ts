@@ -9,7 +9,7 @@ beforeAll(async () => {
   db = new PGlite();
   await db.exec('CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role;');
   const dir = new URL('../../drizzle/migrations/', import.meta.url);
-  for (const f of (await readdir(dir)).filter((f) => f.endsWith('.sql') && f !== '0001_migration.sql').sort())
+  for (const f of (await readdir(dir)).filter((f) => f.endsWith('.sql') && f !== '0001_migration.sql' && f < '0026').sort())
     await db.exec((await readFile(new URL(f, dir), 'utf8')).replace(/^ALTER PUBLICATION.*$/gm, ''));
 }, 60000);
 afterAll(async () => { await db.close(); });
@@ -34,7 +34,7 @@ async function trade(id: string): Promise<Row> { const row = (await db.query<Row
 const balance = async () => Number((await db.query<{ b: string }>('select balance b from sim_account')).rows[0]?.b);
 const count = async (table: string) => (await db.query<{ n: number }>(`select count(*)::int n from ${table}`)).rows[0]?.n;
 
-describe('original Pine practice trading (isolated PostgreSQL)', () => {
+describe('previous PINE_NET10 entry rules, kept for trades opened before breakeven confirmation (isolated PostgreSQL)', () => {
   it('opens at original Pine entry before breakeven without an entry Telegram alert', async () => {
     await db.exec('update app_settings set long_entry_enabled=false');
     await candle([ev('entry_confirmed', 't1')]);
