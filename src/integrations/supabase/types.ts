@@ -1190,6 +1190,150 @@ export type Database = {
         }
         Relationships: []
       }
+      sim2_account: {
+        Row: {
+          balance: number
+          enabled: boolean
+          id: number
+          pending_direction: string | null
+          pending_session: string | null
+          pending_symbol: string | null
+          pending_time: number | null
+          session_id: string
+          session_started_at: string
+          updated_at: string
+        }
+        Insert: {
+          balance?: number
+          enabled?: boolean
+          id: number
+          pending_direction?: string | null
+          pending_session?: string | null
+          pending_symbol?: string | null
+          pending_time?: number | null
+          session_id?: string
+          session_started_at?: string
+          updated_at?: string
+        }
+        Update: {
+          balance?: number
+          enabled?: boolean
+          id?: number
+          pending_direction?: string | null
+          pending_session?: string | null
+          pending_symbol?: string | null
+          pending_time?: number | null
+          session_id?: string
+          session_started_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sim2_balance_events: {
+        Row: {
+          balance_after: number
+          balance_before: number
+          created_at: string
+          id: string
+          next_session: string
+          previous_session: string
+        }
+        Insert: {
+          balance_after?: number
+          balance_before: number
+          created_at?: string
+          id?: string
+          next_session: string
+          previous_session: string
+        }
+        Update: {
+          balance_after?: number
+          balance_before?: number
+          created_at?: string
+          id?: string
+          next_session?: string
+          previous_session?: string
+        }
+        Relationships: []
+      }
+      sim2_trades: {
+        Row: {
+          balance_after: number
+          balance_before: number
+          closed_at: string
+          direction: string
+          entry_fee: number
+          entry_price: number
+          exit_fee: number
+          exit_price: number
+          exit_reason: string
+          id: string
+          leverage: number
+          liquidation_price: number
+          margin: number
+          opened_at: string
+          pnl: number
+          quantity: number
+          session_id: string
+          signal_time: number
+          slippage_cost: number
+          source: string
+          stop_loss: number
+          symbol: string
+          take_profit: number
+        }
+        Insert: {
+          balance_after: number
+          balance_before: number
+          closed_at: string
+          direction: string
+          entry_fee: number
+          entry_price: number
+          exit_fee: number
+          exit_price: number
+          exit_reason: string
+          id?: string
+          leverage?: number
+          liquidation_price: number
+          margin: number
+          opened_at: string
+          pnl: number
+          quantity: number
+          session_id: string
+          signal_time: number
+          slippage_cost: number
+          source?: string
+          stop_loss: number
+          symbol: string
+          take_profit: number
+        }
+        Update: {
+          balance_after?: number
+          balance_before?: number
+          closed_at?: string
+          direction?: string
+          entry_fee?: number
+          entry_price?: number
+          exit_fee?: number
+          exit_price?: number
+          exit_reason?: string
+          id?: string
+          leverage?: number
+          liquidation_price?: number
+          margin?: number
+          opened_at?: string
+          pnl?: number
+          quantity?: number
+          session_id?: string
+          signal_time?: number
+          slippage_cost?: number
+          source?: string
+          stop_loss?: number
+          symbol?: string
+          take_profit?: number
+        }
+        Relationships: []
+      }
       telegram_logs: {
         Row: {
           claimed_at: string | null
@@ -1353,7 +1497,10 @@ export type Database = {
         Returns: undefined
       }
       sim_set_enabled: { Args: { on_off: boolean }; Returns: undefined }
+      sim2_reset: { Args: never; Returns: Json }
+      sim2_set_enabled: { Args: { on_off: boolean }; Returns: undefined }
       simulate_engine_candle: { Args: { p: Json }; Returns: undefined }
+      simulate2_engine_candle: { Args: { p: Json }; Returns: undefined }
       stop_engine: { Args: { p_instance: string }; Returns: boolean }
       terminal_statistics: { Args: never; Returns: Json }
     }
