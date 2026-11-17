@@ -18,7 +18,7 @@ export const Route = createFileRoute("/settings")({
       { title: "Settings — Crypto Signal Terminal" },
       { name: "description", content: "Separate LONG and SHORT Telegram notification controls and display preferences." },
       { property: "og:title", content: "Settings — Crypto Signal Terminal" },
-      { property: "og:description", content: "Original Pine LONG and SHORT breakeven notifications, simulator results and display preferences." },
+      { property: "og:description", content: "Telegram Simulator trade results for LONG and SHORT, and display preferences." },
       { property: 'og:type', content: 'website' },
       { name: 'twitter:card', content: 'summary_large_image' },
     ],
@@ -75,7 +75,7 @@ function SettingsPage() {
         {(['long', 'short'] as const).map((side) => <section key={side} className="border-b border-border py-4 lg:pr-8">
           <h2 className={`mb-2 font-mono text-sm ${side === 'long' ? 'text-long' : 'text-short'}`}>{side.toUpperCase()} NOTIFICATIONS</h2>
           {toggle(`${side.toUpperCase()} notifications`, `${side}_notifications_enabled`)}
-          {toggle(`${side.toUpperCase()} breakeven`, `${side}_breakeven_enabled`)}
+          <p className="mt-2 text-xs text-muted-foreground">Sends only Simulator trade results: Take profit hit or Stop loss hit.</p>
         </section>)}
         <section className="space-y-4 py-4">
           <h2 className="text-xs uppercase tracking-widest text-muted-foreground">Display</h2>

@@ -32,6 +32,9 @@ export const Route = createFileRoute("/simulator")({
 });
 
 const REASON: Record<string, string> = { TAKE_PROFIT: 'TAKE PROFIT HIT', STOP_LOSS: 'STOP LOSS HIT', BREAKEVEN: 'BREAKEVEN', LIQUIDATED: 'LIQUIDATED' };
+/** prompt-39 trades show only the two receipt statuses; earlier trades keep their original labels. */
+const resultLabel = (t: { rule_version: string; exit_reason: string | null }) =>
+  !t.exit_reason ? '—' : t.rule_version === 'PINE5_TREND' ? (t.exit_reason === 'TAKE_PROFIT' ? 'TAKE PROFIT HIT' : 'STOP LOSS HIT') : REASON[t.exit_reason] ?? '—';
 const pnlTone = (n: number | null | undefined) => (Number(n) > 0 ? 'text-long' : Number(n) < 0 ? 'text-short' : 'text-muted-foreground');
 
 function Tile({ label, value, tone, hint }: { label: string; value: string; tone?: string | undefined; hint?: string | undefined }) {
@@ -191,7 +194,7 @@ function Simulator() {
                   <td className="px-3 py-2">{fmtUsd(t.margin)}</td>
                   <td className="px-3 py-2">{fmtPrice(t.entry_price)}</td>
                   <td className="px-3 py-2">{t.exit_price === null ? '—' : Number(t.exit_price).toPrecision(6)}</td>
-                  <td className="px-3 py-2"><StatusBadge value={REASON[t.exit_reason ?? ''] ?? '—'} /></td>
+                  <td className="px-3 py-2"><StatusBadge value={resultLabel(t)} /></td>
                   <td className="px-3 py-2 text-muted-foreground">{fmtUsd(Number(t.entry_fee) + Number(t.exit_fee))}</td>
                   <td className={cn('px-3 py-2', pnlTone(t.pnl))}>{fmtSignedUsd(t.pnl)}</td>
                   <td className="px-3 py-2">{fmtUsd(t.balance_after)}</td>
