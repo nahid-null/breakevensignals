@@ -4,9 +4,11 @@ interface LogLike { trade_id: string | null; event_id: string; delivery_status: 
 interface EventLike { trade_id: string; event_type: string }
 
 export function sentSignalSummary(logs: LogLike[], events: EventLike[]): SentSignalSummary {
-  const trades = new Set(logs.filter((l) => !l.is_test && l.delivery_status === 'SENT' && l.trade_id && l.event_id.endsWith('-entry_confirmed')).map((l) => l.trade_id!));
+  const trades = new Set(logs.flatMap((l) => !l.is_test && l.delivery_status === 'SENT' && l.trade_id && l.event_id.endsWith('-breakeven_activated') ? [l.trade_id] : []));
   const byTrade = new Map<string, Set<string>>();
-  for (const e of events) if (trades.has(e.trade_id)) (byTrade.get(e.trade_id) ?? byTrade.set(e.trade_id, new Set()).get(e.trade_id)!).add(e.event_type);
+  for (const e of events) if (trades.has(e.trade_id)) {
+    const set = byTrade.get(e.trade_id) ?? new Set<string>(); set.add(e.event_type); byTrade.set(e.trade_id, set);
+  }
   let takeProfit = 0, stopLoss = 0, breakeven = 0;
   for (const id of trades) {
     const ev = byTrade.get(id);

@@ -4,8 +4,8 @@ import type { Database } from '@/integrations/supabase/types';
 
 export type SimAccount = Database['public']['Tables']['sim_account']['Row'];
 export type SimTrade = Database['public']['Tables']['sim_trades']['Row'];
-/** Rules applied by the database when a live, trend-approved signal arrives. Display only. */
-export const SIM_RULES = { marginShare: 0.8, strongLeverage: 50, normalLeverage: 20, feePercent: 0.05, strongAdx: 25 } as const;
+/** New practice trades use original Pine entries; the signal engine's targets stay unchanged. */
+export const SIM_RULES = { marginShare: 0.8, leverage: 50, targetNetRoiPercent: 10, defaultBalance: 5, feePercent: 0.05 } as const;
 
 export const useSimAccount = () => useQuery({ queryKey: ['sim_account'], refetchInterval: 15000, queryFn: () => readSimAccount() as Promise<SimAccount | null> });
 export const useSimTrades = () => useQuery({ queryKey: ['sim_trades'], refetchInterval: 15000, queryFn: () => readSimTrades() as Promise<SimTrade[]> });

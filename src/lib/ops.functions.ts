@@ -80,7 +80,7 @@ export const updateSettings = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.from("app_settings").update({ ...(Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined)) as Record<string, never>), updated_at: new Date().toISOString() }).eq("id", 1);
+    const { error } = await supabaseAdmin.from("app_settings").update({ ...(Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined)) as Record<string, never>), long_entry_enabled: false, short_entry_enabled: false, long_stop_loss_enabled: false, short_stop_loss_enabled: false, long_take_profit_enabled: false, short_take_profit_enabled: false, updated_at: new Date().toISOString() }).eq("id", 1);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

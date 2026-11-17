@@ -75,10 +75,7 @@ function SettingsPage() {
         {(['long', 'short'] as const).map((side) => <section key={side} className="border-b border-border py-4 lg:pr-8">
           <h2 className={`mb-2 font-mono text-sm ${side === 'long' ? 'text-long' : 'text-short'}`}>{side.toUpperCase()} NOTIFICATIONS</h2>
           {toggle(`${side.toUpperCase()} notifications`, `${side}_notifications_enabled`)}
-          {toggle(`${side.toUpperCase()} entry`, `${side}_entry_enabled`)}
           {toggle(`${side.toUpperCase()} breakeven`, `${side}_breakeven_enabled`)}
-          {toggle(`${side.toUpperCase()} stop loss`, `${side}_stop_loss_enabled`)}
-          {toggle(`${side.toUpperCase()} take profit`, `${side}_take_profit_enabled`)}
         </section>)}
         <section className="space-y-4 py-4">
           <h2 className="text-xs uppercase tracking-widest text-muted-foreground">Display</h2>
