@@ -1,7 +1,7 @@
 /** Pure Simulator 2 replay; formulas mirror simulate2_engine_candle (50x, 80% margin, 0.05% fee/side, 1 tick/side). */
 export type Candle = { time: number; open: number; high: number; low: number; close: number };
-export type Rules = { trend: boolean; realistic: boolean; share?: number; base?: 'balance' | 'margin'; lev?: number };
-export type Sim2Trade = { symbol: string; direction: 'LONG' | 'SHORT'; signalTime: number; entry: number; tp: number; sl: number; exit: number; reason: string; pnl: number; balanceAfter: number; cost: number };
+export type Rules = { trend: boolean; realistic: boolean; share?: number; base?: 'balance' | 'margin'; lev?: number; hold?: number };
+export type Sim2Trade = { symbol: string; direction: 'LONG' | 'SHORT'; signalTime: number; entry: number; tp: number; sl: number; exit: number; reason: string; pnl: number; balanceAfter: number; cost: number; held: number };
 export const SIM2 = { lev: 50, share: 0.8, fee: 0.0005, target: 0.10, risk: 0.05, body: 0.60, trendLen: 20, rangeLen: 5 } as const;
 
 /** Price levels for a trade opened at `op` (same algebra as the database function). */
@@ -36,18 +36,24 @@ export function sim2Signal(c: Candle[], i: number, tick: number, balance: number
   return { dir };
 }
 
-export function sim2Settle(balance: number, k: Candle, dir: 'LONG' | 'SHORT', tick: number, share: number = SIM2.share, base: 'balance' | 'margin' = 'balance', lev: number = SIM2.lev) {
-  const s = dir === 'LONG' ? 1 : -1, op = k.open; const { m, q, f, tp, sl, liq } = sim2Levels(balance, op, s, tick, share, base, lev);
+export function sim2Settle(balance: number, k: Candle | Candle[], dir: 'LONG' | 'SHORT', tick: number, share: number = SIM2.share, base: 'balance' | 'margin' = 'balance', lev: number = SIM2.lev) {
+  const bars = Array.isArray(k) ? k : [k]; const first = bars[0]; if (!first) return null;
+  const s = dir === 'LONG' ? 1 : -1, op = first.open; const { m, q, f, tp, sl, liq } = sim2Levels(balance, op, s, tick, share, base, lev);
   if (!(tick > 0 && s * (op - sl) > 0 && s * (sl - liq) > 0 && s * (tp - op) > 0)) return null;
-  let px: number, reason: string;
-  if ((s === 1 && k.low <= sl) || (s === -1 && k.high >= sl)) { px = sl; reason = 'STOP_LOSS'; }
-  else if ((s === 1 && k.low <= liq) || (s === -1 && k.high >= liq)) { px = liq; reason = 'LIQUIDATED'; }
-  else if ((s === 1 && k.high >= tp) || (s === -1 && k.low <= tp)) { px = tp; reason = 'TAKE_PROFIT'; }
-  else { px = k.close; reason = 'ONE_CANDLE'; }
+  let px = op, reason = 'TIME_EXIT', held = 0;
+  for (const b of bars) {
+    held++;
+    // Stop checked first inside each candle (conservative when one candle touches both levels).
+    if ((s === 1 && b.low <= sl) || (s === -1 && b.high >= sl)) { px = sl; reason = 'STOP_LOSS'; break; }
+    if ((s === 1 && b.low <= liq) || (s === -1 && b.high >= liq)) { px = liq; reason = 'LIQUIDATED'; break; }
+    if ((s === 1 && b.high >= tp) || (s === -1 && b.low <= tp)) { px = tp; reason = 'TAKE_PROFIT'; break; }
+    px = b.close;
+  }
+  if (reason === 'TIME_EXIT' && bars.length === 1) reason = 'ONE_CANDLE';
   const ef = reason === 'LIQUIDATED' ? 0 : q * px * SIM2.fee;
   const gross = reason === 'LIQUIDATED' ? -m : Math.max(q * (px - op) * s - 2 * q * tick, -m);
   const nb = Math.max(balance + gross - f - ef, 0);
-  return { entry: op, tp, sl, exit: px, reason, pnl: nb - balance, balanceAfter: nb, cost: f + ef + 2 * q * tick };
+  return { entry: op, tp, sl, exit: px, reason, pnl: nb - balance, balanceAfter: nb, cost: f + ef + 2 * q * tick, held };
 }
 
 /** One trade at a time across all coins, chronological; signals only from candles at/after `from`. */
@@ -65,9 +71,11 @@ export function simulate2(data: Record<string, { tick: number; candles: Candle[]
       const d = get(data, s), c = d.candles; const sig = sim2Signal(c, i, d.tick, balance, rules);
       if (sig.skip === 'trend') skippedTrend++; if (sig.skip === 'range') skippedRange++;
       if (!sig.dir) continue;
-      const next = c[i + 1]; if (!next || next.time !== t + 60000) break;
-      const r = sim2Settle(balance, next, sig.dir, d.tick, rules.share, rules.base, rules.lev);
-      freeAt = t + 120000;
+      const hold = rules.hold ?? 1; const bars: Candle[] = [];
+      for (let j = 1; j <= hold; j++) { const b = c[i + j]; if (!b || b.time !== t + j * 60000) break; bars.push(b); }
+      if (bars.length < hold) break;
+      const r = sim2Settle(balance, bars, sig.dir, d.tick, rules.share, rules.base, rules.lev);
+      freeAt = t + ((r?.held ?? 1) + 1) * 60000;
       if (!r) { skippedCost++; freeAt = 0; continue; }
       balance = r.balanceAfter; peak = Math.max(peak, balance); maxDrawdown = Math.max(maxDrawdown, (peak - balance) / peak);
       trades.push({ symbol: s, direction: sig.dir, signalTime: t, ...r });

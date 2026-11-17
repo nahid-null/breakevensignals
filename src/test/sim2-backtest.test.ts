@@ -34,3 +34,17 @@ describe('Simulator 2 Training 3 filters', () => {
     expect((l.tp - 100) / 100).toBeLessThan(0.0036);
   });
 });
+
+describe('Simulator 2 holding period', () => {
+  it('stays open up to 5 candles, exits at TP when reached, and never loses more than 5% of margin', async () => {
+    const { sim2Settle, sim2Levels } = await import('@/lib/engine/sim2-backtest');
+    const L = sim2Levels(5, 100, 1, 0.0001, 0.2, 'margin', 20);
+    const bar = (t: number, lo: number, hi: number, cl: number): Candle => ({ time: t, open: 100, low: lo, high: hi, close: cl });
+    const tp = sim2Settle(5, [bar(0, 99.99, 100.1, 100.05), bar(1, 100, 100.2, 100.1), bar(2, 100, L.tp + 0.01, L.tp)], 'LONG', 0.0001, 0.2, 'margin', 20)!;
+    expect(tp.reason).toBe('TAKE_PROFIT'); expect(tp.held).toBe(3); expect(tp.pnl).toBeCloseTo(0.10, 6);
+    const sl = sim2Settle(5, [bar(0, 99.99, 100.01, 100), bar(1, L.sl - 1, 100, 99)], 'LONG', 0.0001, 0.2, 'margin', 20)!;
+    expect(sl.reason).toBe('STOP_LOSS'); expect(sl.pnl).toBeCloseTo(-0.05, 6);
+    const time = sim2Settle(5, Array.from({ length: 5 }, (_, i) => bar(i, 99.99, 100.02, 100.01)), 'LONG', 0.0001, 0.2, 'margin', 20)!;
+    expect(time.reason).toBe('TIME_EXIT'); expect(time.held).toBe(5);
+  });
+});
