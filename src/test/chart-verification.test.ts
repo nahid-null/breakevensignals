@@ -142,3 +142,15 @@ describe('parity report', () => {
     expect(tv.rows.map((r) => [r.values.ema9, r.values.entryEvent, r.values.rsi])).toEqual([[3.2701, false, 48.5], [3.2721, true, 55.1]]);
   });
 });
+
+describe('parity page pipeline on the intact original scripts', () => {
+  it('internal engine matches the corrected PineTS run of the original LONG and SHORT source', async () => {
+    const { runPineReference } = await import('@/lib/parity/pine-reference');
+    const set = candles.slice(0, 700); const run = runPineSeries(set, near.tickSize);
+    for (const d of ['LONG', 'SHORT'] as const) {
+      const rep = compareParity(nativeRows(run, d), await runPineReference(set, 'NEARUSDT', near.tickSize, d, 60_000, true));
+      expect(rep.fields.filter((f) => f.pct < 100).map((f) => f.field)).toEqual([]);
+      expect(rep.matches).toBe(true);
+    }
+  }, 120_000);
+});
