@@ -240,3 +240,7 @@
 - 11-03 08:51 → 11-17 08:51, 20 coins, 20% margin, 20x, ±10/5% margin net, 1-candle exit.
 - Training 3: 135 tr, 24W/111L 17.8%, gross −$0.50, costs $2.28, net −$2.79, DD 55.7%, $2.21, TP7 SL100 time28, avg −$0.0206/trade.
 - B retest: 69 tr, 22W/47L 31.9%, gross +$0.57, costs $1.54, net −$0.97, DD 20.4%, $4.03, TP6 SL42 time21, avg −$0.0140/trade. Not profitable after costs. Awaiting user.
+
+## 2026-11-17 09:25 UTC — prompt-34 B refinements, in-sample + unseen (live unchanged)
+- Added research-only filters (strong breakout, EMA 9/21/200, RSI14+MACD, false-breakout reject), hold 3/5 and ATR exits to sim2-backtest.ts; runner sequential (parallel downloads were rate-limited, now fail loudly).
+- In-sample 11-03→11-17 and unseen 10-20→11-03, 20 coins, 20% margin, 20x. Every version net-negative in both periods. Least-bad: B3 RSI+MACD (in −$0.22 PF0.62 DD5.9% 20tr; unseen −$0.49 PF0.41 DD10.6% 25tr) and B1 strong breakout (in −$0.55; unseen −$0.35 PF0.62). ATR exits raised win rate to ~40% but costs and bigger losses kept them negative (worst trade up to −$0.35, breaks 5% margin limit). B5 all filters: 1 trade. Recommendation: nothing live.
