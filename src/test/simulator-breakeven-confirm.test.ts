@@ -30,49 +30,59 @@ async function candle(events: unknown[], o = 100, c = 100, mode = 'live') {
     checkpoint: { symbol: 'NEARUSDT', tickSize: 0.01, lastTime: minute, candles: [{ time: minute, open: o, high: Math.max(o, c) + 0.01, low: Math.min(o, c) - 0.01, close: c, volume: 1 }] },
     market: { symbol: 'NEARUSDT', price: c, trend: 'BULLISH', status: 'LIVE', last_candle_at: new Date(minute).toISOString(), long_score: 0, short_score: 0, error: null }, events })]);
 }
-async function toBreakeven(d: Dir) {
+type Trend = { m15: number | null; m5: number | null; m1: number | null };
+async function toBreakeven(d: Dir, mtf_trend: Trend | null = d === 'LONG' ? { m15: 1, m5: 1, m1: 0 } : { m15: -1, m5: -1, m1: 0 }) {
   await candle([ev('entry_confirmed', d)]);
-  await candle([ev('breakeven_activated', d, { stop_loss: 100 })]);
+  await candle([ev('breakeven_activated', d, { stop_loss: 100, ...(mtf_trend ? { mtf_trend } : {}) })]);
 }
 const trades = async () => (await db.query<{ entry_price: string; stop_loss: string; leverage: number; margin: string; rule_version: string }>('select * from sim_trades')).rows;
 const decision = async () => (await db.query<{ status: string; reason: string | null }>("select status, reason from sim_breakeven_confirmations where trade_id='t1'")).rows[0];
 
-describe('practice trades open only on a confirmed breakeven signal', () => {
+describe('practice trades open only on a breakeven signal that matches the 15M/5M trend', () => {
   it('does not open a practice trade on the script entry alone', async () => {
     await candle([ev('entry_confirmed', 'LONG')]);
     expect(await trades()).toHaveLength(0);
   });
-  it('LONG: green next candle with open and close above entry opens at its close', async () => {
-    await toBreakeven('LONG'); expect(await trades()).toHaveLength(0);
-    await candle([], 100.2, 100.5);
+  it('LONG: 15m+5m bullish, 1m sideways opens at the breakeven trigger price at once', async () => {
+    await toBreakeven('LONG');
     const t = (await trades())[0]!;
-    expect(Number(t.entry_price)).toBe(100.5); expect(Number(t.stop_loss)).toBe(100);
-    expect(t.leverage).toBe(50); expect(Number(t.margin)).toBe(4); expect(t.rule_version).toBe('PINE_BE_CONFIRM');
+    // Pine entry 100, target 101.5 -> 1R = 1, breakeven trigger = 101; stop = Pine breakeven line 100.
+    expect(Number(t.entry_price)).toBe(101); expect(Number(t.stop_loss)).toBe(100);
+    expect(t.leverage).toBe(50); expect(Number(t.margin)).toBe(4); expect(t.rule_version).toBe('PINE_BE_TREND');
     expect((await decision())?.status).toBe('CONFIRMED');
   });
-  it('LONG: red next candle above entry is skipped', async () => {
-    await toBreakeven('LONG'); await candle([], 100.5, 100.2);
-    expect(await trades()).toHaveLength(0); expect(await decision()).toEqual({ status: 'SKIPPED', reason: 'CANDLE_NOT_CONFIRMED' });
+  it('LONG: 1m bullish too is allowed', async () => {
+    await toBreakeven('LONG', { m15: 1, m5: 1, m1: 1 });
+    expect(await trades()).toHaveLength(1);
   });
-  it('LONG: green candle that opens below entry is skipped', async () => {
-    await toBreakeven('LONG'); await candle([], 99.9, 100.5);
-    expect(await trades()).toHaveLength(0);
+  it('LONG: 1m bearish is skipped', async () => {
+    await toBreakeven('LONG', { m15: 1, m5: 1, m1: -1 });
+    expect(await trades()).toHaveLength(0); expect(await decision()).toEqual({ status: 'SKIPPED', reason: 'ONE_MINUTE_OPPOSITE' });
   });
-  it('SHORT: red next candle with open and close below entry opens at its close', async () => {
-    await toBreakeven('SHORT'); await candle([], 99.8, 99.5);
-    const t = (await trades())[0]!; expect(Number(t.entry_price)).toBe(99.5); expect(Number(t.stop_loss)).toBe(100);
+  it('LONG breakeven is skipped when 15m+5m are bearish (short-only coin)', async () => {
+    await toBreakeven('LONG', { m15: -1, m5: -1, m1: 0 });
+    expect(await trades()).toHaveLength(0); expect((await decision())?.reason).toBe('BIAS_OPPOSITE_SIGNAL');
   });
-  it('SHORT: green next candle below entry is skipped', async () => {
-    await toBreakeven('SHORT'); await candle([], 99.5, 99.8);
-    expect(await trades()).toHaveLength(0);
+  it('skips when 15m and 5m disagree', async () => {
+    await toBreakeven('LONG', { m15: 1, m5: 0, m1: 0 });
+    expect(await trades()).toHaveLength(0); expect((await decision())?.reason).toBe('NO_15M_5M_BIAS');
   });
-  it('checks only one candle: a later confirming candle does not open a skipped signal', async () => {
-    await toBreakeven('LONG'); await candle([], 100.5, 100.2); await candle([], 100.2, 100.6);
-    expect(await trades()).toHaveLength(0);
+  it('skips when the trend reading is missing', async () => {
+    await toBreakeven('LONG', null);
+    expect(await trades()).toHaveLength(0); expect((await decision())?.reason).toBe('TREND_UNKNOWN');
+  });
+  it('SHORT: 15m+5m bearish opens at the breakeven trigger price', async () => {
+    await toBreakeven('SHORT');
+    const t = (await trades())[0]!; expect(Number(t.entry_price)).toBe(99); expect(Number(t.stop_loss)).toBe(100);
+  });
+  it('closes at the stop when price returns to the breakeven line', async () => {
+    await toBreakeven('LONG'); await candle([], 100.5, 99.9);
+    const r = (await db.query<{ status: string; exit_reason: string; pnl: string }>('select status, exit_reason, pnl from sim_trades')).rows[0]!;
+    expect(r.status).toBe('CLOSED'); expect(r.exit_reason).toBe('STOP_LOSS'); expect(Number(r.pnl)).toBeLessThan(0);
   });
   it('skips when the simulator is switched off', async () => {
-    await toBreakeven('LONG'); await db.exec('update sim_account set enabled=false');
-    await candle([], 100.2, 100.5);
+    await db.exec('update sim_account set enabled=false');
+    await toBreakeven('LONG');
     expect(await trades()).toHaveLength(0); expect((await decision())?.reason).toBe('SIMULATOR_OFF');
   });
 });

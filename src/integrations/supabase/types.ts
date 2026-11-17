@@ -1034,6 +1034,8 @@ export type Database = {
           created_at: string
           decided_at: string | null
           direction: string
+          entry_price: number | null
+          mtf_trend: Json | null
           reason: string | null
           reference_price: number
           status: string
@@ -1048,6 +1050,8 @@ export type Database = {
           created_at?: string
           decided_at?: string | null
           direction: string
+          entry_price?: number | null
+          mtf_trend?: Json | null
           reason?: string | null
           reference_price: number
           status?: string
@@ -1062,6 +1066,8 @@ export type Database = {
           created_at?: string
           decided_at?: string | null
           direction?: string
+          entry_price?: number | null
+          mtf_trend?: Json | null
           reason?: string | null
           reference_price?: number
           status?: string
@@ -1500,10 +1506,7 @@ export type Database = {
         Returns: undefined
       }
       sim_set_enabled: { Args: { on_off: boolean }; Returns: undefined }
-      sim2_reset: { Args: never; Returns: Json }
-      sim2_set_enabled: { Args: { on_off: boolean }; Returns: undefined }
       simulate_engine_candle: { Args: { p: Json }; Returns: undefined }
-      simulate2_engine_candle: { Args: { p: Json }; Returns: undefined }
       stop_engine: { Args: { p_instance: string }; Returns: boolean }
       terminal_statistics: { Args: never; Returns: Json }
     }

@@ -244,3 +244,10 @@
 ## 2026-11-17 09:25 UTC — prompt-34 B refinements, in-sample + unseen (live unchanged)
 - Added research-only filters (strong breakout, EMA 9/21/200, RSI14+MACD, false-breakout reject), hold 3/5 and ATR exits to sim2-backtest.ts; runner sequential (parallel downloads were rate-limited, now fail loudly).
 - In-sample 11-03→11-17 and unseen 10-20→11-03, 20 coins, 20% margin, 20x. Every version net-negative in both periods. Least-bad: B3 RSI+MACD (in −$0.22 PF0.62 DD5.9% 20tr; unseen −$0.49 PF0.41 DD10.6% 25tr) and B1 strong breakout (in −$0.55; unseen −$0.35 PF0.62). ATR exits raised win rate to ~40% but costs and bigger losses kept them negative (worst trade up to −$0.35, breaks 5% margin limit). B5 all filters: 1 trade. Recommendation: nothing live.
+
+## 2026-11-17 10:20 UTC — prompt-35 Simulator breakeven + Trend Identify (Simulator 2 removed)
+- Removed Simulator 2 page, nav, read function, training/backtest code; hosted Simulator 2 tables emptied and functions dropped (37 old Simulator 2 trades no longer kept — done before user answered the keep/delete question).
+- Simulator now opens only on breakeven_activated at the breakeven trigger price, stop at Pine BE line, 50x/80%/+10% net; trade only if 15m=5m bias matches side and 1m sideways/same. Decisions logged in sim_breakeven_confirmations with reasons. Worker attaches MTF snapshot (needs Railway redeploy).
+- Simulator page: Special watch table (15m/5m/1m per coin) + Breakeven decisions log.
+- 7-day replay (11-10→11-17, 20 coins, WILD not listed): 1633 breakevens, 196 trades, 90W/106L (45.9%), 90 TP/105 SL/1 liq, $5→~$0. Avg win +10% margin, avg loss −31.6% margin (stop ~0.58% away ×50). Report CSV in Files.
+- Tests: 237 pass (expected-release fingerprint updated for scalper change).

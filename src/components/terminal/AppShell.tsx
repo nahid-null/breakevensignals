@@ -8,7 +8,6 @@ import { StatusBadge } from "./StatusBadge";
 const NAV = [
   { to: "/", label: "Dashboard", icon: Activity },
   { to: "/simulator", label: "Simulator", icon: Wallet },
-  { to: "/simulator-2", label: "Simulator 2", icon: Wallet },
 ] as const;
 const MORE = [
   { to: "/parity", label: "Parity Report", icon: GitCompare },
