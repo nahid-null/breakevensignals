@@ -7,22 +7,6 @@ import type { PineBar } from '@/lib/chart/pine-series';
 import type { ChartBox, ChartMarker, ChartSegment, Palette } from '@/lib/chart/chart-model';
 import { OverlayPrimitive } from './overlay-primitive';
 
-/** Resolve a CSS custom property (any colour syntax) to rgba via a 1px canvas, so the chart uses the app's tokens. */
-export function cssColor(name: string): [number, number, number] {
-  if (typeof document === 'undefined') return [128, 128, 128];
-  const raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-  const cv = document.createElement('canvas'); cv.width = cv.height = 1; const ctx = cv.getContext('2d');
-  if (!ctx || !raw) return [128, 128, 128];
-  ctx.fillStyle = raw; ctx.fillRect(0, 0, 1, 1); const d = ctx.getImageData(0, 0, 1, 1).data;
-  return [d[0] ?? 128, d[1] ?? 128, d[2] ?? 128];
-}
-const rgba = ([r, g, b]: [number, number, number], a = 1) => `rgba(${r},${g},${b},${a})`;
-export function usePaletteFactory(): Palette {
-  const v = (n: string) => rgba(cssColor(n));
-  return { long: v('--long'), short: v('--short'), waiting: v('--waiting'), active: v('--active'), breakeven: v('--breakeven'), fg: v('--foreground'), muted: v('--muted-foreground'),
-    alpha: (c, a) => c.replace(/rgba\((\d+),(\d+),(\d+),[\d.]+\)/, `rgba($1,$2,$3,${a})`) };
-}
-
 type Props = { bars: Candle[]; forming: Candle | null; pine: PineBar[]; showEma: boolean; markers: ChartMarker[]; boxes: ChartBox[]; segments: ChartSegment[]; palette: Palette;
   precision: number; follow: boolean; onCrosshair?: (time: number | null) => void };
 const T = (ms: number) => (ms / 1000) as UTCTimestamp;
@@ -71,5 +55,5 @@ export default function TradingChart(p: Props) {
     if (p.follow) a.chart.timeScale().scrollToRealTime();
   }, [p.bars, p.forming, p.pine, p.showEma, p.markers, p.boxes, p.segments, p.palette, p.precision, p.follow]);
 
-  return <div ref={el} className="h-[640px] w-full" aria-label="Candlestick chart" />;
+  return <div ref={el} className="h-[560px] w-full md:h-[640px]" aria-label="Candlestick chart" />;
 }
