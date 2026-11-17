@@ -7,7 +7,7 @@ import { simulatorControlsAllowed } from '@/lib/simulator-control-policy';
 const tf = (minutes: number, bull: number, bear: number, adx: number) => ({ ...emptyTimeframe(minutes), bullScore: bull, bearScore: bear, adxValue: adx });
 const mtf = (bull: number, adx: number, bear = 0): MtfState => ({ m15: tf(15, bull, bear, adx), m5: tf(5, bull, bear, adx), m1: tf(1, bull, bear, adx) });
 
-describe('signal strength for simulator leverage', () => {
+describe('retained legacy strength calculation (not a simulator leverage gate)', () => {
   it('is STRONG only when all three timeframes score 7 and ADX is at least 25', () => {
     expect(signalStrength(mtf(7, 25), 'LONG')).toBe('STRONG');
     expect(signalStrength(mtf(7, 24.9), 'LONG')).toBe('NORMAL');
@@ -38,6 +38,9 @@ describe('simulator display numbers', () => {
   it('computes unrealized P&L after entry fee and estimated 0.05% exit fee', () => {
     // 160 units long from 100 at 101: +160 gross, -8 entry fee, -8.08 exit fee
     expect(unrealizedPnl({ direction: 'LONG', quantity: 160, entry_price: 100, entry_fee: 8, margin: 800 }, 101)).toBeCloseTo(143.92, 8);
+  });
+  it('includes one tick per side when estimating new-rule profit', () => {
+    expect(unrealizedPnl({ direction: 'LONG', quantity: 2, entry_price: 100, entry_fee: 0.1, margin: 4, slippage_price: 0.01 }, 100)).toBeCloseTo(-0.24, 9);
   });
   it('counts only trades closed today in the chosen time zone', () => {
     const trades = [

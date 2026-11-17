@@ -1,13 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from '@tanstack/react-start';
 import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Plus, Wallet, Pencil, RotateCcw } from "lucide-react";
 import { fmtPrice, fmtTime, useMarkets, useSettings } from "@/lib/data";
 import { fmtSignedUsd, fmtUsd, SIM_RULES, simSummary, todayPnl, unrealizedPnl, useSimAccount, useSimTrades } from "@/lib/simulator";
-import { addSimBalance, setSimEnabled, changeSimBalance } from "@/lib/simulator.functions";
+import { addSimBalance, setSimEnabled, changeSimBalance, readSimControlAccess } from "@/lib/simulator.functions";
 import { StatusBadge } from "@/components/terminal/StatusBadge";
+import { SavedMarketNotice } from '@/components/terminal/SavedMarketNotice';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -45,6 +46,8 @@ function Simulator() {
   const qc = useQueryClient();
   const addBalance = useServerFn(addSimBalance); const enable = useServerFn(setSimEnabled); const adjust = useServerFn(changeSimBalance);
   const account = useSimAccount();
+  const access = useQuery({ queryKey: ['sim_control_access'], queryFn: () => readSimControlAccess() });
+  const controlsAllowed = access.data?.allowed === true;
   const trades = useSimTrades();
   const markets = useMarkets();
   const settings = useSettings();
@@ -101,7 +104,7 @@ function Simulator() {
         </div>
         <label className="flex items-center gap-3 text-sm">
           <span className={account.data?.enabled ? 'text-long' : 'text-waiting'}>{account.data?.enabled ? 'Taking new trades' : 'Paused'}</span>
-          <Switch checked={!!account.data?.enabled} disabled={!account.data} onCheckedChange={(v) => void toggle(v)} aria-label="Simulator on or off" />
+          <Switch checked={!!account.data?.enabled} disabled={!account.data || !controlsAllowed} onCheckedChange={(v) => void toggle(v)} aria-label="Simulator on or off" />
         </label>
       </div>
 
@@ -119,13 +122,14 @@ function Simulator() {
           <h2 className="text-xs uppercase tracking-widest text-muted-foreground">Add trading balance</h2>
           <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); void deposit(); }}>
             <Input type="number" inputMode="decimal" min="1" step="0.01" placeholder="Amount in USDT" value={amount} onChange={(e) => setAmount(e.target.value)} className="font-mono" aria-label="Amount in USDT" />
-            <Button type="submit" disabled={busy}><Plus className="size-4" /> Add</Button>
+            <Button type="submit" disabled={busy || !controlsAllowed}><Plus className="size-4" /> Add</Button>
           </form>
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" disabled={busy || !!open || !account.data} onClick={() => { setNewBalance(balance.toFixed(2)); setEdit('EDIT'); }}><Pencil className="size-4" /> Edit balance</Button>
-            <Button variant="outline" disabled={busy || !!open || !account.data} onClick={() => setEdit('RESET')}><RotateCcw className="size-4" /> Restart simulator</Button>
+            <Button variant="outline" disabled={busy || !!open || !account.data || !controlsAllowed} onClick={() => { setNewBalance(balance.toFixed(2)); setEdit('EDIT'); }}><Pencil className="size-4" /> Edit balance</Button>
+            <Button variant="outline" disabled={busy || !!open || !account.data || !controlsAllowed} onClick={() => setEdit('RESET')}><RotateCcw className="size-4" /> Restart simulator</Button>
           </div>
           {open && <p className="text-xs text-waiting">Balance changes are locked until the open trade finishes.</p>}
+          {access.data && !controlsAllowed && <p className="text-xs text-waiting">Account controls locked: private access has not been verified.</p>}
           <dl className="grid grid-cols-2 gap-x-3 gap-y-2 border-t border-border pt-3 text-xs">
             <dt className="text-muted-foreground">New trade leverage</dt><dd className="font-mono">{SIM_RULES.leverage}x</dd>
             <dt className="text-muted-foreground">Allocated margin</dt><dd className="font-mono">{SIM_RULES.marginShare * 100}% of balance</dd>
@@ -138,6 +142,7 @@ function Simulator() {
         </div>
         <div className="space-y-3 border border-border bg-card/40 p-4">
           <h2 className="text-xs uppercase tracking-widest text-muted-foreground">Open position</h2>
+          {open && <SavedMarketNotice />}
           {!open ? <p className="text-sm text-muted-foreground">{balance > 0 ? 'Waiting for the next original Pine entry.' : 'Add a balance or restart at $5.'}</p> : (
             <div className="grid grid-cols-2 gap-x-6 gap-y-2 font-mono text-sm sm:grid-cols-3">
               <div><div className="text-[10px] text-muted-foreground">COIN</div>{open.symbol}</div>

@@ -1,6 +1,12 @@
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
 
+export const readSimControlAccess = createServerFn({ method: 'GET' }).handler(async () => {
+  const { getRequest } = await import('@tanstack/react-start/server');
+  const { simulatorControlsAllowed } = await import('./simulator-control-policy');
+  return { allowed: simulatorControlsAllowed(getRequest().url) };
+});
+
 /** Adds practice money to the simulator balance. Takes effect from the next simulated trade. */
 export const addSimBalance = createServerFn({ method: 'POST' })
   .inputValidator((d: unknown) => z.object({ amount: z.number().finite().positive().max(1_000_000_000) }).parse(d))

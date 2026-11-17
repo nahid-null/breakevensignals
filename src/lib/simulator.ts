@@ -10,9 +10,9 @@ export const SIM_RULES = { marginShare: 0.8, leverage: 50, targetNetRoiPercent: 
 export const useSimAccount = () => useQuery({ queryKey: ['sim_account'], refetchInterval: 15000, queryFn: () => readSimAccount() as Promise<SimAccount | null> });
 export const useSimTrades = () => useQuery({ queryKey: ['sim_trades'], refetchInterval: 15000, queryFn: () => readSimTrades() as Promise<SimTrade[]> });
 
-/** Unrealized profit/loss at the given price, after the entry fee and an estimated exit fee. */
-export function unrealizedPnl(t: Pick<SimTrade, 'direction' | 'quantity' | 'entry_price' | 'entry_fee' | 'margin'>, price: number) {
-  const gross = Math.max(Number(t.quantity) * (price - Number(t.entry_price)) * (t.direction === 'LONG' ? 1 : -1), -Number(t.margin));
+/** Matches settlement accounting: both modeled tick costs, entry and estimated exit fees. */
+export function unrealizedPnl(t: Pick<SimTrade, 'direction' | 'quantity' | 'entry_price' | 'entry_fee' | 'margin'> & Partial<Pick<SimTrade, 'slippage_price'>>, price: number) {
+  const gross = Math.max(Number(t.quantity) * (price - Number(t.entry_price)) * (t.direction === 'LONG' ? 1 : -1) - 2 * Number(t.quantity) * Number(t.slippage_price ?? 0), -Number(t.margin));
   return gross - Number(t.entry_fee) - Number(t.quantity) * price * (SIM_RULES.feePercent / 100);
 }
 

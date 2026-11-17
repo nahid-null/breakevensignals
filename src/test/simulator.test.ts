@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { PGlite } from '@electric-sql/pglite';
 import { readFile, readdir } from 'node:fs/promises';
-import { beforeAll, afterAll, beforeEach, describe, expect, it } from 'vitest';
+import { beforeAll, afterAll, beforeEach, afterEach, describe, expect, it } from 'vitest';
 
 const instance = '11111111-1111-4111-8111-111111111111';
 let db: PGlite; let revision: Record<string, number>; let minute: number;
@@ -19,7 +19,6 @@ beforeEach(async () => {
   await db.exec('update sim_account set balance=5;');
   revision = {}; minute = 60_000;
 });
-import { afterEach } from 'vitest';
 afterEach(async () => { await db.exec('ROLLBACK'); });
 const ev = (event: string, trade: string, extra: Record<string, unknown> = {}) => ({ telegram_message: 'SIGNAL', event, event_id: `${trade}-${event}`, trade_id: trade,
   symbol: 'NEARUSDT', direction: 'LONG', indicator: 'PRO LONG SCALPER', timeframe: '1', entry_price: 100,
@@ -114,5 +113,17 @@ describe('original Pine practice trading (isolated PostgreSQL)', () => {
   });
   it('never fabricates a trade when the practice balance is zero', async () => {
     await db.exec('update sim_account set balance=0');await candle([ev('entry_confirmed','t1')]);expect(await count('sim_trades')).toBe(0);
+  });
+  it('retains old leverage and fees when an existing legacy trade closes', async () => {
+    await candle([ev('entry_confirmed','t1')]);
+    await db.exec("update sim_trades set rule_version='LEGACY',slippage_price=0,leverage=20,margin=4,notional=80,quantity=.8,entry_fee=.04,take_profit=101.5");
+    await candle([ev('take_profit_hit','t1',{exit_price:101.5})],99.9,101.5);
+    expect((await trade('t1')).leverage).toBe(20);expect(Number((await trade('t1')).pnl)).toBeCloseTo(1.1194,9);
+  });
+  it('rolls back settlement and result alerts when a commit hits a recorded Binance restriction', async () => {
+    await candle([ev('entry_confirmed','t1')]); const tp=Number((await trade('t1')).take_profit);
+    await db.query('select engine_heartbeat($1::jsonb)',[JSON.stringify({instance_id:instance,status:'ERROR',websocket_connected:false,binance_connected:false,error:'BINANCE_ACCESS_RESTRICTED: HTTP451'})]);
+    await db.exec('SAVEPOINT blocked');await expect(candle([],99.9,tp)).rejects.toThrow('Binance access blocked');await db.exec('ROLLBACK TO blocked');
+    expect((await trade('t1')).status).toBe('OPEN');expect(await balance()).toBe(5);expect(await count('telegram_logs')).toBe(0);
   });
 });
