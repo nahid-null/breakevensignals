@@ -88,7 +88,7 @@ export function settleExperimental(p: ExperimentalPosition, raw: number, reason:
 type IndexedFeed = ExperimentalFeed & { bars: Map<number,Candle>; events: Map<number,Candidate>; fundingAt: Map<number,Funding> };
 const indexCache = new WeakMap<ExperimentalFeed,IndexedFeed>();
 export function replayExperimental(feeds: ExperimentalFeed[], from: number, to: number, cfg: ExperimentalConfig, startingBalance: number, cost=EXPERIMENTAL_COST) {
-  const indexed=feeds.map(f=>{const saved=indexCache.get(f);if(saved)return saved;const fresh={...f,bars:new Map(f.candles.map(c=>[c.time,c])),events:new Map(f.candidates.map(c=>[c.time,c])),fundingAt:new Map(f.funding.map(x=>[x.time,x]))};indexCache.set(f,fresh);return fresh;});
+  const indexed=feeds.map(f=>{const saved=indexCache.get(f);if(saved)return saved;const fresh={...f,bars:new Map(f.candles.map(c=>[c.time,c])),events:new Map(f.candidates.map(c=>[c.time,c])),fundingAt:new Map(f.funding.map(x=>[Math.floor(x.time/MINUTE)*MINUTE,x]))};indexCache.set(f,fresh);return fresh;});
   let balance=startingBalance; let peak=balance; let maxDd=0; let open: ExperimentalPosition | null=null;
   const trades: ExperimentalTrade[]=[]; const rejected: Record<string,number>={}; let candidates=0;
   const reject=(reason:string)=>{rejected[reason]=(rejected[reason]??0)+1;};
@@ -99,7 +99,7 @@ export function replayExperimental(feeds: ExperimentalFeed[], from: number, to: 
       if(e){ candidates++; if(open) reject('TRADE_ALREADY_OPEN'); else { const r=experimentalPosition(e,c,f.rules,balance,cfg,cost); open=r.position; if(r.reason) reject(r.reason); } }
       if(!open || open.symbol!==f.symbol) continue;
       const p=open; const s=sign(p.direction); const funding=f.fundingAt.get(time);
-      if(funding && time>=p.time) p.funding+=p.quantity*funding.mark*funding.rate*s;
+      if(funding && funding.time>=p.time) p.funding+=p.quantity*funding.mark*funding.rate*s;
       const stopHit=s===1?c.low<=p.stop:c.high>=p.stop; const targetHit=s===1?c.high>=p.target:c.low<=p.target;
       const gapLiq=s===1?c.open<=p.liquidation:c.open>=p.liquidation;
       let raw: number | null=null; let reason='';
