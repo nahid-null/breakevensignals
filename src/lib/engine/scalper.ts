@@ -1,6 +1,7 @@
 import { INDICATORS, type Direction } from "../config";
 import { ema, rma, relativeStrength, trueRange, confirmedPivot } from "./calculations";
 import { pineGt as gt, pineLt as lt, pineGe as ge, pineLe as le } from './pine-numbers';
+import { snapshot, updateMtf, type MtfSnapshot } from "./mtf-trend";
 import { MINUTE, PARAMETERS as P, validateCandle, type EngineState, type Candle, type Trade, type Signal, type SideState, type Analysis } from "./model";
 
 export function calculate(state: EngineState, c: Candle): Analysis {
@@ -65,7 +66,7 @@ function signal(state: EngineState, trade: Trade, event: Signal["event"], time: 
     timestamp: new Date(time + MINUTE).toISOString(), ...(exit === undefined ? {} : { exit_price: exit }),
     ...(net === undefined ? {} : { net_result_r: net }) };
 }
-export function manageTrade(state: EngineState, side: SideState, c: Candle): Signal | null {
+export function manageTrade(state: EngineState, side: SideState, c: Candle, trend: MtfSnapshot | null = null): Signal | null {
   const t = side.trade;
   if (!t || c.time <= t.entryTime) return null;
   const long = t.direction === "LONG";
@@ -89,7 +90,9 @@ export function manageTrade(state: EngineState, side: SideState, c: Candle): Sig
   const trigger = long ? t.entry + t.risk * P.breakevenTrigger : t.entry - t.risk * P.breakevenTrigger;
   if (P.enableBreakeven && !t.breakeven && (long ? ge(c.high, trigger) : le(c.low, trigger))) {
     t.breakeven = true; t.breakevenTime = c.time; t.stop = long ? Math.max(t.stop, t.entry) : Math.min(t.stop, t.entry);
-    return signal(state, t, "breakeven_activated", c.time);
+    const be = signal(state, t, "breakeven_activated", c.time);
+    // Trend Identify reading (previous closed 15M/5M/1M bars) for the Simulator only; never gates Pine.
+    return trend ? { ...be, mtf_trend: trend } : be;
   }
   return null;
 }
@@ -102,11 +105,13 @@ export function processCandle(state: EngineState, c: Candle, allowEntries = true
   validateCandle(c);
   if (state.lastTime !== null && c.time <= state.lastTime) return { signals: [], analysis: null, duplicate: true };
   if (state.lastTime !== null && c.time !== state.lastTime + MINUTE) throw new Error("Missing candles: recovery required before processing");
+  // Previous completed 15M/5M/1M bars, as read by request.security(f_trend()[1]) on this 1M bar.
+  const trend = state.mtf ? snapshot(state.mtf) : null;
   const analysis = calculate(state, c);
   const signals: Signal[] = [];
   for (const direction of ["LONG", "SHORT"] as Direction[]) {
     const side = direction === "LONG" ? state.long : state.short;
-    const managed = manageTrade(state, side, c);
+    const managed = manageTrade(state, side, c, trend);
     if (managed) signals.push(managed);
     const stop = direction === "LONG" ? analysis.longStop : analysis.shortStop;
     const setup = direction === "LONG" ? analysis.longSetup : analysis.shortSetup;
@@ -120,6 +125,7 @@ export function processCandle(state: EngineState, c: Candle, allowEntries = true
       signals.push(signal(state, trade, "entry_confirmed", c.time));
     }
   }
+  if (state.mtf) updateMtf(state.mtf, c);
   state.lastTime = c.time; state.count += 1;
   return { signals, analysis, duplicate: false };
 }
