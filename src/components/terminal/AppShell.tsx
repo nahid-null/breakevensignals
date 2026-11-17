@@ -12,6 +12,8 @@ const NAV = [
 ] as const;
 const MORE = [
   { to: "/robot-coins", label: "Robot Coins", icon: Radar },
+  { to: "/chart", label: "Chart & Verify", icon: CandlestickChart },
+  { to: "/parity", label: "Parity Report", icon: GitCompare },
   { to: "/robot-backtest", label: "Robot Backtest", icon: FlaskConical },
   { to: "/markets", label: "Coin Monitor", icon: LineChart },
   { to: "/signals", label: "Signal History", icon: History },
