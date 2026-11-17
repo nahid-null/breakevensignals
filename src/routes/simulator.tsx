@@ -8,6 +8,7 @@ import { fmtPrice, fmtTime, useMarkets, useSettings, useStatuses } from "@/lib/d
 import { fmtSignedUsd, fmtUsd, SIM_RULES, simSessionTrades, simSummary, todayPnl, unrealizedPnl, useSimAccount, useSimTrades } from "@/lib/simulator";
 import { addSimBalance, setSimEnabled, changeSimBalance, readSimControlAccess } from "@/lib/simulator.functions";
 import { StatusBadge } from "@/components/terminal/StatusBadge";
+import { TrendWatch } from '@/components/terminal/TrendWatch';
 import { SavedMarketNotice } from '@/components/terminal/SavedMarketNotice';
 import { contractFeedStatus } from '@/lib/engine/market-policy';
 import { Button } from "@/components/ui/button";
@@ -20,9 +21,9 @@ export const Route = createFileRoute("/simulator")({
   head: () => ({
     meta: [
       { title: "Simulator Trading — Crypto Signal Terminal" },
-      { name: "description", content: "Original Pine entries with fixed 50x practice trades, 80% margin and 10% net margin-profit targets, plus preserved history." },
+      { name: "description", content: "Practice trades only on Pine breakeven signals that match the 15m/5m trend, at 50x with 80% margin and a 10% net margin target." },
       { property: "og:title", content: "Simulator Trading — Crypto Signal Terminal" },
-      { property: "og:description", content: "Original Pine entries, fixed 50x, 80% margin, 10% net margin ROI and audited practice balance controls." },
+      { property: "og:description", content: "Breakeven-only practice trades filtered by the Trend Identify 15m/5m/1m trend, 50x, 80% margin, 10% net margin ROI." },
       { property: 'og:type', content: 'website' },
       { name: 'twitter:card', content: 'summary_large_image' },
     ],
@@ -140,7 +141,9 @@ function Simulator() {
             <dt className="text-muted-foreground">New trade leverage</dt><dd className="font-mono">{SIM_RULES.leverage}x</dd>
             <dt className="text-muted-foreground">Allocated margin</dt><dd className="font-mono">{SIM_RULES.marginShare * 100}% of balance</dd>
             <dt className="text-muted-foreground">Net profit target</dt><dd className="font-mono text-long">+{SIM_RULES.targetNetRoiPercent}% on margin</dd>
-            <dt className="text-muted-foreground">Entry</dt><dd>Breakeven + next-candle confirm</dd>
+            <dt className="text-muted-foreground">Entry</dt><dd>At breakeven price, when it fires</dd>
+            <dt className="text-muted-foreground">Trend filter</dt><dd>15m = 5m; 1m sideways or same</dd>
+            <dt className="text-muted-foreground">Stop loss</dt><dd>Pine breakeven line</dd>
             <dt className="text-muted-foreground">Telegram</dt><dd>Breakeven + trade results</dd>
             <dt className="text-muted-foreground">Costs</dt><dd>{SIM_RULES.feePercent}% per side + 1 tick per side</dd>
             <dt className="text-muted-foreground">Concurrent trades</dt><dd>1</dd>
@@ -149,11 +152,11 @@ function Simulator() {
         <div className="space-y-3 border border-border bg-card/40 p-4">
           <h2 className="text-xs uppercase tracking-widest text-muted-foreground">Open position</h2>
           {open && <SavedMarketNotice />}
-          {!performanceReady ? <p className="text-sm text-muted-foreground">{account.isError || trades.isError ? 'Could not load practice account or trades.' : 'Loading practice account…'}</p> : !open ? <p className="text-sm text-muted-foreground">{!account.data?.enabled ? 'Paused — no new practice entries.' : balance > 0 ? 'Waiting for the next original Pine entry.' : 'Practice balance is zero.'}</p> : (
+          {!performanceReady ? <p className="text-sm text-muted-foreground">{account.isError || trades.isError ? 'Could not load practice account or trades.' : 'Loading practice account…'}</p> : !open ? <p className="text-sm text-muted-foreground">{!account.data?.enabled ? 'Paused — no new practice entries.' : balance > 0 ? 'Waiting for a breakeven signal on a specially watched coin.' : 'Practice balance is zero.'}</p> : (
             <div className="grid grid-cols-2 gap-x-6 gap-y-2 font-mono text-sm sm:grid-cols-3">
               <div><div className="text-[10px] text-muted-foreground">COIN</div>{open.symbol}</div>
               <div><div className="text-[10px] text-muted-foreground">SIDE</div><StatusBadge value={open.direction} /></div>
-              <div><div className="text-[10px] text-muted-foreground">LEVERAGE</div>{open.leverage}x · {open.rule_version === 'LEGACY' ? 'PREVIOUS RULES' : 'PINE'}</div>
+              <div><div className="text-[10px] text-muted-foreground">LEVERAGE</div>{open.leverage}x · {open.rule_version === 'PINE_BE_TREND' ? 'BE + TREND' : open.rule_version === 'LEGACY' ? 'PREVIOUS RULES' : 'PINE'}</div>
               <div><div className="text-[10px] text-muted-foreground">MARGIN</div>{fmtUsd(open.margin)}</div>
               <div><div className="text-[10px] text-muted-foreground">ENTRY</div>{fmtPrice(open.entry_price)}</div>
               <div><div className="text-[10px] text-muted-foreground">PRICE · {feed === 'LIVE' ? 'LIVE' : 'LAST SAVED'}</div>{Number.isFinite(price) ? fmtPrice(price) : '—'}{feed !== 'LIVE' && <div className="text-[10px] text-waiting">{feed} · {fmtTime(market?.last_candle_at, tz)}</div>}</div>
@@ -165,6 +168,8 @@ function Simulator() {
           )}
         </div>
       </section>
+
+      <TrendWatch tz={tz} />
 
       <section className="overflow-hidden border-y border-border">
         <h2 className="border-b border-border px-3 py-2 text-xs uppercase tracking-widest text-muted-foreground">Trade history</h2>
@@ -182,7 +187,7 @@ function Simulator() {
                   <td className="px-3 py-2">{fmtTime(t.opened_at, tz)}</td>
                   <td className="px-3 py-2">{t.symbol}</td>
                   <td className="px-3 py-2"><StatusBadge value={t.direction} /></td>
-                  <td className="px-3 py-2">{t.leverage}x <span className="text-muted-foreground">{t.rule_version === 'LEGACY' ? 'PREVIOUS RULES' : 'PINE'}</span></td>
+                  <td className="px-3 py-2">{t.leverage}x <span className="text-muted-foreground">{t.rule_version === 'PINE_BE_TREND' ? 'BE + TREND' : t.rule_version === 'LEGACY' ? 'PREVIOUS RULES' : 'PINE'}</span></td>
                   <td className="px-3 py-2">{fmtUsd(t.margin)}</td>
                   <td className="px-3 py-2">{fmtPrice(t.entry_price)}</td>
                   <td className="px-3 py-2">{t.exit_price === null ? '—' : Number(t.exit_price).toPrecision(6)}</td>

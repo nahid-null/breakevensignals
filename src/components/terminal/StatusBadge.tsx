@@ -8,6 +8,7 @@ const tone: Record<string, string> = {
   LIVE: "text-long border-long/40 bg-long/10",
   RUNNING: "text-long border-long/40 bg-long/10",
   BULLISH: "text-long border-long/40 bg-long/10",
+  SIDEWAYS: "text-waiting border-waiting/40 bg-waiting/10",
   BEARISH: "text-short border-short/40 bg-short/10",
   UNAVAILABLE: "text-short border-short/40 bg-short/10",
   processed: "text-long border-long/40 bg-long/10",
