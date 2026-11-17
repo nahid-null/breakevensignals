@@ -42,7 +42,19 @@ const report = (name: string, rules: Rules) => {
 };
 console.log(`Window ${new Date(start).toISOString()} -> ${new Date(end).toISOString()} (${days} days, ${Object.keys(data).length} coins)`);
 const sh = Number(process.argv[3] ?? 0.2), lv = Number(process.argv[4] ?? 20);
-for (const hold of [1, 3, 5]) {
+const variants: [string, Rules['extra']][] = [['Training 3 (baseline)', undefined], ['A stronger 20-candle trend', 'trend20'], ['B breakout + retest', 'retest'], ['C not overextended', 'noExtend'], ['D minimum volatility (20 candles)', 'vol'], ['E room to target (reward check)', 'room']];
+for (const [name, extra] of variants) {
+  const r = simulate2(data, { trend: true, realistic: true, share: sh, base: 'margin', lev: lv, hold: 1, extra }, start);
+  const n = r.trades.length, h = (k: string) => r.trades.filter(t => t.reason === k).length, w = r.trades.filter(t => t.pnl > 0).length;
+  const cost = r.trades.reduce((a, t) => a + t.cost, 0), gross = r.balance - 5 + cost;
+  console.log(`VAR ${name}: trades ${n} | wins ${w} losses ${n - w} | win rate ${n ? (w / n * 100).toFixed(1) : '-'}% | net ${(r.balance - 5).toFixed(2)} | before costs ${gross.toFixed(2)} | costs $${cost.toFixed(2)} | maxDD ${(r.maxDrawdown * 100).toFixed(1)}% | final $${r.balance.toFixed(2)} | TP ${h('TAKE_PROFIT')} SL ${h('STOP_LOSS')} TIME ${h('ONE_CANDLE')}`);
+  if (!extra) {
+    let early = 0, adverse = 0; const pend = r.trades.filter(t => t.reason === 'STOP_LOSS');
+    for (const t of r.trades) { const sd = Math.abs(t.entry - t.sl) / t.entry, td = Math.abs(t.tp - t.entry) / t.entry; adverse += sd; early += td; }
+    console.log(`  analysis: avg stop distance ${(adverse / Math.max(n,1) * 100).toFixed(3)}% vs avg target distance ${(early / Math.max(n,1) * 100).toFixed(3)}% | stops ${pend.length}/${n} | needed break-even win rate ${(0.05/(0.10+0.05)*100).toFixed(1)}%`);
+  }
+}
+if (process.env.BT_HOLDS) for (const hold of [1, 3, 5]) {
   const r = simulate2(data, { trend: true, realistic: true, share: sh, base: 'margin', lev: lv, hold }, start);
   const n = r.trades.length, h = (k: string) => r.trades.filter(t => t.reason === k).length, w = r.trades.filter(t => t.pnl > 0).length;
   const time = h('TIME_EXIT') + h('ONE_CANDLE'), cost = r.trades.reduce((a, t) => a + t.cost, 0), worst = Math.min(0, ...r.trades.map(t => t.pnl));
