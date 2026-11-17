@@ -1,12 +1,19 @@
 # Independent Crypto Signal Terminal
 
+## Current prompt-36 — read-only Simulator audit
+- [x] Hook already imports React; automatic check OK. Separate genuine $2.10626 account/18 trades from replay; old report contained26zero-margin phantom closes+1open;37older native skip outcomes absent from saved ledger and explicitly disclosed.
+- [x] Run60fee/slippage-inclusive configurations on201600verified real candles, same Nov10 10:15→Nov17 10:15UTC;52complete/8dust failures; best completed20x/10%/net20 ends$3.28127,still negative; no alternatives applied.
+- [x] Save detailed v2 report,13-tab workbook and86-entry evidence ZIP; current50x/80%/net10/trend rules already configured; settings/history untouched; no publish/deploy.
+- [x] 64targeted accounting/trend/Pine tests pass; zero-balance skips and positive-dust SQL rollback reproduced in isolated PostgreSQL; real Simulator UI shows$2.11and18retained trades,no runtime errors; spreadsheet formulas reconcile to0.
+- [ ] Correct positive-dust rounded-margin division only after user approval; current practice strategy remains unchanged as requested.
+
 ## Current prompt-25 — Simulator 2
 - [x] Add independent 1m candle-breakout practice account: 50x, 80% margin, 10% net balance target, 5% modeled balance risk and one-candle exit; leave existing Simulator/Pine/Telegram unchanged.
 - [x] Build Simulator 2 $5 reset with empty visible session history and retained archived financial audit records; tested in isolated PostgreSQL, hosted controls remain locked.
 - [x] Verify isolated settlement/reset/replay/permission rules and desktop/current/phone navigation; 260 tests pass, central notes updated.
 - [x] Request-by-request audit: all7genuine Simulator2 rows, every column via horizontal scroll, LONG/SHORT examples, reset cancel and all15original Simulator rows at1280/550/390 in the sole dark theme;46targeted tests pass,0runtime errors/overflow.
 - [x] Observe genuine hosted Simulator 2 results through preview: TAO LONG/SHORT 08:10–08:14 one-minute trades, costs and modeled stop loss reconcile; no synthetic hosted trades or agent account mutations.
-- [ ] Publish Simulator 2 page; published desktop/phone currently lack its navigation and return404at/simulator-2. Hosted reset success awaits private access and safe authorization (see blocking follow-up).
+- [x] Simulator 2 publication superseded by prompt-35 retirement; do not restore it.
 
 ## Current prompt-23 verification and reset
 - [x] Reopen affected pages through navigation at1280/602/390 in dark theme: all21coins BOTH/LONG/SHORT/search, all7practice records,544completedPinepositions,86Telegramreceipts, both500barlocalparityreports, reset confirmation/cancel and downloadable verification. Published reset remains locked; published daily P&L uses old source and awaits republishing.
@@ -36,4 +43,4 @@
 Paper Robot30-trade collection, SMC/sweep rollout, chart rollout and MTF-filter rollout are superseded by prompt-22 retirement/removal; source, prior results and financial history remain intact in project/database and chat.md. Windows/Render deployment preparation remains reference-only; Railway is the reported host. No real orders, paid resources or restriction bypasses.
 - [x] prompt-35: Simulator 2 + training removed; Simulator trades breakeven only with 15m/5m/1m trend gate; trend watch + decision log on page; 7-day report.
 - [ ] Redeploy Railway worker so live breakevens carry trend readings (until then every breakeven is skipped as "Trend not ready").
-- [ ] User confirm entry price (breakeven trigger) and 1m rule (sideways or same) — defaults applied.
+- [x] prompt-36 requests the currently configured strategy unchanged; no experimental configuration may be activated.
