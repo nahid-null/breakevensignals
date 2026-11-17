@@ -5,6 +5,7 @@
 - [x] 144 base runs (24 configs×$5/$1000×3periods), 4 frozen-selection stress runs; 10x/20x, 5%/10%, independent sides, net1/1.5/2, closed15m Trend Identify/5mEMA9/21/next1mconfirmation→next-open fills. 34accounting/trend tests pass; every10087breakeven reconciles; max balance residual1.14e-12.
 - [x] No profitable run: $5 traded losses or exchange-minimum rejection; all72$1000runs negative. Neither side qualifies on development; diagnostic10x/5%/net1:2 final LONG−10.49%/80trades, SHORT−7.62%/80trades, no modeled liquidations; stress also negative.
 - [x] Save detailed report,144-runCSV,160final-tradeCSV and inspected189-entry evidence ZIP in existing Simulator Performance Reports collection (membership returned pending); no live code/settings/history/publish changes. Existing unrelated approval/deployment blockers remain deferred, not authorized by prompt37.
+- [x] Final Files readback: all4v1members ready; all144metricrows/160finaltrades and archive hashes verified. Fix report-only post-exit candle marks; recompute148runs with original selection retained and all non-drawdown values/trades identical;19drawdown summaries corrected, headline holdout unchanged.35focused tests pass; v2report/CSV/evidence preserve v1 history.
 
 ## Current prompt-36 — read-only Simulator audit
 - [x] Hook already imports React; automatic check OK. Separate genuine $2.10626 account/18 trades from replay; old report contained26zero-margin phantom closes+1open;37older native skip outcomes absent from saved ledger and explicitly disclosed.
