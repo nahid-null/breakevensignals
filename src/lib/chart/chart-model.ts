@@ -9,9 +9,9 @@ export type Palette = { long: string; short: string; waiting: string; active: st
 export type Overlays = { ema: boolean; pineSignals: boolean; pineLevels: boolean; liquidity: boolean; structure: boolean; fvg: boolean; ob: boolean; premium: boolean; ote: boolean; robotTrades: boolean; robotStages: boolean };
 export const DEFAULT_OVERLAYS: Overlays = { ema: true, pineSignals: true, pineLevels: true, liquidity: true, structure: true, fvg: true, ob: true, premium: false, ote: true, robotTrades: true, robotStages: true };
 
-export type ChartMarker = { time: number; position: 'aboveBar' | 'belowBar' | 'atPriceMiddle'; price?: number; shape: 'arrowUp' | 'arrowDown' | 'circle' | 'square'; color: string; text: string };
-export type ChartBox = { from: number; to: number | null; top: number; bottom: number; fill: string; stroke: string; label?: string };
-export type ChartSegment = { from: number; to: number | null; price: number; color: string; dash?: boolean; width?: number; label?: string };
+export type ChartMarker = { time: number; position: 'aboveBar' | 'belowBar' | 'atPriceMiddle'; price?: number | undefined; shape: 'arrowUp' | 'arrowDown' | 'circle' | 'square'; color: string; text: string };
+export type ChartBox = { from: number; to: number | null; top: number; bottom: number; fill: string; stroke: string; label?: string | undefined };
+export type ChartSegment = { from: number; to: number | null; price: number; color: string; dash?: boolean; width?: number; label?: string | undefined };
 
 export type RobotTradeView = {
   id: string; direction: 'LONG' | 'SHORT'; openedAt: number; closedAt: number | null; entry: number; initialStop: number; stop: number; tp: number;

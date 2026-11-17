@@ -1,8 +1,8 @@
 /** Minimal drawing layer for zones (boxes) and levels (segments) on a lightweight-charts series. */
 import type { IChartApi, IPrimitivePaneRenderer, IPrimitivePaneView, ISeriesApi, ISeriesPrimitive, SeriesAttachedParameter, SeriesType, Time, UTCTimestamp } from 'lightweight-charts';
 
-export type Box = { from: number; to: number | null; top: number; bottom: number; fill: string; stroke: string; label?: string };
-export type Segment = { from: number; to: number | null; price: number; color: string; dash?: boolean; width?: number; label?: string };
+export type Box = { from: number; to: number | null; top: number; bottom: number; fill: string; stroke: string; label?: string | undefined };
+export type Segment = { from: number; to: number | null; price: number; color: string; dash?: boolean; width?: number; label?: string | undefined };
 type Target = Parameters<IPrimitivePaneRenderer['draw']>[0];
 
 export class OverlayPrimitive implements ISeriesPrimitive<Time> {
