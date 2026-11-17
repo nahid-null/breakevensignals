@@ -160,7 +160,10 @@ function ChartPage() {
     const em = eMarkets.data?.find((m) => m.symbol === symbol);
     if (PINE_SYMBOLS.has(symbol) && tf === '1m' && mode === 'live' && em?.last_candle_at) {
       const t = Date.parse(em.last_candle_at); const b = pine.bars.find((x) => x.time === t) ?? pine.bars.find((x) => x.time === t - MIN);
-      out.push(b ? { component: 'Pine scores: live worker vs chart', status: b.long.score === em.long_score && b.short.score === em.short_score ? 'MATCH' : 'MISMATCH',
+      const same = (x?: typeof b) => !!x && x.long.score === em.long_score && x.short.score === em.short_score;
+      const prev = b ? pine.bars[pine.bars.indexOf(b) - 1] : undefined;
+      if (b && !same(b) && same(prev)) out.push({ component: 'Pine scores: live worker vs chart', status: 'INFO', detail: `The worker's saved scores still belong to ${iso(prev!.time)} UTC (it was saving the newest candle). Re-checked on the next candle.` });
+      else out.push(b ? { component: 'Pine scores: live worker vs chart', status: same(b) ? 'MATCH' : 'MISMATCH',
         detail: `${iso(b.time)} UTC · worker LONG ${em.long_score}/SHORT ${em.short_score} · chart LONG ${b.long.score}/SHORT ${b.short.score}. The chart started ${bars.length} candles ago; the worker has run longer, which only matters while averages warm up.` }
         : { component: 'Pine scores: live worker vs chart', status: 'INFO', detail: `Worker's last candle ${iso(t)} UTC is not in the loaded chart yet.` });
     } else out.push({ component: 'Pine scores: live worker vs chart', status: 'N/A', detail: PINE_SYMBOLS.has(symbol) ? 'Available on the 1M live chart (the live Pine engine runs on 1-minute candles).' : 'This coin is not in the Pine signal list.' });
@@ -191,7 +194,7 @@ function ChartPage() {
   const nearMisses = useMemo(() => !pine ? [] : pine.trades.slice(-12).reverse().map((t: PineTrade) => {
     const rows = (decisions.data ?? []).filter((x) => x.direction === t.direction && barOpen(decisionBarTime(x), ms) === t.entryTime);
     const r = rows.at(-1);
-    return { t, reason: r ? `${STAGE_LABEL[robotStage(r.reason, r.decision)]}: ${r.reason}` : ROBOT_SET.has(symbol) ? 'No stored robot decision for this candle (robot window is the last 8 days).' : 'Coin not in the robot list.' };
+    return { t, reason: r ? `${STAGE_LABEL[robotStage(r.reason, r.decision)]}: ${r.reason}` : ROBOT_SET.has(symbol) ? 'No stored robot decision for this candle.' : 'Coin not in the robot list.' };
   }), [pine, decisions.data, ms, symbol]);
 
   const setSearch = (p: Partial<{ symbol: string; tf: string }>) => void nav({ search: (prev) => ({ ...prev, ...p }) });
