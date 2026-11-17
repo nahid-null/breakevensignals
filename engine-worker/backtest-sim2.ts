@@ -4,7 +4,7 @@
  * Pure replay: never writes to the database or sends Telegram.
  * Usage: bun engine-worker/backtest-sim2.ts [days=3]
  */
-import { SYMBOLS } from '../src/lib/symbols';
+import { SYMBOLS } from '../src/lib/config';
 import { simulate2, type Candle, type Rules } from '../src/lib/engine/sim2-backtest';
 
 const days = Number(process.argv[2] ?? 3);
