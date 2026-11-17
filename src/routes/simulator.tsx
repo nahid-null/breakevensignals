@@ -31,10 +31,10 @@ export const Route = createFileRoute("/simulator")({
   component: Simulator,
 });
 
-const REASON: Record<string, string> = { TAKE_PROFIT: 'TAKE PROFIT HIT', STOP_LOSS: 'STOP LOSS HIT', BREAKEVEN: 'BREAKEVEN', LIQUIDATED: 'LIQUIDATED', TIME_EXIT: 'CLOSED AFTER 24H' };
+const REASON: Record<string, string> = { TAKE_PROFIT: 'TAKE PROFIT HIT', STOP_LOSS: 'STOP LOSS HIT', BREAKEVEN: 'BREAKEVEN', LIQUIDATED: 'LIQUIDATED', TIME_EXIT: 'CLOSED AFTER 1H' };
 /** prompt-39 trades show only the two receipt statuses; earlier trades keep their original labels. */
 const resultLabel = (t: { rule_version: string; exit_reason: string | null }) =>
-  !t.exit_reason ? '—' : (t.rule_version === 'PINE5_TREND' || t.rule_version === 'PINE1_CROSS') ? (t.exit_reason === 'TAKE_PROFIT' ? 'TAKE PROFIT HIT' : t.exit_reason === 'TIME_EXIT' ? 'CLOSED AFTER 24H' : 'STOP LOSS HIT') : REASON[t.exit_reason] ?? '—';
+  !t.exit_reason ? '—' : (t.rule_version === 'PINE5_TREND' || t.rule_version === 'PINE1_CROSS') ? (t.exit_reason === 'TAKE_PROFIT' ? 'TAKE PROFIT HIT' : t.exit_reason === 'TIME_EXIT' ? 'CLOSED AFTER 1H' : 'STOP LOSS HIT') : REASON[t.exit_reason] ?? '—';
 const pnlTone = (n: number | null | undefined) => (Number(n) > 0 ? 'text-long' : Number(n) < 0 ? 'text-short' : 'text-muted-foreground');
 
 function Tile({ label, value, tone, hint }: { label: string; value: string; tone?: string | undefined; hint?: string | undefined }) {
@@ -147,7 +147,7 @@ function Simulator() {
           {access.data && !controlsAllowed && <p className="text-xs text-waiting">Account controls locked: private access has not been verified.</p>}
           <dl className="grid grid-cols-2 gap-x-3 gap-y-2 border-t border-border pt-3 text-xs">
             <dt className="text-muted-foreground">New trade leverage</dt><dd className="font-mono">{SIM_RULES.leverage}x</dd>
-            <dt className="text-muted-foreground">Allocated margin</dt><dd className="font-mono">{SIM_RULES.marginShare * 100}% of balance</dd>
+            <dt className="text-muted-foreground">Allocated margin</dt><dd className="font-mono">{SIM_RULES.marginShare * 100}% of balance per trade</dd>
             <dt className="text-muted-foreground">Signals</dt><dd>LONG/SHORT indicators on 1m chart</dd>
             <dt className="text-muted-foreground">Entry</dt><dd>Indicator entry price</dd>
             <dt className="text-muted-foreground">Trend filter</dt><dd>15m = 5m = side; 1m sideways or same</dd>
