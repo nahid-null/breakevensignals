@@ -18,7 +18,6 @@ import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SetupRouteImport } from './routes/setup'
 import { Route as SignalsRouteImport } from './routes/signals'
 import { Route as SimulatorRouteImport } from './routes/simulator'
-import { Route as Simulator2RouteImport } from './routes/simulator-2'
 import { Route as TelegramRouteImport } from './routes/telegram'
 import { Route as ApiPublicEngineRouteImport } from './routes/api/public/engine'
 import { Route as ApiPublicTradingviewWebhookRouteImport } from './routes/api/public/tradingview-webhook'
@@ -68,11 +67,6 @@ const SimulatorRoute = SimulatorRouteImport.update({
   path: '/simulator',
   getParentRoute: () => rootRouteImport,
 } as any)
-const Simulator2Route = Simulator2RouteImport.update({
-  id: '/simulator-2',
-  path: '/simulator-2',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const TelegramRoute = TelegramRouteImport.update({
   id: '/telegram',
   path: '/telegram',
@@ -100,7 +94,6 @@ export interface FileRoutesByFullPath {
   '/setup': typeof SetupRoute
   '/signals': typeof SignalsRoute
   '/simulator': typeof SimulatorRoute
-  '/simulator-2': typeof Simulator2Route
   '/telegram': typeof TelegramRoute
   '/api/public/engine': typeof ApiPublicEngineRoute
   '/api/public/tradingview-webhook': typeof ApiPublicTradingviewWebhookRoute
@@ -115,7 +108,6 @@ export interface FileRoutesByTo {
   '/setup': typeof SetupRoute
   '/signals': typeof SignalsRoute
   '/simulator': typeof SimulatorRoute
-  '/simulator-2': typeof Simulator2Route
   '/telegram': typeof TelegramRoute
   '/api/public/engine': typeof ApiPublicEngineRoute
   '/api/public/tradingview-webhook': typeof ApiPublicTradingviewWebhookRoute
@@ -131,7 +123,6 @@ export interface FileRoutesById {
   '/setup': typeof SetupRoute
   '/signals': typeof SignalsRoute
   '/simulator': typeof SimulatorRoute
-  '/simulator-2': typeof Simulator2Route
   '/telegram': typeof TelegramRoute
   '/api/public/engine': typeof ApiPublicEngineRoute
   '/api/public/tradingview-webhook': typeof ApiPublicTradingviewWebhookRoute
@@ -148,7 +139,6 @@ export interface FileRouteTypes {
     | '/setup'
     | '/signals'
     | '/simulator'
-    | '/simulator-2'
     | '/telegram'
     | '/api/public/engine'
     | '/api/public/tradingview-webhook'
@@ -163,7 +153,6 @@ export interface FileRouteTypes {
     | '/setup'
     | '/signals'
     | '/simulator'
-    | '/simulator-2'
     | '/telegram'
     | '/api/public/engine'
     | '/api/public/tradingview-webhook'
@@ -178,7 +167,6 @@ export interface FileRouteTypes {
     | '/setup'
     | '/signals'
     | '/simulator'
-    | '/simulator-2'
     | '/telegram'
     | '/api/public/engine'
     | '/api/public/tradingview-webhook'
@@ -194,7 +182,6 @@ export interface RootRouteChildren {
   SetupRoute: typeof SetupRoute
   SignalsRoute: typeof SignalsRoute
   SimulatorRoute: typeof SimulatorRoute
-  Simulator2Route: typeof Simulator2Route
   TelegramRoute: typeof TelegramRoute
   ApiPublicEngineRoute: typeof ApiPublicEngineRoute
   ApiPublicTradingviewWebhookRoute: typeof ApiPublicTradingviewWebhookRoute
@@ -265,13 +252,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SimulatorRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/simulator-2': {
-      id: '/simulator-2'
-      path: '/simulator-2'
-      fullPath: '/simulator-2'
-      preLoaderRoute: typeof Simulator2RouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/telegram': {
       id: '/telegram'
       path: '/telegram'
@@ -306,7 +286,6 @@ const rootRouteChildren: RootRouteChildren = {
   SetupRoute: SetupRoute,
   SignalsRoute: SignalsRoute,
   SimulatorRoute: SimulatorRoute,
-  Simulator2Route: Simulator2Route,
   TelegramRoute: TelegramRoute,
   ApiPublicEngineRoute: ApiPublicEngineRoute,
   ApiPublicTradingviewWebhookRoute: ApiPublicTradingviewWebhookRoute,
