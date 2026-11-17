@@ -8,7 +8,7 @@ import { simulator2Options } from '@/lib/simulator2';
 import { enableSimulator2, resetSimulator2 } from '@/lib/simulator2.functions';
 import { readSimControlAccess } from '@/lib/simulator.functions';
 import { fmtUsd, fmtSignedUsd, simSummary, todayPnl } from '@/lib/simulator';
-import { fmtPrice, fmtTime, useSettings, useStatuses } from '@/lib/data';
+import { fmtTime, useSettings, useStatuses } from '@/lib/data';
 import { StatusBadge } from '@/components/terminal/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -32,6 +32,8 @@ export const Route = createFileRoute('/simulator-2')({
 function Metric({ label, value, tone }: { label: string; value: string; tone?: string }) {
   return <div className="min-w-0 border-l border-border pl-4 py-2"><div className="text-[10px] uppercase text-muted-foreground">{label}</div><div className={cn('mt-2 font-mono text-xl tabular-nums break-words', tone)}>{value}</div></div>;
 }
+
+const fmtPrice = (value: number) => Number(value).toLocaleString('en-US', { maximumSignificantDigits: 9 });
 
 function CandleExample({ short = false }: { short?: boolean }) {
   return <svg role="img" aria-label={short ? 'Bearish previous-candle breakout' : 'Bullish previous-candle breakout'} viewBox="0 0 220 96" className={cn('h-24 w-full max-w-56', short ? 'text-short' : 'text-long')}>
