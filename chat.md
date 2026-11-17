@@ -211,3 +211,8 @@
 - Added pure replay `src/lib/engine/sim2-backtest.ts` (mirrors live formulas), runner `engine-worker/backtest-sim2.ts`, tests `src/test/sim2-backtest.test.ts` (4 pass). Live Simulator 2 rules NOT changed.
 - 3-day real Binance backtest (20 coins, 2026-11-14 08:30 → 11-17 08:30): Training 1: 995 trades, 75 wins, balance $5 → ~$0. Training 3: 174 trades, 8 wins, 165 stop-outs, balance → ~$0.
 - Root cause: at 50x with 80% margin, fees+slippage already cost ~4% of balance, so a −5% balance stop sits only ~0.02% from entry (above entry on coarse-tick coins → skipped). Target needs ~0.35–0.43% move. Awaiting user decision on sizing before enabling anything.
+
+## 2026-11-17 08:40 UTC — prompt-28 Simulator 2 20% margin backtest (live unchanged)
+- User chose less margin: 20% of balance, 50x, $5, Training 3 filters, +$0.50/−$0.25 net. Backtest-only; nothing live/published changed.
+- Replay now accepts margin share; trades whose stop is impossible after costs are skipped (not blocking other coins), which changed earlier counts slightly.
+- 3 days real Binance 1m (11-14 08:3x → 11-17 08:3x, 20 coins): 20% margin → 4 trades, 1 win, 3 losses, 0 TP, 1 SL, 3 one-candle exits, $5 → $4.74, max drawdown 5.3%. Avg TP distance 1.115%, SL 0.385%. 80% margin Training 3: 223 trades, 10 wins, $5 → $0. Sample far too small for conclusions.
