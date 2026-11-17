@@ -21,7 +21,7 @@ export const Route = createFileRoute('/parity')({
   component: ParityPage,
 });
 
-type Run = { title: string; reference: string; symbol: string; tf: string; first: number; last: number; direction: Direction; report: ParityReport; candleCheck?: { compared: number; identical: number; firstDiff: number | null }; note?: string };
+type Run = { title: string; reference: string; symbol: string; tf: string; first: number; last: number; direction: Direction; report: ParityReport; candleCheck?: { compared: number; identical: number; firstDiff: number | null }; note?: string | undefined };
 const iso = (t: number) => new Date(t).toISOString().slice(0, 16).replace('T', ' ');
 const fmt = (v: ParityValue | undefined) => v === undefined ? 'missing' : v === null ? 'na' : typeof v === 'boolean' ? (v ? 'true' : 'false') : Number(v.toPrecision(10)).toString();
 const PINE_COINS = SYMBOLS.filter((s) => s !== 'WILDUSDT');
