@@ -6,25 +6,16 @@ import { ABSOLUTE_MAX_ALLOCATION_PCT, ROBOT_SYMBOL_PATTERN } from './config';
 export const robotDeposit = createServerFn({ method: 'POST' })
   .inputValidator((d: unknown) => z.object({ amount: z.number().finite().positive().max(1_000_000_000) }).parse(d))
   .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
-    const { data: r, error } = await supabaseAdmin.rpc('robot_deposit', { amount: Math.round(data.amount * 100) / 100 });
-    if (error) throw new Error(error.message);
-    return { balance: Number(r) };
+    throw new Error('Paper Robot account controls have been retired.');
   });
 
 /** Emergency STOP ALL: blocks new entries and closes every paper position at the last saved price. */
 export const robotStopAll = createServerFn({ method: 'POST' }).handler(async () => {
-  const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
-  const { data, error } = await supabaseAdmin.rpc('robot_emergency_stop');
-  if (error) throw new Error(error.message);
-  return { closed: Number(data) };
+  throw new Error('Paper Robot is already retired and stopped.');
 });
 
 export const robotResume = createServerFn({ method: 'POST' }).handler(async () => {
-  const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
-  const { error } = await supabaseAdmin.rpc('robot_resume');
-  if (error) throw new Error(error.message);
-  return { ok: true };
+  throw new Error('Paper Robot has been retired; new entries are disabled.');
 });
 
 /** Editable paper settings. Leverage is fixed at 50x and is not editable. The daily loss limit and loss-streak cooldown are optional switches, off by default. */
@@ -51,11 +42,5 @@ export const robotSettingsSchema = z.object({
 export const robotSaveSettings = createServerFn({ method: 'POST' })
   .inputValidator((d: unknown) => robotSettingsSchema.parse(d))
   .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
-    const open = await supabaseAdmin.from('robot_positions').select('symbol').eq('status', 'OPEN');
-    if (open.error) throw new Error('Could not check open paper positions');
-    if (open.data?.some((p) => !data.symbols.includes(p.symbol))) throw new Error('Keep every coin with an open paper position in the monitored list');
-    const { error } = await supabaseAdmin.from('robot_settings').update({ ...data, updated_at: new Date().toISOString() }).eq('id', 1);
-    if (error) throw new Error(error.message);
-    return { ok: true };
+    throw new Error('Paper Robot settings have been retired.');
   });

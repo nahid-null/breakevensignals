@@ -10,9 +10,9 @@ export const SIM_RULES = { marginShare: 0.8, leverage: 50, targetNetRoiPercent: 
 export const useSimAccount = () => useQuery({ queryKey: ['sim_account'], refetchInterval: 15000, queryFn: () => readSimAccount() as Promise<SimAccount | null> });
 export const useSimTrades = () => useQuery({ queryKey: ['sim_trades'], refetchInterval: 15000, queryFn: () => readSimTrades() as Promise<SimTrade[]> });
 
-/** Unrealized profit/loss at the given price, after the entry fee and an estimated exit fee. */
-export function unrealizedPnl(t: Pick<SimTrade, 'direction' | 'quantity' | 'entry_price' | 'entry_fee' | 'margin'>, price: number) {
-  const gross = Math.max(Number(t.quantity) * (price - Number(t.entry_price)) * (t.direction === 'LONG' ? 1 : -1), -Number(t.margin));
+/** Matches settlement accounting: both modeled tick costs, entry and estimated exit fees. */
+export function unrealizedPnl(t: Pick<SimTrade, 'direction' | 'quantity' | 'entry_price' | 'entry_fee' | 'margin'> & Partial<Pick<SimTrade, 'slippage_price'>>, price: number) {
+  const gross = Math.max(Number(t.quantity) * (price - Number(t.entry_price)) * (t.direction === 'LONG' ? 1 : -1) - 2 * Number(t.quantity) * Number(t.slippage_price ?? 0), -Number(t.margin));
   return gross - Number(t.entry_fee) - Number(t.quantity) * price * (SIM_RULES.feePercent / 100);
 }
 
@@ -28,6 +28,13 @@ export function simSummary(trades: Pick<SimTrade, 'status' | 'pnl'>[]) {
   const wins = closed.filter((t) => Number(t.pnl) > 0).length;
   return { closed: closed.length, wins, losses: closed.length - wins, winRate: closed.length ? (wins / closed.length) * 100 : null,
     totalPnl: closed.reduce((s, t) => s + Number(t.pnl ?? 0), 0) };
+}
+
+/** A restart begins a new performance session without deleting previous trades. */
+export function simSessionTrades<T extends Pick<SimTrade, 'opened_at'>>(trades: T[], startedAt: string | null | undefined): T[] {
+  if (!startedAt) return trades;
+  const start = Date.parse(startedAt);
+  return trades.filter((t) => Date.parse(t.opened_at) >= start);
 }
 
 export const fmtUsd = (n: number | null | undefined) => n === null || n === undefined || !Number.isFinite(Number(n)) ? '—'

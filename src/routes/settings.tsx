@@ -18,7 +18,7 @@ export const Route = createFileRoute("/settings")({
       { title: "Settings — Crypto Signal Terminal" },
       { name: "description", content: "Separate LONG and SHORT Telegram notification controls and display preferences." },
       { property: "og:title", content: "Settings — Crypto Signal Terminal" },
-      { property: "og:description", content: "LONG and SHORT notifications for entries, breakeven, stop loss and take profit." },
+      { property: "og:description", content: "Original Pine LONG and SHORT breakeven notifications, simulator results and display preferences." },
       { property: 'og:type', content: 'website' },
       { name: 'twitter:card', content: 'summary_large_image' },
     ],

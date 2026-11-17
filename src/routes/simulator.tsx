@@ -1,13 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from '@tanstack/react-start';
 import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Plus, Wallet, Pencil, RotateCcw } from "lucide-react";
-import { fmtPrice, fmtTime, useMarkets, useSettings } from "@/lib/data";
-import { fmtSignedUsd, fmtUsd, SIM_RULES, simSummary, todayPnl, unrealizedPnl, useSimAccount, useSimTrades } from "@/lib/simulator";
-import { addSimBalance, setSimEnabled, changeSimBalance } from "@/lib/simulator.functions";
+import { fmtPrice, fmtTime, useMarkets, useSettings, useStatuses } from "@/lib/data";
+import { fmtSignedUsd, fmtUsd, SIM_RULES, simSessionTrades, simSummary, todayPnl, unrealizedPnl, useSimAccount, useSimTrades } from "@/lib/simulator";
+import { addSimBalance, setSimEnabled, changeSimBalance, readSimControlAccess } from "@/lib/simulator.functions";
 import { StatusBadge } from "@/components/terminal/StatusBadge";
+import { SavedMarketNotice } from '@/components/terminal/SavedMarketNotice';
+import { contractFeedStatus } from '@/lib/engine/market-policy';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -45,9 +47,12 @@ function Simulator() {
   const qc = useQueryClient();
   const addBalance = useServerFn(addSimBalance); const enable = useServerFn(setSimEnabled); const adjust = useServerFn(changeSimBalance);
   const account = useSimAccount();
+  const access = useQuery({ queryKey: ['sim_control_access'], queryFn: () => readSimControlAccess() });
+  const controlsAllowed = access.data?.allowed === true;
   const trades = useSimTrades();
   const markets = useMarkets();
   const settings = useSettings();
+  const status = useStatuses();
   const tz = settings.data?.display_timezone ?? "UTC";
   const [amount, setAmount] = useState("");
   const [busy, setBusy] = useState(false);
@@ -56,12 +61,16 @@ function Simulator() {
   const list = trades.data ?? [];
   const open = list.find((t) => t.status === 'OPEN');
   const closed = list.filter((t) => t.status === 'CLOSED');
-  const price = open ? Number(markets.data?.find((m) => m.symbol === open.symbol)?.price ?? NaN) : NaN;
+  const market = open ? markets.data?.find((m) => m.symbol === open.symbol) : undefined;
+  const feed = contractFeedStatus(market, status.health, status.healthQuery.isError || markets.isError);
+  const price = Number(market?.price ?? NaN);
   const live = open && Number.isFinite(price) ? unrealizedPnl(open, price) : null;
-  const session = list.filter((t) => !account.data?.session_started_at || Date.parse(t.opened_at) >= Date.parse(account.data.session_started_at));
+  const session = simSessionTrades(list, account.data?.session_started_at);
   const sum = simSummary(session);
   const today = todayPnl(list, new Date(), tz);
   const balance = Number(account.data?.balance ?? 0);
+  const accountReady = account.isSuccess && account.data !== null;
+  const performanceReady = accountReady && trades.isSuccess;
 
   async function deposit() {
     const n = Number(amount);
@@ -100,32 +109,33 @@ function Simulator() {
           <h1 className="text-2xl font-semibold">Simulator trading</h1>
         </div>
         <label className="flex items-center gap-3 text-sm">
-          <span className={account.data?.enabled ? 'text-long' : 'text-waiting'}>{account.data?.enabled ? 'Taking new trades' : 'Paused'}</span>
-          <Switch checked={!!account.data?.enabled} disabled={!account.data} onCheckedChange={(v) => void toggle(v)} aria-label="Simulator on or off" />
+          <span className={account.data?.enabled ? 'text-long' : 'text-waiting'}>{!accountReady ? 'Status unavailable' : account.data?.enabled ? 'Taking new trades' : 'Paused'}</span>
+          <Switch checked={!!account.data?.enabled} disabled={!account.data || !controlsAllowed} onCheckedChange={(v) => void toggle(v)} aria-label="Simulator on or off" />
         </label>
       </div>
 
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <Tile label="Balance" value={fmtUsd(account.data?.balance)} hint={`Added in total ${fmtUsd(account.data?.total_deposited)}`} />
-        <Tile label="Equity" value={fmtUsd(balance + (live ?? 0))} hint={open ? 'Includes open trade' : undefined} />
-        <Tile label="Today's P&L" value={fmtSignedUsd(today)} tone={pnlTone(today)} />
-        <Tile label="Session P&L" value={fmtSignedUsd(sum.totalPnl)} tone={pnlTone(sum.totalPnl)} />
-        <Tile label="Win rate" value={sum.winRate === null ? '—' : `${sum.winRate.toFixed(1)}%`} hint={`${sum.wins} won · ${sum.losses} lost`} />
-        <Tile label="Session trades" value={String(session.length)} hint={`${sum.closed} closed`} />
+        <Tile label="Equity" value={performanceReady && (!open || live !== null) ? fmtUsd(balance + (live ?? 0)) : '—'} hint={open ? 'Includes open trade' : undefined} />
+        <Tile label="Today's P&L" value={trades.isSuccess ? fmtSignedUsd(today) : '—'} tone={pnlTone(today)} />
+        <Tile label="Session P&L" value={performanceReady ? fmtSignedUsd(sum.totalPnl) : '—'} tone={pnlTone(sum.totalPnl)} />
+        <Tile label="Win rate" value={!performanceReady || sum.winRate === null ? '—' : `${sum.winRate.toFixed(1)}%`} hint={performanceReady ? `${sum.wins} won · ${sum.losses} lost` : undefined} />
+        <Tile label="Session trades" value={performanceReady ? String(session.length) : '—'} hint={performanceReady ? `${sum.closed} closed` : undefined} />
       </section>
 
       <section className="grid gap-4 lg:grid-cols-[1fr_1.4fr]">
         <div className="space-y-3 border border-border bg-card/40 p-4">
           <h2 className="text-xs uppercase tracking-widest text-muted-foreground">Add trading balance</h2>
           <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); void deposit(); }}>
-            <Input type="number" inputMode="decimal" min="1" step="0.01" placeholder="Amount in USDT" value={amount} onChange={(e) => setAmount(e.target.value)} className="font-mono" aria-label="Amount in USDT" />
-            <Button type="submit" disabled={busy}><Plus className="size-4" /> Add</Button>
+            <Input type="number" inputMode="decimal" min="0.01" step="0.01" max="1000000000" placeholder="Amount in USDT" value={amount} onChange={(e) => setAmount(e.target.value)} className="font-mono" aria-label="Amount in USDT" disabled={busy || !controlsAllowed || !!open || !accountReady} />
+            <Button type="submit" disabled={busy || !controlsAllowed || !!open || !accountReady}><Plus className="size-4" /> Add</Button>
           </form>
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" disabled={busy || !!open || !account.data} onClick={() => { setNewBalance(balance.toFixed(2)); setEdit('EDIT'); }}><Pencil className="size-4" /> Edit balance</Button>
-            <Button variant="outline" disabled={busy || !!open || !account.data} onClick={() => setEdit('RESET')}><RotateCcw className="size-4" /> Restart simulator</Button>
+            <Button variant="outline" disabled={busy || !!open || !account.data || !controlsAllowed} onClick={() => { setNewBalance(balance.toFixed(2)); setEdit('EDIT'); }}><Pencil className="size-4" /> Edit balance</Button>
+            <Button variant="outline" disabled={busy || !!open || !account.data || !controlsAllowed} onClick={() => setEdit('RESET')}><RotateCcw className="size-4" /> Restart simulator</Button>
           </div>
           {open && <p className="text-xs text-waiting">Balance changes are locked until the open trade finishes.</p>}
+          {access.data && !controlsAllowed && <p className="text-xs text-waiting">Account controls locked: private access has not been verified.</p>}
           <dl className="grid grid-cols-2 gap-x-3 gap-y-2 border-t border-border pt-3 text-xs">
             <dt className="text-muted-foreground">New trade leverage</dt><dd className="font-mono">{SIM_RULES.leverage}x</dd>
             <dt className="text-muted-foreground">Allocated margin</dt><dd className="font-mono">{SIM_RULES.marginShare * 100}% of balance</dd>
@@ -138,14 +148,15 @@ function Simulator() {
         </div>
         <div className="space-y-3 border border-border bg-card/40 p-4">
           <h2 className="text-xs uppercase tracking-widest text-muted-foreground">Open position</h2>
-          {!open ? <p className="text-sm text-muted-foreground">{balance > 0 ? 'Waiting for the next original Pine entry.' : 'Add a balance or restart at $5.'}</p> : (
+          {open && <SavedMarketNotice />}
+          {!performanceReady ? <p className="text-sm text-muted-foreground">{account.isError || trades.isError ? 'Could not load practice account or trades.' : 'Loading practice account…'}</p> : !open ? <p className="text-sm text-muted-foreground">{!account.data?.enabled ? 'Paused — no new practice entries.' : balance > 0 ? 'Waiting for the next original Pine entry.' : 'Practice balance is zero.'}</p> : (
             <div className="grid grid-cols-2 gap-x-6 gap-y-2 font-mono text-sm sm:grid-cols-3">
               <div><div className="text-[10px] text-muted-foreground">COIN</div>{open.symbol}</div>
               <div><div className="text-[10px] text-muted-foreground">SIDE</div><StatusBadge value={open.direction} /></div>
               <div><div className="text-[10px] text-muted-foreground">LEVERAGE</div>{open.leverage}x · {open.rule_version === 'LEGACY' ? 'PREVIOUS RULES' : 'PINE'}</div>
               <div><div className="text-[10px] text-muted-foreground">MARGIN</div>{fmtUsd(open.margin)}</div>
               <div><div className="text-[10px] text-muted-foreground">ENTRY</div>{fmtPrice(open.entry_price)}</div>
-              <div><div className="text-[10px] text-muted-foreground">PRICE</div>{Number.isFinite(price) ? fmtPrice(price) : '—'}</div>
+              <div><div className="text-[10px] text-muted-foreground">PRICE · {feed === 'LIVE' ? 'LIVE' : 'LAST SAVED'}</div>{Number.isFinite(price) ? fmtPrice(price) : '—'}{feed !== 'LIVE' && <div className="text-[10px] text-waiting">{feed} · {fmtTime(market?.last_candle_at, tz)}</div>}</div>
               <div><div className="text-[10px] text-muted-foreground">STOP LOSS</div><span className={open.breakeven ? 'text-breakeven' : 'text-short'}>{fmtPrice(open.stop_loss)}</span></div>
               <div><div className="text-[10px] text-muted-foreground">TAKE PROFIT</div><span className="text-long">{fmtPrice(open.take_profit)}</span></div>
               <div><div className="text-[10px] text-muted-foreground">LIQUIDATION</div>{Number(open.liquidation_price).toPrecision(6)}</div>
@@ -165,13 +176,13 @@ function Simulator() {
               </tr>
             </thead>
             <tbody>
-              {closed.length === 0 && <tr><td colSpan={12} className="px-3 py-8 text-center text-muted-foreground">No finished simulator trades yet.</td></tr>}
+              {trades.isLoading ? <tr><td colSpan={12} className="px-3 py-8 text-center text-muted-foreground">Loading trade history…</td></tr> : trades.isError ? <tr><td colSpan={12} className="px-3 py-8 text-center text-short">Could not load trade history.</td></tr> : closed.length === 0 && <tr><td colSpan={12} className="px-3 py-8 text-center text-muted-foreground">No finished simulator trades yet.</td></tr>}
               {closed.map((t) => (
                 <tr key={t.id} className="border-b border-border/50 font-mono text-xs">
                   <td className="px-3 py-2">{fmtTime(t.opened_at, tz)}</td>
                   <td className="px-3 py-2">{t.symbol}</td>
                   <td className="px-3 py-2"><StatusBadge value={t.direction} /></td>
-                  <td className="px-3 py-2">{t.leverage}x <span className="text-muted-foreground">{t.strength}</span></td>
+                  <td className="px-3 py-2">{t.leverage}x <span className="text-muted-foreground">{t.rule_version === 'LEGACY' ? 'PREVIOUS RULES' : 'PINE'}</span></td>
                   <td className="px-3 py-2">{fmtUsd(t.margin)}</td>
                   <td className="px-3 py-2">{fmtPrice(t.entry_price)}</td>
                   <td className="px-3 py-2">{t.exit_price === null ? '—' : Number(t.exit_price).toPrecision(6)}</td>

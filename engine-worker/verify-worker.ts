@@ -1,5 +1,5 @@
 import { PGlite } from '@electric-sql/pglite';
-import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { mkdtemp, readdir, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { SignalService } from './service';
@@ -12,13 +12,13 @@ import { feedHasLiveEvidence } from '../src/lib/engine/feed-health';
 const directory = await mkdtemp(join(tmpdir(), 'worker-verification-'));
 let db = new PGlite(join(directory, 'db'));
 await db.exec('CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role;');
-for (const migration of ['0000_migration.sql', '0002_independent_signal_engine.sql', '0003_engine_event_provenance_and_statistics.sql', '0004_fix_engine_checkpoint_time_comparison.sql', '0005_engine_runtime_identity_and_graceful_stop.sql', '0006_windows_pc_engine_telemetry.sql', '0007_durable_successful_candle_scans.sql', '0008_guard_restricted_market_writes.sql', '0009_validated_candle_feed_health.sql','0010_mtf_trend_filter.sql','0011_simulator_trading.sql','0012_simulator_follow_telegram_switches.sql']) {
+for (const migration of (await readdir(new URL('../drizzle/migrations/', import.meta.url))).filter((f) => f.endsWith('.sql') && f !== '0001_migration.sql').sort()) {
   const sql = (await readFile(new URL(`../drizzle/migrations/${migration}`, import.meta.url), 'utf8')).replace(/^ALTER PUBLICATION.*$/gm, '');
   await db.exec(sql);
 }
 const report = { scope: 'Temporary real Binance worker verification with isolated disk PostgreSQL; NOT deployed production',
   directory, startedAt: new Date().toISOString(), initialContracts: 0, reconnectPassed: false, candleAdvancePassed: false,
-  restoredCheckpoints: 0, trendFilterCheckpoints: 0, restartPassed: false, successfulCandleScans: 0, scanCountRestored: false, validatedLiveFeeds: 0, isolatedPendingNotifications: 0, productionWrites: 0, completedAt: '' };
+  restoredCheckpoints: 0, restartPassed: false, successfulCandleScans: 0, scanCountRestored: false, validatedLiveFeeds: 0, isolatedPendingNotifications: 0, productionWrites: 0, completedAt: '' };
 const server = Bun.serve({ hostname: '127.0.0.1', port: 0, async fetch(request) {
   if (request.headers.get('authorization') !== 'Bearer isolated-verification-key') return new Response('Unauthorized', { status: 401 });
   try {
@@ -82,8 +82,6 @@ try {
   report.scanCountRestored = (await db.query<{ n: number }>('select sum(successful_scans)::int n from market_state')).rows[0]?.n === report.successfulCandleScans;
   if (!report.scanCountRestored) throw new Error('Scan counter disk persistence mismatch');
   report.restoredCheckpoints = restored.length;
-  report.trendFilterCheckpoints = (await db.query<{ n: number }>("select count(*)::int n from engine_checkpoints where state ? 'mtf'")).rows[0]?.n ?? 0;
-  if (report.trendFilterCheckpoints !== restored.length) throw new Error('15M/5M/1M trend state was not saved with every checkpoint');
   service = new SignalService(url, 'isolated-verification-key', false, 'temporary');
   await service.start();
   report.restartPassed = before.every((row) => {
