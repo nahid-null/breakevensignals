@@ -5,7 +5,7 @@ const flat = (n: number, start: number, step: number): Candle[] => Array.from({ 
   const o = start + i * step, c = o + step; return { time: i * 60000, open: o, high: Math.max(o, c) + 0.01, low: Math.min(o, c) - 0.01, close: c };
 });
 const breakout = (c: Candle[], up: boolean): Candle[] => {
-  const p = c[c.length - 1], o = p.close, cl = up ? p.high + 0.5 : p.low - 0.5;
+  const p = c[c.length - 1]!, o = p.close, cl = up ? p.high + 0.5 : p.low - 0.5;
   return [...c, { time: p.time + 60000, open: o, close: cl, high: Math.max(o, cl) + 0.05, low: Math.min(o, cl) - 0.05 }];
 };
 const loose = { trend: false, realistic: false }, trend = { trend: true, realistic: false };

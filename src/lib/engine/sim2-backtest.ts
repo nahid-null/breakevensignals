@@ -16,7 +16,7 @@ export function sim2Levels(balance: number, op: number, s: 1 | -1, tick: number)
 /** Training 1 breakout + optional Training 3 filters, evaluated on closed candles up to index i. */
 export function sim2Signal(c: Candle[], i: number, tick: number, balance: number, rules: Rules): { dir: 'LONG' | 'SHORT' | null; skip?: 'trend' | 'range' } {
   const k = c[i], p = c[i - 1];
-  if (!p || p.time !== k.time - 60000 || k.high === k.low) return { dir: null };
+  if (!k || !p || p.time !== k.time - 60000 || k.high === k.low) return { dir: null };
   if (Math.abs(k.close - k.open) / (k.high - k.low) < SIM2.body) return { dir: null };
   const dir = k.close > k.open && k.close > p.high ? 'LONG' : k.close < k.open && k.close < p.low ? 'SHORT' : null;
   if (!dir) return { dir: null };
@@ -53,6 +53,7 @@ export function sim2Settle(balance: number, k: Candle, dir: 'LONG' | 'SHORT', ti
 /** One trade at a time across all coins, chronological; signals only from candles at/after `from`. */
 export function simulate2(data: Record<string, { tick: number; candles: Candle[] }>, rules: Rules, from: number, startBalance = 5) {
   const idx: Record<string, Map<number, number>> = {};
+  const get = <T,>(r: Record<string, T>, k: string) => r[k] as T;
   const times = new Set<number>();
   for (const [s, d] of Object.entries(data)) { idx[s] = new Map(d.candles.map((c, i) => [c.time, i])); d.candles.forEach(c => c.time >= from && times.add(c.time)); }
   let balance = startBalance, peak = startBalance, maxDrawdown = 0, skippedTrend = 0, skippedRange = 0, freeAt = 0;
@@ -60,12 +61,12 @@ export function simulate2(data: Record<string, { tick: number; candles: Candle[]
   for (const t of [...times].sort((a, b) => a - b)) {
     if (t < freeAt || balance <= 0) continue;
     for (const s of Object.keys(data).sort()) {
-      const i = idx[s].get(t); if (i === undefined) continue;
-      const c = data[s].candles; const sig = sim2Signal(c, i, data[s].tick, balance, rules);
+      const i = get(idx, s).get(t); if (i === undefined) continue;
+      const d = get(data, s), c = d.candles; const sig = sim2Signal(c, i, d.tick, balance, rules);
       if (sig.skip === 'trend') skippedTrend++; if (sig.skip === 'range') skippedRange++;
       if (!sig.dir) continue;
       const next = c[i + 1]; if (!next || next.time !== t + 60000) break;
-      const r = sim2Settle(balance, next, sig.dir, data[s].tick);
+      const r = sim2Settle(balance, next, sig.dir, d.tick);
       freeAt = t + 120000;
       if (!r) break;
       balance = r.balanceAfter; peak = Math.max(peak, balance); maxDrawdown = Math.max(maxDrawdown, (peak - balance) / peak);
