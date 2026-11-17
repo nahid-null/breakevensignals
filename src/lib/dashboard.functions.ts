@@ -32,6 +32,14 @@ export const readStats = get.handler(async () => {
 export const readSimAccount = get.handler(async () => must(await (await db()).from('sim_account').select('*').eq('id', 1).maybeSingle()));
 export const readSimTrades = get.handler(async () => must(await (await db()).from('sim_trades').select('*').order('opened_at', { ascending: false }).limit(500)) ?? []);
 
+/** Separate account and its current session, read consistently from a fixed account id. */
+export const readSimulator2 = get.handler(async () => {
+  const client = await db();
+  const account = must(await client.from('sim2_account').select('*').eq('id', 1).single());
+  const trades = must(await client.from('sim2_trades').select('*').eq('session_id', account.session_id).order('closed_at', { ascending: false }));
+  return { account, trades: trades ?? [] };
+});
+
 export const readRobotAccount = get.handler(async () => must(await (await db()).from('robot_account').select('*').eq('id', 1).single()));
 export const readRobotSettings = get.handler(async () => must(await (await db()).from('robot_settings').select('*').eq('id', 1).single()));
 export const readRobotPositions = get.handler(async () => must(await (await db()).from('robot_positions').select('*').order('opened_at', { ascending: false }).limit(1000)));
