@@ -59,4 +59,4 @@ use the editor.
 - Fail closed for hosted balance controls until Invite-only access is verified; localhost checks never authorize remote callers.
 - Ship both pure engine trees in the worker Docker image and smoke-test that COPY set; audit unused initial-capital corrections separately from deposits to preserve ledger history.
 - Retained parity tools reuse `processCandle` and intact Pine fixtures; retired chart modules remain unrouted to preserve verification evidence.
-- Simulator 2 settles independently inside candle commits; serialized pending entries and archived reset sessions prevent overlaps and loss of financial evidence.
+- Simulator entries come only from breakeven events carrying the worker's prior-closed Trend Identify snapshot; the trend gate lives in the settlement function and never filters Pine signals, so source signals stay unaltered.

@@ -34,4 +34,6 @@
 
 ## Retired requirements
 Paper Robot30-trade collection, SMC/sweep rollout, chart rollout and MTF-filter rollout are superseded by prompt-22 retirement/removal; source, prior results and financial history remain intact in project/database and chat.md. Windows/Render deployment preparation remains reference-only; Railway is the reported host. No real orders, paid resources or restriction bypasses.
-- [ ] Simulator 2 Training 3: backtest done (losing); waiting for user decision on position size vs −5% stop before enabling live
+- [x] prompt-35: Simulator 2 + training removed; Simulator trades breakeven only with 15m/5m/1m trend gate; trend watch + decision log on page; 7-day report.
+- [ ] Redeploy Railway worker so live breakevens carry trend readings (until then every breakeven is skipped as "Trend not ready").
+- [ ] User confirm entry price (breakeven trigger) and 1m rule (sideways or same) — defaults applied.
