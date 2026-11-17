@@ -121,7 +121,7 @@ describe('parity report', () => {
   it('passes against identical values and reports the first changed candle', () => {
     const native = nativeRows(run, 'LONG');
     expect(compareParity(native, native).matches).toBe(true);
-    const ref = native.map((r, i) => i === 700 ? { ...r, values: { ...r.values, rsi: (r.values.rsi as number) + 0.01 } } : r);
+    const ref = native.map((r, i) => i === 700 ? { ...r, values: { ...r.values, rsi: (r.values['rsi'] as number) + 0.01 } } : r);
     const rep = compareParity(native, ref);
     expect(rep.matches).toBe(false);
     expect(rep.firstMismatch).toEqual({ field: 'rsi', time: candles[700]!.time });
@@ -139,7 +139,7 @@ describe('parity report', () => {
     expect(tv.direction).toBe('LONG');
     expect(tv.intervalMs).toBe(60_000);
     expect(tv.rows[0]!.time).toBe(1794887820000);
-    expect(tv.rows.map((r) => [r.values.ema9, r.values.entryEvent, r.values.rsi])).toEqual([[3.2701, false, 48.5], [3.2721, true, 55.1]]);
+    expect(tv.rows.map((r) => [r.values['ema9'], r.values['entryEvent'], r.values['rsi']])).toEqual([[3.2701, false, 48.5], [3.2721, true, 55.1]]);
   });
 });
 
