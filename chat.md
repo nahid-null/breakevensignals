@@ -224,3 +224,10 @@
 
 ## 2026-11-17 08:55 UTC — prompt-30 backtest 20% margin, 20x (live unchanged)
 - 7-day real Binance 1m (11-10 08:51 → 11-17 08:51, 20 coins), Training 3 filters, +10%/−5% of margin net: 90 trades, 16 wins/74 losses, TP 5 (5.6%), SL 67 (74.4%), one-candle 18; net −$2.06, $5 → $2.94, max drawdown 41.2%, fees+slippage ≈$1.78. Avg TP distance 0.625%, SL 0.125%. Awaiting approval; live and publish untouched.
+
+## 2026-11-17 08:58 UTC — prompt-31 hold-period comparison (live unchanged)
+- Same 7 days (11-10 08:51 → 11-17 08:51), 20 coins, 20% margin, 20x, Training 3, ±10/5% of margin net:
+  - 1 candle: 90 trades, 16W/74L (17.8%), net −$2.06, $2.94, DD 41.2%, TP 5 SL 67 time 18, costs $1.78
+  - 3 candles: 88, 12W/76L (13.6%), −$2.06, $2.94, DD 41.7%, TP 10 SL 74 time 4, costs $1.71
+  - 5 candles: 87, 12W/75L (13.8%), −$2.05, $2.95, DD 41.6%, TP 11 SL 75 time 1, costs $1.70
+- Worst trade −$0.050 (never above 5% of margin in model; real gaps could exceed). Awaiting approval.
