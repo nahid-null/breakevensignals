@@ -20,6 +20,7 @@ for (const s of SYMBOLS) {
   const candles: Candle[] = [];
   for (let t = start - 300 * 60000; t < end; ) {
     const rows = await (await fetch(`${BASE}/fapi/v1/klines?symbol=${s}&interval=1m&startTime=${t}&endTime=${end - 1}&limit=1500`)).json() as (string | number)[][];
+    if (!Array.isArray(rows)) throw new Error(`${s}: Binance returned ${JSON.stringify(rows).slice(0, 120)}`);
     if (!rows.length) break;
     for (const r of rows) if (Number(r[6]) < end) candles.push({ time: Number(r[0]), open: +r[1], high: +r[2], low: +r[3], close: +r[4] });
     t = Number(rows[rows.length - 1][0]) + 60000;
