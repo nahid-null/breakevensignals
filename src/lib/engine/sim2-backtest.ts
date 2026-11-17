@@ -1,6 +1,10 @@
 /** Pure Simulator 2 replay; formulas mirror simulate2_engine_candle (50x, 80% margin, 0.05% fee/side, 1 tick/side). */
 export type Candle = { time: number; open: number; high: number; low: number; close: number };
-export type Rules = { trend: boolean; realistic: boolean; share?: number; base?: 'balance' | 'margin'; lev?: number; hold?: number; extra?: Sim2Variant | undefined };
+export type Rules = { trend: boolean; realistic: boolean; share?: number; base?: 'balance' | 'margin'; lev?: number; hold?: number; extra?: Sim2Variant | undefined; filters?: B2Filters | undefined; exit?: B2Exit | undefined };
+/** Research-only refinements of the breakout + retest idea. */
+export type B2Filters = { strong?: boolean; ema?: boolean; mom?: boolean; noFalse?: boolean };
+/** atr: stop/target set from 14-candle average true range at the signal, instead of the fixed margin percentages. */
+export type B2Exit = { atrSl: number; atrTp: number };
 export type Sim2Variant = 'trend20' | 'retest' | 'noExtend' | 'vol' | 'room';
 export type Sim2Trade = { symbol: string; direction: 'LONG' | 'SHORT'; signalTime: number; entry: number; tp: number; sl: number; exit: number; reason: string; pnl: number; balanceAfter: number; cost: number; held: number };
 export const SIM2 = { lev: 50, share: 0.8, fee: 0.0005, target: 0.10, risk: 0.05, body: 0.60, trendLen: 20, rangeLen: 5 } as const;
@@ -37,9 +41,10 @@ function baseSignal(c: Candle[], i: number, tick: number, balance: number, rules
   return { dir };
 }
 
-export function sim2Settle(balance: number, k: Candle | Candle[], dir: 'LONG' | 'SHORT', tick: number, share: number = SIM2.share, base: 'balance' | 'margin' = 'balance', lev: number = SIM2.lev) {
+export function sim2Settle(balance: number, k: Candle | Candle[], dir: 'LONG' | 'SHORT', tick: number, share: number = SIM2.share, base: 'balance' | 'margin' = 'balance', lev: number = SIM2.lev, dist?: { tp: number; sl: number }) {
   const bars = Array.isArray(k) ? k : [k]; const first = bars[0]; if (!first) return null;
-  const s = dir === 'LONG' ? 1 : -1, op = first.open; const { m, q, f, tp, sl, liq } = sim2Levels(balance, op, s, tick, share, base, lev);
+  const s = dir === 'LONG' ? 1 : -1, op = first.open; const L = sim2Levels(balance, op, s, tick, share, base, lev);
+  const { m, q, f, liq } = L; const tp = dist ? op * (1 + s * dist.tp) : L.tp, sl = dist ? op * (1 - s * dist.sl) : L.sl;
   if (!(tick > 0 && s * (op - sl) > 0 && s * (sl - liq) > 0 && s * (tp - op) > 0)) return null;
   let px = op, reason = 'TIME_EXIT', held = 0;
   for (const b of bars) {
@@ -75,7 +80,8 @@ export function simulate2(data: Record<string, { tick: number; candles: Candle[]
       const hold = rules.hold ?? 1; const bars: Candle[] = [];
       for (let j = 1; j <= hold; j++) { const b = c[i + j]; if (!b || b.time !== t + j * 60000) break; bars.push(b); }
       if (bars.length < hold) break;
-      const r = sim2Settle(balance, bars, sig.dir, d.tick, rules.share, rules.base, rules.lev);
+      const at = rules.exit ? indicators(c).atr[i]! / c[i]!.close : 0;
+      const r = sim2Settle(balance, bars, sig.dir, d.tick, rules.share, rules.base, rules.lev, rules.exit ? { tp: at * rules.exit.atrTp, sl: at * rules.exit.atrSl } : undefined);
       freeAt = t + ((r?.held ?? 1) + 1) * 60000;
       if (!r) { skippedCost++; freeAt = 0; continue; }
       balance = r.balanceAfter; peak = Math.max(peak, balance); maxDrawdown = Math.max(maxDrawdown, (peak - balance) / peak);
@@ -108,6 +114,7 @@ export function sim2Signal(c: Candle[], i: number, tick: number, balance: number
       const level = b.dir === 'LONG' ? prev.high : prev.low;
       const ok = b.dir === 'LONG' ? k.low <= level * 1.0005 && k.close > level && k.close > k.open
                                   : k.high >= level * 0.9995 && k.close < level && k.close < k.open;
+      if (ok && rules.filters && (i < 220 || !b2Pass(c, j, i, b.dir, level, rules.filters))) return { dir: null, skip: 'variant' };
       return ok ? { dir: b.dir } : { dir: null, skip: 'variant' };
     }
     return { dir: null };
@@ -131,4 +138,33 @@ export function sim2Signal(c: Candle[], i: number, tick: number, balance: number
     ok = room <= 0 || room >= tpMove(b.dir, k.close); // already above the swing (clear air) or target fits before it
   }
   return ok ? b : { dir: null, skip: 'variant' };
+}
+
+type Ind = { ema9: number[]; ema21: number[]; ema200: number[]; rsi: number[]; hist: number[]; atr: number[] };
+const indCache = new WeakMap<Candle[], Ind>();
+const ema = (v: number[], n: number) => { const k = 2 / (n + 1), o: number[] = []; v.forEach((x, i) => o.push(i ? x * k + o[i - 1]! * (1 - k) : x)); return o; };
+/** Standard EMA, Wilder RSI(14), MACD(12,26,9) histogram and Wilder ATR(14). */
+export function indicators(c: Candle[]): Ind {
+  const hit = indCache.get(c); if (hit) return hit;
+  const cl = c.map(x => x.close); const e12 = ema(cl, 12), e26 = ema(cl, 26); const macd = cl.map((_, i) => e12[i]! - e26[i]!); const sig = ema(macd, 9);
+  const rsi: number[] = [], atr: number[] = []; let g = 0, l = 0, a = 0;
+  c.forEach((x, i) => {
+    const p = c[i - 1]; const ch = p ? x.close - p.close : 0; const tr = p ? Math.max(x.high - x.low, Math.abs(x.high - p.close), Math.abs(x.low - p.close)) : x.high - x.low;
+    if (i <= 14) { g += Math.max(ch, 0) / 14; l += Math.max(-ch, 0) / 14; a += tr / 14; } else { g = (g * 13 + Math.max(ch, 0)) / 14; l = (l * 13 + Math.max(-ch, 0)) / 14; a = (a * 13 + tr) / 14; }
+    rsi.push(i < 14 ? 50 : l === 0 ? 100 : 100 - 100 / (1 + g / l)); atr.push(a);
+  });
+  const r = { ema9: ema(cl, 9), ema21: ema(cl, 21), ema200: ema(cl, 200), rsi, hist: macd.map((x, i) => x - sig[i]!), atr };
+  indCache.set(c, r); return r;
+}
+/** Extra checks for a breakout at j and retest at i; true means the setup passes. */
+export function b2Pass(c: Candle[], j: number, i: number, dir: 'LONG' | 'SHORT', level: number, f: B2Filters): boolean {
+  const up = dir === 'LONG', k = c[i]!, b = c[j]!; const I = indicators(c);
+  if (f.strong) { const body = Math.abs(b.close - b.open) / (b.high - b.low); if (body < 0.7 || (b.high - b.low) / b.close < 1.5 * avgRange(c, j - 1, 20)) return false; }
+  if (f.ema) { const e9 = I.ema9[i]!, e21 = I.ema21[i]!, e200 = I.ema200[i]!; if (up ? !(e9 > e21 && e21 > e200 && k.close > e200) : !(e9 < e21 && e21 < e200 && k.close < e200)) return false; }
+  if (f.mom) { const r = I.rsi[i]!, h = I.hist[i]!, hp = I.hist[i - 1]!; if (up ? !(r >= 50 && r <= 70 && h > 0 && h >= hp) : !(r >= 30 && r <= 50 && h < 0 && h <= hp)) return false; }
+  if (f.noFalse) {
+    for (let x = j + 1; x < i; x++) { const m = c[x]!; if (up ? m.close <= level : m.close >= level) return false; }
+    if (up ? k.low < b.open : k.high > b.open) return false;
+  }
+  return true;
 }

@@ -18,7 +18,7 @@ for (const s of SYMBOLS) {
   if (!meta) { console.log(`${s}: unavailable on Binance USD-M, skipped`); continue; }
   const tick = Number(meta.filters.find(f => f.filterType === 'PRICE_FILTER')!.tickSize);
   const candles: Candle[] = [];
-  for (let t = start - 30 * 60000; t < end; ) {
+  for (let t = start - 300 * 60000; t < end; ) {
     const rows = await (await fetch(`${BASE}/fapi/v1/klines?symbol=${s}&interval=1m&startTime=${t}&endTime=${end - 1}&limit=1500`)).json() as (string | number)[][];
     if (!rows.length) break;
     for (const r of rows) if (Number(r[6]) < end) candles.push({ time: Number(r[0]), open: +r[1], high: +r[2], low: +r[3], close: +r[4] });
@@ -52,6 +52,24 @@ for (const [name, extra] of variants.filter(([, e]) => !process.env.BT_ONLY || p
     let early = 0, adverse = 0; const pend = r.trades.filter(t => t.reason === 'STOP_LOSS');
     for (const t of r.trades) { const sd = Math.abs(t.entry - t.sl) / t.entry, td = Math.abs(t.tp - t.entry) / t.entry; adverse += sd; early += td; }
     console.log(`  analysis: avg stop distance ${(adverse / Math.max(n,1) * 100).toFixed(3)}% vs avg target distance ${(early / Math.max(n,1) * 100).toFixed(3)}% | stops ${pend.length}/${n} | needed break-even win rate ${(0.05/(0.10+0.05)*100).toFixed(1)}%`);
+  }
+}
+if (process.env.BT_B2) {
+  const base: Rules = { trend: true, realistic: true, share: sh, base: 'margin', lev: lv, hold: 1, extra: 'retest' };
+  const all = { strong: true, ema: true, mom: true, noFalse: true };
+  const runs: [string, Rules][] = [
+    ['B (reference)', base], ['B1 strong breakout', { ...base, filters: { strong: true } }], ['B2 EMA 9/21/200 aligned', { ...base, filters: { ema: true } }],
+    ['B3 RSI + MACD momentum', { ...base, filters: { mom: true } }], ['B4 reject false breakouts', { ...base, filters: { noFalse: true } }],
+    ['B5 all filters', { ...base, filters: all }], ['B2+B4 EMA + no false', { ...base, filters: { ema: true, noFalse: true } }],
+    ['B hold 3', { ...base, hold: 3 }], ['B hold 5', { ...base, hold: 5 }], ['B2+B4 hold 3', { ...base, hold: 3, filters: { ema: true, noFalse: true } }],
+    ['B ATR exit SL1 TP2 hold5', { ...base, hold: 5, exit: { atrSl: 1, atrTp: 2 } }], ['B ATR exit SL1.5 TP3 hold10', { ...base, hold: 10, exit: { atrSl: 1.5, atrTp: 3 } }],
+    ['B2+B4 ATR SL1 TP2 hold5', { ...base, hold: 5, filters: { ema: true, noFalse: true }, exit: { atrSl: 1, atrTp: 2 } }],
+  ];
+  for (const [name, rules] of runs) {
+    const r = simulate2(data, rules, start); const n = r.trades.length, w = r.trades.filter(t => t.pnl > 0);
+    const gw = w.reduce((a, t) => a + t.pnl, 0), gl = -r.trades.filter(t => t.pnl <= 0).reduce((a, t) => a + t.pnl, 0), cost = r.trades.reduce((a, t) => a + t.cost, 0);
+    const h = (k: string) => r.trades.filter(t => t.reason === k).length, worst = Math.min(0, ...r.trades.map(t => t.pnl));
+    console.log(`B2 ${name} | trades ${n} | win ${n ? (w.length / n * 100).toFixed(1) : '-'}% | net ${(r.balance - 5).toFixed(2)} | gross ${(r.balance - 5 + cost).toFixed(2)} | costs ${cost.toFixed(2)} | PF ${gl ? (gw / gl).toFixed(2) : '-'} | DD ${(r.maxDrawdown * 100).toFixed(1)}% | final ${r.balance.toFixed(2)} | avgW ${w.length ? (gw / w.length).toFixed(4) : '-'} avgL ${n - w.length ? (-gl / (n - w.length)).toFixed(4) : '-'} | TP ${h('TAKE_PROFIT')} SL ${h('STOP_LOSS')} TIME ${h('ONE_CANDLE') + h('TIME_EXIT')} | worst ${worst.toFixed(3)}`);
   }
 }
 if (process.env.BT_HOLDS) for (const hold of [1, 3, 5]) {
