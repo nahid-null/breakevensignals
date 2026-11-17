@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { commitSchema, heartbeatSchema, marketSchema, eventSource } from "@/lib/engine/protocol";
-import { formatSignalMessage } from "@/lib/telegram-format";
 import type { Json } from "@/integrations/supabase/types";
 import { robotCommitSchema } from "@/lib/robot/protocol";
 import { robotFillMessages, robotOpenMessage } from "@/lib/robot/telegram-format";
@@ -37,9 +36,9 @@ export const Route = createFileRoute("/api/public/engine")({
       }
       if (base.data.action === "commit") {
         const data = commitSchema.parse(base.data.data);
+        // Telegram now carries only Simulator trade results; signal events never queue a message.
         const events = data.events.map((e) => ({ ...e,
-          source: eventSource(data.mode),
-          telegram_message: data.mode === 'live' ? formatSignalMessage({ ...e, fee_rate_percent: e.fee_rate_percent ?? null }) : '' }));
+          source: e.adopted ? 'historical' : eventSource(data.mode), telegram_message: '' }));
         const { data: result, error } = await supabaseAdmin.rpc("commit_engine_candle", { p: { ...data, events } as Json });
         if (error) throw error;
         return Response.json(result);

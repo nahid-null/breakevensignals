@@ -211,6 +211,13 @@
       "when": 1794910410297,
       "tag": "0029_simulator_breakeven_trend_entry_remove_simulator2",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1794919838958,
+      "tag": "0030_simulator_pine5_trend_results_only",
+      "breakpoints": true
     }
   ]
 }

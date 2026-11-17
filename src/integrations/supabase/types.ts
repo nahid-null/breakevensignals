@@ -1038,8 +1038,10 @@ export type Database = {
           mtf_trend: Json | null
           reason: string | null
           reference_price: number
+          rule_version: string | null
           status: string
           symbol: string
+          take_profit: number | null
           trade_id: string
         }
         Insert: {
@@ -1054,8 +1056,10 @@ export type Database = {
           mtf_trend?: Json | null
           reason?: string | null
           reference_price: number
+          rule_version?: string | null
           status?: string
           symbol: string
+          take_profit?: number | null
           trade_id: string
         }
         Update: {
@@ -1070,8 +1074,10 @@ export type Database = {
           mtf_trend?: Json | null
           reason?: string | null
           reference_price?: number
+          rule_version?: string | null
           status?: string
           symbol?: string
+          take_profit?: number | null
           trade_id?: string
         }
         Relationships: []

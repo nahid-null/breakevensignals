@@ -18,12 +18,7 @@ vi.mock('../../engine-worker/binance', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../engine-worker/binance')>();
   return { ...actual, delay: async () => {}, binanceFetch: async () => ({ symbols: [
     { symbol: 'NEARUSDT', status: 'TRADING', filters: [{ filterType: 'PRICE_FILTER', tickSize: '0.001' }] },
-  ] }), history: async (_symbol: string, start?: number, end?: number) => {
-    const now = Math.floor((end ?? Date.now()) / MINUTE) * MINUTE;
-    const first = start ?? now - 300 * MINUTE;
-    return Array.from({ length: Math.max(0, (now - first) / MINUTE) }, (_, i) => ({ time: first + i * MINUTE,
-      open: 100, high: 100.5, low: 99.5, close: 100, volume: 10 }));
-  } };
+  ] }), history: async (...a: [string, number?, number?, unknown?, ('1m' | '5m' | '15m')?]) => (await import('./mock-history')).mockHistory(...a) };
 });
 
 afterEach(() => { vi.useRealTimers(); sockets.length = 0; vi.unstubAllGlobals(); });

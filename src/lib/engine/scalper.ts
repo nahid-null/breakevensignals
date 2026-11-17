@@ -59,11 +59,12 @@ export function calculate(state: EngineState, c: Candle): Analysis {
     shortSetup: history && bearish && rsi !== null && lt(rsi, 50) && lt(histogram, 0) && volatility && shortScore >= P.scoreThreshold && shortStop !== null && valid(shortStop - c.close) };
 }
 
+const step = (state: EngineState) => state.interval ?? MINUTE;
 function signal(state: EngineState, trade: Trade, event: Signal["event"], time: number, exit?: number, net?: number): Signal {
   return { event_id: `${trade.id}-${event}`, trade_id: trade.id, symbol: state.symbol, direction: trade.direction,
-    indicator: INDICATORS[trade.direction], timeframe: "1", event, entry_price: trade.entry,
+    indicator: INDICATORS[trade.direction], timeframe: String(step(state) / MINUTE), event, entry_price: trade.entry,
     stop_loss: trade.stop, take_profit: trade.target, fee_rate_percent: P.feePercent,
-    timestamp: new Date(time + MINUTE).toISOString(), ...(exit === undefined ? {} : { exit_price: exit }),
+    timestamp: new Date(time + step(state)).toISOString(), ...(exit === undefined ? {} : { exit_price: exit }),
     ...(net === undefined ? {} : { net_result_r: net }) };
 }
 export function manageTrade(state: EngineState, side: SideState, c: Candle, trend: MtfSnapshot | null = null): Signal | null {
@@ -96,15 +97,18 @@ export function manageTrade(state: EngineState, side: SideState, c: Candle, tren
   }
   return null;
 }
-export function cooldownFinished(lastExitTime: number | null, now: number): boolean {
-  return lastExitTime === null || (now - lastExitTime) / MINUTE > P.cooldownBars;
+export function cooldownFinished(lastExitTime: number | null, now: number, bar = MINUTE): boolean {
+  return lastExitTime === null || (now - lastExitTime) / bar > P.cooldownBars;
 }
 
 /** Mutates a tentative checkpoint. Persist it atomically with returned events before accepting it. */
-export function processCandle(state: EngineState, c: Candle, allowEntries = true): { signals: Signal[]; analysis: Analysis | null; duplicate: boolean } {
+/** entryTrend: Trend Identify reading attached to new entries for the Simulator only; never gates Pine. */
+export function processCandle(state: EngineState, c: Candle, allowEntries = true, entryTrend: MtfSnapshot | null = null): { signals: Signal[]; analysis: Analysis | null; duplicate: boolean } {
   validateCandle(c);
+  const bar = step(state);
+  if (c.time % bar !== 0) throw new Error("Candle is not aligned to the engine timeframe");
   if (state.lastTime !== null && c.time <= state.lastTime) return { signals: [], analysis: null, duplicate: true };
-  if (state.lastTime !== null && c.time !== state.lastTime + MINUTE) throw new Error("Missing candles: recovery required before processing");
+  if (state.lastTime !== null && c.time !== state.lastTime + bar) throw new Error("Missing candles: recovery required before processing");
   // Previous completed 15M/5M/1M bars, as read by request.security(f_trend()[1]) on this 1M bar.
   const trend = state.mtf ? snapshot(state.mtf) : null;
   const analysis = calculate(state, c);
@@ -116,13 +120,14 @@ export function processCandle(state: EngineState, c: Candle, allowEntries = true
     const stop = direction === "LONG" ? analysis.longStop : analysis.shortStop;
     const setup = direction === "LONG" ? analysis.longSetup : analysis.shortSetup;
     // Only the original Pine conditions apply; saved legacy MTF state never gates entries.
-    if (allowEntries && !side.trade && cooldownFinished(side.lastExitTime, c.time) && setup && stop !== null) {
+    if (allowEntries && !side.trade && cooldownFinished(side.lastExitTime, c.time, bar) && setup && stop !== null) {
       const risk = Math.abs(c.close - stop);
-      const trade: Trade = { id: `native-${state.symbol}-${direction}-${c.time}`, direction, entry: c.close,
+      const trade: Trade = { id: `${bar === MINUTE ? 'native' : `native${bar / MINUTE}m`}-${state.symbol}-${direction}-${c.time}`, direction, entry: c.close,
         stop, originalStop: stop, target: c.close + (direction === "LONG" ? 1 : -1) * risk * P.rrMultiplier,
         risk, entryTime: c.time, breakeven: false, breakevenTime: null };
       side.trade = trade;
-      signals.push(signal(state, trade, "entry_confirmed", c.time));
+      const entry = signal(state, trade, "entry_confirmed", c.time);
+      signals.push(entryTrend ? { ...entry, mtf_trend: entryTrend } : entry);
     }
   }
   if (state.mtf) updateMtf(state.mtf, c);

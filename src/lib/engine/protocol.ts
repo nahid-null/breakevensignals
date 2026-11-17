@@ -25,24 +25,33 @@ const side = z.object({ trade: trade.nullable(), lastExitTime: candleTime.nullab
   positiveNetR: finite, negativeNetR: finite, grossProfitR: finite, grossLossR: finite, netR: finite,
   peakR: finite, maxDrawdownR: finite,
 }) });
-export const checkpointSchema = z.object({
+const engineFields = {
   version: z.literal(ENGINE_VERSION), symbol: z.enum(SYMBOLS), tickSize: finite.positive(),
   lastTime: candleTime, count: z.number().int().positive(),
   candles: z.array(z.object({ time: candleTime, open: finite.positive(), high: finite.positive(),
     low: finite.positive(), close: finite.positive(), volume: finite.nonnegative() })).min(1).max(20),
   ema9: finite.nullable(), ema21: finite.nullable(), ema200: finite.nullable(), fast: finite.nullable(), slow: finite.nullable(),
   macdSignal: finite.nullable(), gain: average, loss: average, atr: average, rsi: finite.nullable(),
-  swingLow: finite.nullable(), swingHigh: finite.nullable(), long: side, short: side, mtf: mtfSchema.optional(),
-}).refine((s) => s.candles.at(-1)?.time === s.lastTime && (!s.long.trade || s.long.trade.direction === 'LONG') && (!s.short.trade || s.short.trade.direction === 'SHORT'), 'Invalid checkpoint');
+  swingLow: finite.nullable(), swingHigh: finite.nullable(), long: side, short: side,
+};
+type EngineShape = { candles: { time: number }[]; lastTime: number; long: { trade: { direction: string } | null }; short: { trade: { direction: string } | null } };
+const consistent = (s: EngineShape) => s.candles.at(-1)?.time === s.lastTime && (!s.long.trade || s.long.trade.direction === 'LONG') && (!s.short.trade || s.short.trade.direction === 'SHORT');
+/** Original Pine on 5-minute bars plus the current bucket's closed 1-minute candles. */
+const fiveSchema = z.object({
+  engine: z.object({ ...engineFields, interval: z.literal(5 * MINUTE) }).refine(consistent, 'Invalid 5-minute checkpoint'),
+  bucket: z.array(bar).max(4),
+});
+export const checkpointSchema = z.object({ ...engineFields, mtf: mtfSchema.optional(), five: fiveSchema.optional() })
+  .refine((s) => consistent(s) && (!s.five || s.five.bucket.every((c) => c.time <= s.lastTime)), 'Invalid checkpoint');
 
 export const signalSchema = z.object({
   event_id: z.string().min(3).max(200), trade_id: z.string().min(3).max(200), event: z.enum(EVENT_TYPES),
-  symbol: z.enum(SYMBOLS), direction: z.enum(['LONG','SHORT']), indicator: z.string(), timeframe: z.literal('1'),
+  symbol: z.enum(SYMBOLS), direction: z.enum(['LONG','SHORT']), indicator: z.string(), timeframe: z.enum(['1', '5']),
   entry_price: finite.positive(), stop_loss: finite.positive(), take_profit: finite.positive(),
   exit_price: finite.positive().optional(), fee_rate_percent: finite.min(0).max(5),
   timestamp: z.string().datetime(), net_result_r: finite.optional(),
   trend_aligned: z.boolean().optional(), mtf_trend: mtfSnapshot.optional(),
-  signal_strength: z.enum(['STRONG','NORMAL']).optional(),
+  signal_strength: z.enum(['STRONG','NORMAL']).optional(), adopted: z.boolean().optional(),
 }).refine((e) => e.indicator === INDICATORS[e.direction] && e.event_id === `${e.trade_id}-${e.event}` &&
   (!['stop_loss_hit','take_profit_hit'].includes(e.event) || (e.exit_price !== undefined && e.net_result_r !== undefined)), 'Invalid signal identity or exit result');
 
@@ -75,5 +84,5 @@ export const commitSchema = z.object({
   checkpoint: checkpointSchema,
   market: marketSchema,
   mode: z.enum(["live", "warmup", "recovery"]),
-  events: z.array(signalSchema).max(4),
+  events: z.array(signalSchema).max(12),
 }).refine((p) => p.market.symbol === p.symbol && p.checkpoint['symbol'] === p.symbol && p.events.every((e) => e.symbol === p.symbol), "Symbol mismatch");

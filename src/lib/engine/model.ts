@@ -2,6 +2,7 @@ import type { Direction, EventType, Symbol } from "../config";
 import type { MtfState, MtfSnapshot, SignalStrength } from "./mtf-trend";
 
 export const MINUTE = 60_000;
+export const FIVE_MINUTES = 5 * MINUTE;
 export const ENGINE_VERSION = 1;
 export const PARAMETERS = {
   scoreThreshold: 70, rsiLength: 14, macdFast: 12, macdSlow: 26, macdSignal: 9,
@@ -34,6 +35,10 @@ export interface EngineState {
   swingLow: number | null; swingHigh: number | null; long: SideState; short: SideState;
   /** Multi-timeframe trend filter state. The live worker always sets it before processing. */
   mtf?: MtfState;
+  /** Bar length in ms; absent means one minute. The 5-minute Pine engine sets FIVE_MINUTES. */
+  interval?: number;
+  /** Original Pine LONG/SHORT running on 5-minute bars built from this feed's closed 1-minute candles. */
+  five?: { engine: EngineState; bucket: Candle[] };
 }
 export interface Signal {
   event_id: string; trade_id: string; event: EventType; symbol: Symbol; direction: Direction;
@@ -41,6 +46,8 @@ export interface Signal {
   take_profit: number; fee_rate_percent: number; timestamp: string;
   exit_price?: number; net_result_r?: number;
   trend_aligned?: boolean; mtf_trend?: MtfSnapshot; signal_strength?: SignalStrength;
+  /** Open Pine trade adopted from history at startup: stored as historical, never traded or notified. */
+  adopted?: boolean;
 }
 export interface Analysis {
   ema9: number; ema21: number; ema200: number; rsi: number | null; atr: number | null;

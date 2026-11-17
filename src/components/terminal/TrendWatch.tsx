@@ -23,7 +23,7 @@ export function TrendWatch({ tz }: { tz: string }) {
         <h2 className="flex items-center gap-2 border-b border-border px-3 py-2 text-xs uppercase tracking-widest text-muted-foreground">
           <Eye className="size-3" /> Special watch · {watched.length} of {rows.length} coins
         </h2>
-        <p className="px-3 pt-2 text-[11px] text-muted-foreground">Watched when 15m and 5m agree and 1m is sideways or the same. Only that side's breakeven is traded.</p>
+        <p className="px-3 pt-2 text-[11px] text-muted-foreground">Watched when 15m and 5m agree and 1m is sideways or the same. Only that side's 5-minute indicator signals are traded.</p>
         <div className="max-h-[420px] overflow-auto">
           <table className="w-full text-xs">
             <thead className="text-[10px] uppercase tracking-widest text-muted-foreground">
@@ -43,7 +43,7 @@ export function TrendWatch({ tz }: { tz: string }) {
         </div>
       </div>
       <div className="min-w-0 border border-border bg-card/40">
-        <h2 className="border-b border-border px-3 py-2 text-xs uppercase tracking-widest text-muted-foreground">Breakeven decisions</h2>
+        <h2 className="border-b border-border px-3 py-2 text-xs uppercase tracking-widest text-muted-foreground">Signal decisions</h2>
         <div className="max-h-[460px] overflow-auto">
           <table className="w-full min-w-[480px] text-xs">
             <thead className="text-[10px] uppercase tracking-widest text-muted-foreground">
@@ -52,7 +52,7 @@ export function TrendWatch({ tz }: { tz: string }) {
             <tbody>
               {decisions.isLoading ? <tr><td colSpan={5} className="px-3 py-6 text-center text-muted-foreground">Loading…</td></tr>
                 : decisions.isError ? <tr><td colSpan={5} className="px-3 py-6 text-center text-short">Could not load decisions.</td></tr>
-                : (decisions.data ?? []).length === 0 && <tr><td colSpan={5} className="px-3 py-6 text-center text-muted-foreground">No breakeven signals yet.</td></tr>}
+                : (decisions.data ?? []).length === 0 && <tr><td colSpan={5} className="px-3 py-6 text-center text-muted-foreground">No signals yet.</td></tr>}
               {(decisions.data ?? []).map((d) => (
                 <tr key={d.trade_id} className="border-b border-border/50 font-mono">
                   <td className="px-3 py-1.5">{fmtTime(new Date(Number(d.breakeven_candle_time) + 60_000).toISOString(), tz)}</td>

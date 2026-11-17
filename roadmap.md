@@ -56,3 +56,6 @@ Paper Robot30-trade collection, SMC/sweep rollout, chart rollout and MTF-filter 
 - [x] prompt-35: Simulator 2 + training removed; Simulator trades breakeven only with 15m/5m/1m trend gate; trend watch + decision log on page; 7-day report.
 - [ ] Redeploy Railway worker so live breakevens carry trend readings (until then every breakeven is skipped as "Trend not ready").
 - [x] prompt-36 requests the currently configured strategy unchanged; no experimental configuration may be activated.
+
+- [x] prompt-39: Pine on 5m, trend-matched original entries, 25x, 50% of $10, one trade, Telegram results only; 7-day report saved.
+- [ ] Publish site, then redeploy Railway worker so live 5-minute signals reach the Simulator (user action on Railway).

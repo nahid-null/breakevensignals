@@ -2,6 +2,7 @@ import WebSocket from './websocket';
 import { SYMBOLS, INDICATORS, type Symbol } from "../src/lib/config";
 import { initialState, ENGINE_VERSION, MINUTE, PARAMETERS, validateCandle, type EngineState, type Candle, type Analysis, type Signal } from "../src/lib/engine/model";
 import { processCandle } from "../src/lib/engine/scalper";
+import { buildFive, bucketStart, processMinute } from "../src/lib/engine/five-minute";
 import { BINANCE_WS, BinanceRequestError, binanceFetch, checkWebSocketAccess, history, delay, backoff } from "./binance";
 import { initMtf, snapshot as trendSnapshot, type MtfSnapshot } from "../src/lib/engine/mtf-trend";
 import { feedHasLiveEvidence, MESSAGE_MAX_AGE_MS, type FeedHealth } from '../src/lib/engine/feed-health';
@@ -38,6 +39,8 @@ export class SignalService {
   private heartbeatInFlight: Promise<void> | null = null;
   private readonly marketAbort = new AbortController();
   private recovery = new Set<Symbol>();
+  /** Historical 5-minute Pine trades to store with the next commit after the 5-minute engine is built. */
+  private adoption = new Map<Symbol, Signal[]>();
   private timers: ReturnType<typeof setInterval>[] = [];
   private startedAt: number | null = null;
   private lastScanAt: number | null = null;
@@ -97,6 +100,13 @@ export class SignalService {
     if (this.running && !this.marketPaused) this.lastRestAt = Date.now();
     if (fifteens.length < 200 || fives.length < 200 || minutes.length < 200) throw new Error(`${symbol}: insufficient Binance trend history`);
     return initMtf(lastTime, minutes, fives, fifteens);
+  }
+  /** Warms the original Pine scripts on 5-minute bars up to the saved one-minute candle. */
+  private async fiveState(symbol: Symbol, tick: number, lastTime: number) {
+    const fives = await history(symbol, undefined, bucketStart(lastTime) + 5 * MINUTE, this.marketAbort.signal, '5m');
+    const partial = await history(symbol, bucketStart(lastTime), lastTime + MINUTE, this.marketAbort.signal, '1m');
+    if (this.running && !this.marketPaused) this.lastRestAt = Date.now();
+    return buildFive(symbol, tick, lastTime, fives, partial);
   }
   private async commit(symbol: Symbol, tentative: EngineState, market: Market, events: Signal[], mode: 'live' | 'warmup' | 'recovery') {
     if (!this.running || this.marketPaused) return;
@@ -197,9 +207,13 @@ export class SignalService {
         state.mtf = await this.trendState(symbol, first.time - MINUTE);
         if (!this.running || this.marketPaused) return;
         let analysis: Analysis | null = null;
-        for (const c of candles) analysis = processCandle(state, c).analysis;
+        // Pine entries now come from 5-minute bars; the 1-minute replay only feeds trend and display.
+        for (const c of candles) analysis = processCandle(state, c, false).analysis;
         const last = candles.at(-1);
         if (!last) throw new Error('Empty history');
+        const built = await this.fiveState(symbol, tick, last.time);
+        if (!this.running || this.marketPaused) return;
+        state.five = built.five;
         // Replay every trading rule, including locking/cooldown. Do not publish backtest
         // trades as live signals. If a real historical trade is still open, adopt it with
         // explicit historical provenance, no notification, and its original entry levels.
@@ -216,7 +230,7 @@ export class SignalService {
             event_id: `${t.id}-breakeven_activated`, event: 'breakeven_activated', stop_loss: t.stop,
             timestamp: new Date((t.breakevenTime ?? last.time) + MINUTE).toISOString() });
         }
-        await this.commit(symbol, state, this.market(symbol, state, last, analysis, 'RECOVERING'), adopted, 'warmup');
+        await this.commit(symbol, state, this.market(symbol, state, last, analysis, 'RECOVERING'), [...adopted, ...built.adopted], 'warmup');
       }
       const current = this.checkpoints.get(symbol);
       if (current && !current.state.mtf && current.state.lastTime !== null) {
@@ -335,10 +349,19 @@ export class SignalService {
     if (this.marketPaused) return;
     const saved = this.checkpoints.get(symbol);
     if (!saved || c.time <= (saved.state.lastTime ?? -1)) return;
+    if (!saved.state.five && saved.state.lastTime !== null) {
+      // Checkpoint saved before the 5-minute switch: build it once; its still-open Pine trades are adopted.
+      const built = await this.fiveState(symbol, saved.state.tickSize, saved.state.lastTime);
+      if (!this.running || this.marketPaused) return;
+      saved.state.five = built.five;
+      this.adoption.set(symbol, built.adopted);
+    }
     const tentative = structuredClone(saved.state);
-    const result = processCandle(tentative, c);
+    const result = processMinute(tentative, c);
     if (!this.running || this.marketPaused) return;
-    await this.commit(symbol, tentative, this.market(symbol, tentative, c, result.analysis, mode === 'live' ? 'LIVE' : 'RECOVERING'), result.signals, mode);
+    const events = [...(this.adoption.get(symbol) ?? []), ...result.signals];
+    await this.commit(symbol, tentative, this.market(symbol, tentative, c, result.analysis, mode === 'live' ? 'LIVE' : 'RECOVERING'), events, mode);
+    if (this.checkpoints.get(symbol)?.state.five) this.adoption.delete(symbol);
   }
   private async recover(symbol: Symbol, until: number) {
     let saved = this.checkpoints.get(symbol);

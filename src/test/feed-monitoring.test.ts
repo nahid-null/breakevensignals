@@ -4,6 +4,7 @@ import { MINUTE } from '@/lib/engine/model';
 import { heartbeatSchema } from '@/lib/engine/protocol';
 import { SignalService } from '../../engine-worker/service';
 import { BINANCE_WS, history } from '../../engine-worker/binance';
+import { mockHistory } from './mock-history';
 
 const sockets = vi.hoisted(() => [] as { url: string; emit: (event: string, data?: unknown) => void }[]);
 vi.mock('../../engine-worker/websocket', () => ({ default: class {
@@ -17,8 +18,7 @@ vi.mock('../../engine-worker/binance', async (original) => {
   const actual = await original<typeof import('../../engine-worker/binance')>();
   return { ...actual, delay: async () => {}, binanceFetch: async () => ({ symbols: [
     { symbol: 'NEARUSDT', status: 'TRADING', filters: [{ filterType: 'PRICE_FILTER', tickSize: '0.001' }] },
-  ] }), history: vi.fn(async () => Array.from({ length: 300 }, (_, i) => ({ time: Math.floor(Date.now() / MINUTE) * MINUTE - (300 - i) * MINUTE,
-    open: 100, high: 101, low: 99, close: 100, volume: 10 }))) };
+  ] }), history: vi.fn(async (...a: [string, number?, number?, unknown?, ('1m' | '5m' | '15m')?]) => (await import('./mock-history')).mockHistory(a[0], a[1], a[2], a[3], a[4], 101, 99)) };
 });
 let service: SignalService | null = null;
 afterEach(async () => { await service?.stop(); service = null; sockets.length = 0; vi.useRealTimers(); vi.unstubAllGlobals(); vi.mocked(history).mockReset(); });
@@ -26,10 +26,7 @@ const candles = () => Array.from({ length: 300 }, (_, i) => ({ time: Math.floor(
   open: 100, high: 101, low: 99, close: 100, volume: 10 }));
 async function start() {
   vi.useFakeTimers(); vi.setSystemTime(Date.parse('2026-11-16T09:20:00Z'));
-  vi.mocked(history).mockImplementation(async (_symbol, first, end) => {
-    const now = Math.floor((end ?? Date.now()) / MINUTE) * MINUTE;
-    return first === undefined ? candles() : Array.from({ length: Math.max(0, (now - first) / MINUTE) }, (_, i) => ({ time: first + i * MINUTE, open: 100, high: 101, low: 99, close: 100, volume: 10 }));
-  });
+  vi.mocked(history).mockImplementation(async (symbol, first, end, signal, interval) => mockHistory(symbol, first, end, signal, interval, 101, 99));
   vi.stubGlobal('fetch', vi.fn(async () => { throw new Error('Observation must not write'); }));
   service = new SignalService('', '', true);
   await service.start();

@@ -16,9 +16,7 @@ vi.mock('../../engine-worker/websocket', () => ({ default: class {
 } }));
 vi.mock('../../engine-worker/binance', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../engine-worker/binance')>();
-  return { ...actual, delay: async () => {}, binanceFetch: vi.fn(), checkWebSocketAccess: vi.fn(async () => {}), history: vi.fn(async () => Array.from({ length: 300 }, (_, i) => ({
-    time: Math.floor(Date.now() / MINUTE) * MINUTE - (300 - i) * MINUTE, open: 100, high: 100.5, low: 99.5, close: 100, volume: 10,
-  }))) };
+  return { ...actual, delay: async () => {}, binanceFetch: vi.fn(), checkWebSocketAccess: vi.fn(async () => {}), history: vi.fn(async (...a: [string, number?, number?, unknown?, ('1m' | '5m' | '15m')?]) => (await import('./mock-history')).mockHistory(...a)) };
 });
 
 type AppCall = { action: string; data: Record<string, unknown> };
