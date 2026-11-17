@@ -60,3 +60,4 @@ Paper Robot30-trade collection, SMC/sweep rollout, chart rollout and MTF-filter 
 - [x] prompt-39: Pine on 5m, trend-matched original entries, 25x, 50% of $10, one trade, Telegram results only; 7-day report saved.
 - [ ] Publish site, then redeploy Railway worker so live 5-minute signals reach the Simulator (user action on Railway).
 - [ ] Redeploy Railway scanner so 1m entries carry trend readings (prompt-40) — waits on user
+- [x] prompt-43: 2 slots x 10%, 1-hour close, 7-day report saved.

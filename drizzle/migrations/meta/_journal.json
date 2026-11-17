@@ -253,6 +253,13 @@
       "when": 1794930222625,
       "tag": "0035_simulator_free_balance_guard",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1794930909271,
+      "tag": "0036_simulator_ten_percent_one_hour",
+      "breakpoints": true
     }
   ]
 }

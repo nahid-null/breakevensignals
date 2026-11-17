@@ -5,10 +5,10 @@ import { trendSkip } from './simulator-replay';
 
 /**
  * prompt-40 Simulator rule, mirroring public.simulate_engine_candle / sim_finish_trade (PINE1_CROSS):
- * every original Pine entry from 1-minute bars (prompt-42: trend gate, two slots, 24h max hold), 50x, 20% of balance as margin,
+ * every original Pine entry from 1-minute bars (prompt-43: trend gate, two slots, 1h max hold), 50x, 10% of balance per slot as margin,
  * no stop loss, take profit at +25% net of margin, cross-margin liquidation against the whole balance.
  */
-export const PINE1 = { leverage: 50, marginShare: 0.2, targetRoe: 0.25, feeRate: 0.0005, maintenance: 0.005, startBalance: 10, maxHoldMs: 86_400_000, slots: 2 } as const;
+export const PINE1 = { leverage: 50, marginShare: 0.1, targetRoe: 0.25, feeRate: 0.0005, maintenance: 0.005, startBalance: 10, maxHoldMs: 3_600_000, slots: 2 } as const;
 const dec = (n: Decimal.Value) => new Decimal(n);
 
 export interface Pine1Position { tradeId: string; symbol: string; direction: 'LONG' | 'SHORT'; openedCandle: number; entry: string;

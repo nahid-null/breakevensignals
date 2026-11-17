@@ -39,13 +39,13 @@ const trades = async () => (await db.query<{ entry_price: string; stop_loss: str
 const decision = async (id = 't1') => (await db.query<{ status: string; reason: string | null }>('select status, reason from sim_breakeven_confirmations where trade_id=$1', [id])).rows[0];
 const messages = async () => (await db.query<{ message: string }>('select message from telegram_logs')).rows.map((r) => r.message);
 
-describe('prompt-40 Simulator: 1m Pine entries, trend gate, 50x, 20% margin, no stop, +25% target, cross margin', () => {
-  it('LONG with trend opens at 50x using 20% of balance, no Pine stop, target at +25% net', async () => {
+describe('prompt-43 Simulator: 1m Pine entries, trend gate, 50x, 10% margin per slot, no stop, +25% target, cross margin', () => {
+  it('LONG with trend opens at 50x using 10% of balance, no Pine stop, target at +25% net', async () => {
     await enter('LONG');
     const t = (await trades())[0]!;
-    expect(t.leverage).toBe(50); expect(Number(t.margin)).toBe(2); expect(t.rule_version).toBe('PINE1_CROSS');
+    expect(t.leverage).toBe(50); expect(Number(t.margin)).toBe(1); expect(t.rule_version).toBe('PINE1_CROSS');
     expect(Number(t.take_profit)).toBeCloseTo((100 * 1.0055 + 0.02) / 0.9995, 6);
-    expect(Number(t.stop_loss)).toBeLessThan(91);
+    expect(Number(t.stop_loss)).toBeLessThan(82);
   });
   it('5-minute entries no longer open trades', async () => {
     await enter('LONG', bias('LONG'), { timeframe: '5' });
@@ -57,21 +57,21 @@ describe('prompt-40 Simulator: 1m Pine entries, trend gate, 50x, 20% margin, no 
     expect(await trades()).toHaveLength(0);
     expect((await decision())?.reason).toBe('ONE_MINUTE_OPPOSITE');
   });
-  it('prompt-41: a trade is closed at market after 24 hours', async () => {
+  it('prompt-43: a trade is closed at market after 1 hour', async () => {
     await enter('LONG');
     for (let k = 0; k < 3; k++) await candle([], 100, 99.5, 'live', 100, 99.4);
     expect((await trades())[0]!.status).toBe('OPEN');
-    minute += 86_400_000 - 4 * 60_000;
+    minute += 3_600_000 - 4 * 60_000;
     await candle([], 99.5, 99.5, 'live', 99.6, 99.4);
     const t = (await trades())[0]!; expect(t.status).toBe('CLOSED'); expect(t.exit_reason).toBe('TIME_EXIT'); expect(Number(t.exit_price)).toBe(99.5);
-    expect((await messages())[0]).toContain('Closed after 24 hours');
+    expect((await messages())[0]).toContain('Closed after 1 hour');
   });
-  it('prompt-42: two trades at once on different coins, each 20% of balance; a third is skipped', async () => {
+  it('prompt-42: two trades at once on different coins, each 10% of balance; a third is skipped', async () => {
     await enter('LONG');
     await candle([{ ...ev('entry_confirmed', 'LONG', { mtf_trend: bias('LONG'), symbol: 'LINKUSDT' }, 't2') }]);
     await candle([{ ...ev('entry_confirmed', 'LONG', { mtf_trend: bias('LONG'), symbol: 'SUIUSDT' }, 't3') }]);
     const open = (await trades()).filter((t) => t.status === 'OPEN');
-    expect(open).toHaveLength(2); expect(open.map((t) => Number(t.margin))).toEqual([2, 2]);
+    expect(open).toHaveLength(2); expect(open.map((t) => Number(t.margin))).toEqual([1, 1]);
     expect((await decision('t3'))?.reason).toBe('BOTH_SLOTS_IN_USE');
   });
   it('prompt-42: never two trades on the same coin', async () => {
@@ -83,17 +83,17 @@ describe('prompt-40 Simulator: 1m Pine entries, trend gate, 50x, 20% margin, no 
     await candle([ev('stop_loss_hit', 'LONG', { exit_price: 99 })], 100, 95, 'live', 100, 95);
     expect((await trades())[0]!.status).toBe('OPEN');
   });
-  it('closes at +25% of margin (0.50 on 2 margin) with Take profit hit only', async () => {
+  it('closes at +25% of margin (0.25 on 1 margin) with Take profit hit only', async () => {
     await enter('LONG');
     await candle([], 100, 101, 'live', 101, 99.9);
     const t = (await trades())[0]!; expect(t.status).toBe('CLOSED'); expect(t.exit_reason).toBe('TAKE_PROFIT');
     const bal = Number((await db.query<{ balance: string }>('select balance from sim_account')).rows[0]?.balance);
-    expect(bal).toBeCloseTo(10.5, 6);
+    expect(bal).toBeCloseTo(10.25, 6);
     const m = await messages(); expect(m).toHaveLength(1); expect(m[0]).toContain('Take profit hit');
   });
   it('cross margin: liquidation wipes the whole balance', async () => {
     await enter('LONG');
-    await candle([], 100, 85, 'live', 100, 85);
+    await candle([], 100, 75, 'live', 100, 75);
     expect((await trades())[0]!.exit_reason).toBe('LIQUIDATED');
     expect(Number((await db.query<{ balance: string }>('select balance from sim_account')).rows[0]?.balance)).toBe(0);
   });

@@ -282,3 +282,8 @@
 - Trend filter restored; up to 2 open trades (one per coin, unique index per symbol), each 20% of balance; a loss never uses the other slot's margin; free-balance guard. 24h close kept. Both open trades shown on Simulator and Dashboard.
 - 7-day replay: 6 trades, 2 TP, 2 closed at 24h, 2 liquidated → $10 → $0.
 - Live trend readings still need the Railway scanner redeployed (online scanner sends none, so signals show "Trend not ready").
+
+## prompt-43 (2026-11-17)
+- 2 slots now use 10% of balance each; open trades force-close at market after 1 hour ("Closed after 1 hour"). Trend filter, 1m entries, no SL, 50x, +25% target unchanged (migration 0036).
+- 7-day replay: 272 trades, 142 TP, 130 closed after 1h, 0 liquidated → $10 → $1.08.
+- No live trades today: all 47 live signals skipped as "Trend not ready" — online Railway scanner still runs old code without trend readings.
