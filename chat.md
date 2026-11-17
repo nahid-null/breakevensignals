@@ -146,3 +146,4 @@
 - No trading logic, risk settings, robot state or history changed. Added lightweight-charts → package.json/bun.lock changed, so expected worker fingerprint refreshed to c8036706…; Railway shows MISMATCH until redeployed (worker code itself unchanged).
 - Tests: 211 pass (new src/test/chart-verification.test.ts, 15). Desktop/mobile browser checks: no errors, no horizontal overflow.
 - Remaining: user TradingView export for certification; publish website + redeploy Railway; 30 genuine SMC_V1 trades. Quoted use-mobile hook error still not reproduced.
+- Follow-up check 04:20 UTC: all 6 timeframes on desktop+phone, Pine and robot (BNBUSDT replay) break-even panels, robot-only coin, parity SHORT 15m PASSED on phone; no errors/overflow. Other break-even displays (Signal ledger trigger, robot stop "moved" marker) use the same formulas — unchanged. Pine column now states its fee assumption.
