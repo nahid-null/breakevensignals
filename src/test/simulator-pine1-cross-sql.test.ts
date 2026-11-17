@@ -57,11 +57,26 @@ describe('prompt-43 Simulator: 1m Pine entries, trend gate, 50x, 10% margin per 
     expect(await trades()).toHaveLength(0);
     expect((await decision())?.reason).toBe('ONE_MINUTE_OPPOSITE');
   });
-  it('prompt-44: no time limit — still open after 25 hours', async () => {
-    await enter('LONG');
-    minute += 25 * 3_600_000;
-    await candle([], 99.5, 99.5, 'live', 99.6, 99.4);
+  it('prompt-45: force-closes at market exactly 24 hours after entry, then the coin can trade again', async () => {
+    await enter('LONG'); // entered at the close of this candle
+    minute += 86_400_000 - 120_000;
+    await candle([], 99.5, 99.5, 'live', 99.6, 99.4); // closes 23h59m after entry
     expect((await trades())[0]!.status).toBe('OPEN');
+    await candle([ev('entry_confirmed', 'LONG', { mtf_trend: bias('LONG') }, 't2')], 99.5, 99.4, 'live', 99.6, 99.3); // closes exactly 24h after entry
+    const [first, second] = await trades();
+    expect(first!.status).toBe('CLOSED'); expect(first!.exit_reason).toBe('TIME_EXIT'); expect(Number(first!.exit_price)).toBe(99.4);
+    const t = (await db.query<{ pnl: string; balance_after: string; exit_fee: string }>("select pnl, balance_after, exit_fee from sim_trades where trade_id='t1'")).rows[0]!;
+    // 0.5 qty: -0.3 price move, -0.01 slippage, 0.025 entry fee, 0.5*99.4*0.05% exit fee
+    expect(Number(t.exit_fee)).toBeCloseTo(0.02485, 8);
+    expect(Number(t.pnl)).toBeCloseTo(-0.3 - 0.01 - 0.025 - 0.02485, 8);
+    expect(second!.status).toBe('OPEN');
+    expect((await messages())[0]).toContain('Closed after 24 hours');
+  });
+  it('prompt-45: SHORT trades also close after 24 hours', async () => {
+    await enter('SHORT');
+    minute += 86_400_000 - 60_000;
+    await candle([], 100.2, 100.2, 'live', 100.3, 100.1);
+    expect((await trades())[0]!.exit_reason).toBe('TIME_EXIT');
   });
   it('prompt-44: manual close settles at the saved price and sends Closed manually', async () => {
     await enter('LONG');

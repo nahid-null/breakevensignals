@@ -62,3 +62,4 @@ Paper Robot30-trade collection, SMC/sweep rollout, chart rollout and MTF-filter 
 - [ ] Redeploy Railway scanner so 1m entries carry trend readings (prompt-40) — waits on user
 - [x] prompt-43: 2 slots x 10%, 1-hour close, 7-day report saved.
 - [x] prompt-44: no auto-close, manual Close button, 3 slots x 10%, live check, 7-day report
+- [x] prompt-45: hard 24-hour close from entry time (market price, fees), slot reusable immediately; 7-day report

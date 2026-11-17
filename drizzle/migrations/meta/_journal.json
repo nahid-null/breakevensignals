@@ -267,6 +267,13 @@
       "when": 1794932602300,
       "tag": "0037_simulator_three_slots_manual_close",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1794935076246,
+      "tag": "0038_simulator_24h_auto_close",
+      "breakpoints": true
     }
   ]
 }
