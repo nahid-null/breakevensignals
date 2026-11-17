@@ -4,7 +4,6 @@ import { Search, Activity, ArrowDownWideNarrow } from "lucide-react";
 import { SYMBOLS } from "@/lib/config";
 import { fmtPrice, fmtTime, latestBySymbol, usePositions, useSettings, useStatuses, useMarkets, useStats, type Position } from "@/lib/data";
 import { StatusBadge, positionLabel } from "@/components/terminal/StatusBadge";
-import { MtfTrend } from "@/components/terminal/MtfTrend";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { Button } from '@/components/ui/button';
@@ -17,9 +16,9 @@ export const Route = createFileRoute("/markets")({
   head: () => ({
     meta: [
       { title: "Coin Monitor — Crypto Signal Terminal" },
-      { name: "description", content: "Per-coin prices, 15M/5M/1M trend and LONG/SHORT positions for 21 Binance USDT futures pairs." },
+      { name: "description", content: "Per-coin prices and original Pine LONG/SHORT positions for 21 Binance USDT futures pairs." },
       { property: "og:title", content: "Coin Monitor — Crypto Signal Terminal" },
-      { property: "og:description", content: "Per-coin prices, 15M/5M/1M trend and LONG/SHORT positions for 21 Binance USDT futures pairs." },
+      { property: "og:description", content: "Per-coin prices and original Pine LONG/SHORT positions for 21 Binance USDT futures pairs." },
       { property: 'og:type', content: 'website' },
       { name: 'twitter:card', content: 'summary_large_image' },
     ],
@@ -137,7 +136,7 @@ function Markets() {
               <tr className="border-b border-border">
                 <th className="px-3 py-2 text-left">Coin</th>
                 <th className="px-3 py-2 text-left">Price</th>
-                <th className="px-3 py-2 text-left">Trend 15M·5M·1M / feed</th>
+                <th className="px-3 py-2 text-left">Pine trend / feed</th>
                 {view !== 'SHORT' && <>
                 <th className="px-3 py-2 text-left text-long">Long status</th>
                 <th className="px-3 py-2 text-left">Long entry</th>
@@ -172,7 +171,7 @@ function Markets() {
                   <tr key={r.symbol} className="border-b border-border/60 transition-colors hover:bg-accent/40">
                     <td className="px-3 py-2.5 font-mono font-semibold">{r.symbol}</td>
                     <td className="px-3 py-2.5 font-mono tabular-nums">{fmtPrice(m?.price)}{m && feed !== 'LIVE' && <div className="mt-1 text-[9px] text-muted-foreground">LAST SAVED · {fmtTime(m.last_candle_at, tz)}</div>}</td>
-                    <td className="px-3 py-2.5"><div className="flex flex-col items-start gap-1"><MtfTrend value={m?.mtf_trend} /><span title={m?.error ?? ''} className="font-mono text-[9px] text-muted-foreground">{feed}</span></div></td>
+                    <td className="px-3 py-2.5"><div className="flex flex-col items-start gap-1"><StatusBadge value={m?.trend ?? 'WAITING'} /><span title={m?.error ?? ''} className="font-mono text-[9px] text-muted-foreground">{feed}</span></div></td>
                     {view !== 'SHORT' && <Cells p={r.long} />}
                     {view !== 'LONG' && <Cells p={r.short} />}
                     <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{fmtTime(upd, tz)}</td>
