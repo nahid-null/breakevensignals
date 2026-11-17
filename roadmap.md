@@ -63,3 +63,4 @@ Paper Robot30-trade collection, SMC/sweep rollout, chart rollout and MTF-filter 
 - [x] prompt-43: 2 slots x 10%, 1-hour close, 7-day report saved.
 - [x] prompt-44: no auto-close, manual Close button, 3 slots x 10%, live check, 7-day report
 - [x] prompt-45: hard 24-hour close from entry time (market price, fees), slot reusable immediately; 7-day report
+- [x] prompt-46: liquidity-sweep strategy (no Pine LONG/SHORT, trend filter kept) — 7- and 30-day test report only; live Simulator unchanged, waits on user approval
