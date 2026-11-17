@@ -40,10 +40,10 @@ describe('original Pine on 5-minute bars', () => {
     expect(entry.timeframe).toBe('5'); expect(entry.trade_id.startsWith('native5m-NEARUSDT-')).toBe(true);
     expect(Date.parse(entry.timestamp) % FIVE_MINUTES).toBe(0);
   });
-  it('the one-minute engine no longer opens Pine entries', () => {
+  it('prompt-40: the one-minute engine opens Pine entries again (timeframe 1)', () => {
     const state = initialState('NEARUSDT', 0.001);
     const out = minutes(3000).flatMap((c) => processMinute(state, c).signals);
-    expect(out.filter((s) => s.event === 'entry_confirmed')).toHaveLength(0);
+    expect(out.filter((s) => s.event === 'entry_confirmed' && s.timeframe === '1').length).toBeGreaterThan(0);
   });
   it('resumes mid-bar from saved 1-minute candles', () => {
     const all = minutes(5 * 400 + 3);

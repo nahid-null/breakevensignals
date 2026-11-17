@@ -218,6 +218,13 @@
       "when": 1794919838958,
       "tag": "0030_simulator_pine5_trend_results_only",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1794928052493,
+      "tag": "0031_simulator_pine1_cross_margin",
+      "breakpoints": true
     }
   ]
 }

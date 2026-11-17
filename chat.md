@@ -267,3 +267,9 @@
 - Pine LONG/SHORT now run on 5m bars built from closed 1m candles (identical signals to direct 5m run, tested). 1m Pine no longer opens entries. Simulator (PINE5_TREND): 15m=5m=side, 1m sideways/same; indicator entry/TP/SL (stop follows Pine breakeven); 25x; 50% margin; one trade; fees+slippage+liquidation. Telegram: results only, "Status: Take profit hit / Stop loss hit"; entry/breakeven alerts off. Restart = $10; account restarted $2.11→$10 (audited RESET).
 - 7-day replay 11-10 12:50→11-17 12:50 UTC, 20 coins (WILD unlisted): 922 signals, 48 traded (874 skipped: 728 trend not agreeing, 146 trade open), 47 closed + 1 open, 20 TP / 27 SL (7 at breakeven line), 0 liq, win 42.6%, $10→$3.89 (−$6.11), fees $5.36, max drop 81.9%. Files in Simulator Performance Reports.
 - Tests 285 pass. Hosted worker must be redeployed on Railway after the site is published, otherwise no 5m signals reach the Simulator.
+
+## prompt-40 (2026-11-17)
+- Diagnosis: the hosted (Railway) worker still runs pre-prompt-39 code. It emits only 1m entries and no Trend Identify reading, while the Simulator accepted only 5m entries, so 0 trades.
+- Live now (migration 0031, rule PINE1_CROSS): 1m Pine entries with the trend gate kept · 50x · 20% of balance margin · no stop loss · close at +25% net of margin · cross-margin liquidation on the whole balance · results-only Telegram.
+- Code: 1m entries re-enabled in processMinute and carry their mtf_trend (needs Railway redeploy before trend-gated trades can open live). Report tool: engine-worker/report-pine1-cross.ts.
+- 7-day replay: 34 trades, 33 TP, 0 losses, $10 → $50.03. No-stop risk: a ~9–10% adverse move wipes out the balance.

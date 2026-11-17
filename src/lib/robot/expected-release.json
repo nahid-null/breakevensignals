@@ -1,5 +1,5 @@
 {
   "strategy": "SMC_V1",
-  "source_hash": "e6f97e579378c8f10d60770f9120bcb76af584260279ccfcb30b60794f7540a9",
+  "source_hash": "90518fdfe08056cde50608e876ba760bdf12afcc720bd2b0cdf077fe557501a9",
   "coverage": "Production worker entry/feed/engine/risk/protocol source plus package manifest, lockfile and Dockerfile; no Git metadata or credentials."
 }

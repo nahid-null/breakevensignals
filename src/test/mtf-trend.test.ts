@@ -67,7 +67,7 @@ describe('15M/5M/1M trend filter', () => {
       expect(ok).toHaveLength(1);
       expect(ok[0]?.direction).toBe(direction);
       expect(ok[0]?.trend_aligned).toBeUndefined();
-      expect(ok[0]?.mtf_trend).toBeUndefined();
+      expect(ok[0]?.mtf_trend).toBeDefined(); // prompt-40: reading attached for the Simulator gate, entry itself not gated
     }
   });
 

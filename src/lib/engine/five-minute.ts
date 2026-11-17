@@ -58,9 +58,9 @@ export function buildFive(symbol: EngineState['symbol'], tickSize: number, lastT
 
 /** Process one closed 1-minute candle: Trend Identify + display + legacy 1m exits, then 5m Pine on bucket close. */
 export function processMinute(state: EngineState, c: Candle): { signals: Signal[]; analysis: Analysis | null; duplicate: boolean } {
-  // Prior-closed 15M/5M/1M Trend Identify reading at this candle, attached to new 5-minute entries.
+  // prompt-40: 1-minute Pine entries feed the Simulator again; 5-minute bars still run for reference.
   const trend = state.mtf ? snapshot(state.mtf) : null;
-  const result = processCandle(state, c, false);
+  const result = processCandle(state, c, true);
   if (result.duplicate || !state.five) return result;
   const f = state.five; const start = bucketStart(c.time);
   f.bucket = [...f.bucket.filter((x) => bucketStart(x.time) === start), c];

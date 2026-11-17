@@ -127,7 +127,8 @@ export function processCandle(state: EngineState, c: Candle, allowEntries = true
         risk, entryTime: c.time, breakeven: false, breakevenTime: null };
       side.trade = trade;
       const entry = signal(state, trade, "entry_confirmed", c.time);
-      signals.push(entryTrend ? { ...entry, mtf_trend: entryTrend } : entry);
+      const t = entryTrend ?? trend; // prompt-40: 1m entries carry their own prior-closed Trend Identify reading.
+      signals.push(t ? { ...entry, mtf_trend: t } : entry);
     }
   }
   if (state.mtf) updateMtf(state.mtf, c);
