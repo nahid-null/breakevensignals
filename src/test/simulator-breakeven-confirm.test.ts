@@ -45,7 +45,7 @@ describe('practice trades open only on a confirmed breakeven signal', () => {
   it('LONG: green next candle with open and close above entry opens at its close', async () => {
     await toBreakeven('LONG'); expect(await trades()).toHaveLength(0);
     await candle([], 100.2, 100.5);
-    const [t] = await trades();
+    const t = (await trades())[0]!;
     expect(Number(t.entry_price)).toBe(100.5); expect(Number(t.stop_loss)).toBe(100);
     expect(t.leverage).toBe(50); expect(Number(t.margin)).toBe(4); expect(t.rule_version).toBe('PINE_BE_CONFIRM');
     expect((await decision())?.status).toBe('CONFIRMED');
@@ -60,7 +60,7 @@ describe('practice trades open only on a confirmed breakeven signal', () => {
   });
   it('SHORT: red next candle with open and close below entry opens at its close', async () => {
     await toBreakeven('SHORT'); await candle([], 99.8, 99.5);
-    const [t] = await trades(); expect(Number(t.entry_price)).toBe(99.5); expect(Number(t.stop_loss)).toBe(100);
+    const t = (await trades())[0]!; expect(Number(t.entry_price)).toBe(99.5); expect(Number(t.stop_loss)).toBe(100);
   });
   it('SHORT: green next candle below entry is skipped', async () => {
     await toBreakeven('SHORT'); await candle([], 99.5, 99.8);
