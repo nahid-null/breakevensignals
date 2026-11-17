@@ -190,6 +190,20 @@
       "when": 1794897325411,
       "tag": "0026_simulator_breakeven_confirmation_entry",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1794902993192,
+      "tag": "0027_independent_candle_simulator2",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1794903034607,
+      "tag": "0028_simulator2_serial_time_boundary",
+      "breakpoints": true
     }
   ]
 }

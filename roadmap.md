@@ -1,5 +1,13 @@
 # Independent Crypto Signal Terminal
 
+## Current prompt-25 — Simulator 2
+- [x] Add independent 1m candle-breakout practice account: 50x, 80% margin, 10% net balance target, 5% modeled balance risk and one-candle exit; leave existing Simulator/Pine/Telegram unchanged.
+- [x] Build Simulator 2 $5 reset with empty visible session history and retained archived financial audit records; tested in isolated PostgreSQL, hosted controls remain locked.
+- [x] Verify isolated settlement/reset/replay/permission rules and desktop/current/phone navigation; 260 tests pass, central notes updated.
+- [x] Request-by-request audit: all7genuine Simulator2 rows, every column via horizontal scroll, LONG/SHORT examples, reset cancel and all15original Simulator rows at1280/550/390 in the sole dark theme;46targeted tests pass,0runtime errors/overflow.
+- [x] Observe genuine hosted Simulator 2 results through preview: TAO LONG/SHORT 08:10–08:14 one-minute trades, costs and modeled stop loss reconcile; no synthetic hosted trades or agent account mutations.
+- [ ] Publish Simulator 2 page; published desktop/phone currently lack its navigation and return404at/simulator-2. Hosted reset success awaits private access and safe authorization (see blocking follow-up).
+
 ## Current prompt-23 verification and reset
 - [x] Reopen affected pages through navigation at1280/602/390 in dark theme: all21coins BOTH/LONG/SHORT/search, all7practice records,544completedPinepositions,86Telegramreceipts, both500barlocalparityreports, reset confirmation/cancel and downloadable verification. Published reset remains locked; published daily P&L uses old source and awaits republishing.
 - [x] Verify removal of the added trend gate, original LONG/SHORT parity, current hosted feed count and why fewer alerts appear: 20/20 fresh feeds, all saved MTF fields null, four native entries since worker restart; one genuine50x UNI practice trade, no new breakeven yet.
