@@ -46,7 +46,7 @@ describe('15M/5M/1M trend filter', () => {
     expect(restored).toEqual(live);
   });
 
-  it('blocks LONG and SHORT entries while trends are mixed, and allows the matching side when aligned', () => {
+  it('does not gate original Pine LONG or SHORT entries on legacy MTF trends', () => {
     const entries = (direction: 'LONG' | 'SHORT', mtf: MtfState | undefined) => {
       const s = initialState('NEARUSDT', 0.001);
       const flat = (i: number): Candle => { const close = 100 + Math.sin(i) * 0.2; return { time: i * MINUTE, open: close, high: close + 0.5, low: close - 0.5, close, volume: 100 }; };
@@ -59,15 +59,15 @@ describe('15M/5M/1M trend filter', () => {
     for (const direction of ['LONG', 'SHORT'] as const) {
       const v = direction === 'LONG' ? 1 : -1;
       expect(entries(direction, undefined)).toHaveLength(1); // original scalper setup exists
-      expect(entries(direction, fixed(1, -1, 1))).toEqual([]);
-      expect(entries(direction, fixed(-1, 1, -1))).toEqual([]);
-      expect(entries(direction, fixed(0, 0, 0))).toEqual([]);
-      expect(entries(direction, fixed(-v as 1 | -1, -v as 1 | -1, -v as 1 | -1))).toEqual([]);
+      expect(entries(direction, fixed(1, -1, 1))).toHaveLength(1);
+      expect(entries(direction, fixed(-1, 1, -1))).toHaveLength(1);
+      expect(entries(direction, fixed(0, 0, 0))).toHaveLength(1);
+      expect(entries(direction, fixed(-v as 1 | -1, -v as 1 | -1, -v as 1 | -1))).toHaveLength(1);
       const ok = entries(direction, fixed(v, v, v));
       expect(ok).toHaveLength(1);
       expect(ok[0]?.direction).toBe(direction);
-      expect(ok[0]?.trend_aligned).toBe(true);
-      expect(ok[0]?.mtf_trend).toEqual({ m15: v, m5: v, m1: v });
+      expect(ok[0]?.trend_aligned).toBeUndefined();
+      expect(ok[0]?.mtf_trend).toBeUndefined();
     }
   });
 

@@ -21,10 +21,7 @@ export const robotStopAll = createServerFn({ method: 'POST' }).handler(async () 
 });
 
 export const robotResume = createServerFn({ method: 'POST' }).handler(async () => {
-  const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
-  const { error } = await supabaseAdmin.rpc('robot_resume');
-  if (error) throw new Error(error.message);
-  return { ok: true };
+  throw new Error('Paper Robot has been retired; new entries are disabled.');
 });
 
 /** Editable paper settings. Leverage is fixed at 50x and is not editable. The daily loss limit and loss-streak cooldown are optional switches, off by default. */
@@ -51,11 +48,5 @@ export const robotSettingsSchema = z.object({
 export const robotSaveSettings = createServerFn({ method: 'POST' })
   .inputValidator((d: unknown) => robotSettingsSchema.parse(d))
   .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
-    const open = await supabaseAdmin.from('robot_positions').select('symbol').eq('status', 'OPEN');
-    if (open.error) throw new Error('Could not check open paper positions');
-    if (open.data?.some((p) => !data.symbols.includes(p.symbol))) throw new Error('Keep every coin with an open paper position in the monitored list');
-    const { error } = await supabaseAdmin.from('robot_settings').update({ ...data, updated_at: new Date().toISOString() }).eq('id', 1);
-    if (error) throw new Error(error.message);
-    return { ok: true };
+    throw new Error('Paper Robot settings have been retired.');
   });
