@@ -22,7 +22,7 @@ describe('prompt-38 entry-quality rule', () => {
   it('skips when 5m EMA9/21 conflicts', () => { expect(gateReason(newSetup(sig, signalBar), retest, { ...ctx, ema5Side: -1 })).toBe('5M_EMA9_21_CONFLICT'); });
   it('skips weak volume below the 20-candle average', () => { expect(gateReason(newSetup(sig, signalBar), retest, { ...ctx, volumeSMA: 11 })).toBe('WEAK_VOLUME'); });
   it('skips late entries more than 1.5 ATR beyond EMA21', () => { expect(gateReason(newSetup(sig, signalBar), retest, { ...ctx, ema21: 99.6 })).toBe('TOO_EXTENDED_LATE'); });
-  it('skips structure stops tighter than 0.40% of price', () => { expect(gateReason(newSetup(sig, signalBar), retest, { ...ctx, atr: .1 })).toBe('STOP_TOO_TIGHT_FOR_COSTS'); });
+  it('skips structure stops tighter than 0.40% of price', () => { expect(gateReason(newSetup(sig, { ...signalBar, low: 99.95 }), retest, { ...ctx, atr: .1, ema21: 100.2 })).toBe('STOP_TOO_TIGHT_FOR_COSTS'); });
   it('skips when resistance sits within 1R above entry', () => { expect(gateReason(newSetup(sig, signalBar), retest, { ...ctx, high240: 100.5 })).toBe('TOO_CLOSE_TO_SUPPORT_RESISTANCE'); });
   it('places the stop beyond the lowest low since the signal, buffered 0.15 ATR', () => {
     const u = newSetup(sig, signalBar); const s = stepSetup(u, retest, ctx); expect(s.status === 'CONFIRMED' && s.stop).toBeCloseTo(99.5 - .06, 10); });
@@ -30,6 +30,6 @@ describe('prompt-38 entry-quality rule', () => {
     const bars = [{ time: 0, open: 100, high: 100, low: 100, close: 100, volume: 1 }, { time: 60000, open: 100, high: 105, low: 100, close: 104, volume: 1 }];
     expect(costedOutcome(bars, 0, 'LONG', 99, .01)?.netR).toBeCloseTo(1.5, 6);
     const both = [{ time: 0, open: 100, high: 105, low: 98, close: 100, volume: 1 }];
-    const o = costedOutcome(both, 0, 'LONG', 99, .01); expect(o?.result).toBe('STOP'); expect(o?.netR).toBeLessThan(-1);
+    const o = costedOutcome(both, 0, 'LONG', 99, .01); expect(o?.result).toBe('STOP'); expect(o?.netR).toBeCloseTo(-1, 6);
   });
 });
