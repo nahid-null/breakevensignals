@@ -8,7 +8,7 @@ import { simulator2Options } from '@/lib/simulator2';
 import { enableSimulator2, resetSimulator2 } from '@/lib/simulator2.functions';
 import { readSimControlAccess } from '@/lib/simulator.functions';
 import { fmtUsd, fmtSignedUsd, simSummary, todayPnl } from '@/lib/simulator';
-import { fmtTime, useSettings, useStatuses } from '@/lib/data';
+import { fmtTime, useMarkets, useSettings, useStatuses } from '@/lib/data';
 import { StatusBadge } from '@/components/terminal/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -56,7 +56,7 @@ function Simulator2() {
   const reset = useServerFn(resetSimulator2); const enable = useServerFn(enableSimulator2);
   const access = useQuery({ queryKey: ['sim_control_access'], queryFn: () => readSimControlAccess() });
   const allowed = access.data?.allowed === true;
-  const settings = useSettings(); const status = useStatuses();
+  const settings = useSettings(); const status = useStatuses(); const markets = useMarkets();
   const tz = settings.data?.display_timezone ?? 'UTC';
   const [confirm, setConfirm] = useState(false); const [busy, setBusy] = useState(false);
   const sum = simSummary(trades.map(t => ({ status: 'CLOSED', pnl: t.pnl })));
@@ -83,6 +83,22 @@ function Simulator2() {
       <Metric label="Balance" value={fmtUsd(account.balance)} /><Metric label="Today's P&L" value={fmtSignedUsd(today)} tone={tone(today)} />
       <Metric label="Session P&L" value={fmtSignedUsd(sum.totalPnl)} tone={tone(sum.totalPnl)} /><Metric label="Trades" value={String(trades.length)} />
       <Metric label="Win rate" value={sum.winRate === null ? '—' : `${sum.winRate.toFixed(1)}%`} /><Metric label="Leverage" value="50x" />
+    </section>
+    <section aria-label="Open trade" className="border-y border-border py-4">
+      <div className="flex flex-wrap items-center justify-between gap-2"><h2 className="text-sm font-semibold">Open trade</h2>{account.pending_symbol && <span className="font-mono text-[10px] text-active">ACTIVE</span>}</div>
+      {!account.pending_symbol || !account.pending_time ? <p className="mt-3 text-xs text-muted-foreground">No open trade. Waiting for the next strong breakout candle.</p> : (() => {
+        const st = account.pending_time; const live = markets.data?.find(m => m.symbol === account.pending_symbol)?.price ?? null;
+        return <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 text-xs sm:grid-cols-4">
+          <div><dt className="text-[10px] text-muted-foreground">COIN</dt><dd className="mt-1 font-mono">{account.pending_symbol}</dd></div>
+          <div><dt className="text-[10px] text-muted-foreground">SIDE</dt><dd className="mt-1">{account.pending_direction && <StatusBadge value={account.pending_direction} />}</dd></div>
+          <div><dt className="text-[10px] text-muted-foreground">SIGNAL CANDLE</dt><dd className="mt-1 font-mono">{fmtTime(new Date(st).toISOString(), tz)}</dd></div>
+          <div><dt className="text-[10px] text-muted-foreground">ENTRY → CLOSE</dt><dd className="mt-1 font-mono">{fmtTime(new Date(st + 60000).toISOString(), tz)} → {fmtTime(new Date(st + 120000).toISOString(), tz)}</dd></div>
+          <div><dt className="text-[10px] text-muted-foreground">MARGIN · LEVERAGE</dt><dd className="mt-1 font-mono">{fmtUsd(account.balance * 0.8)} · 50x</dd></div>
+          <div><dt className="text-[10px] text-muted-foreground">TAKE PROFIT</dt><dd className="mt-1 font-mono text-long">+{fmtUsd(account.balance * 0.10)}</dd></div>
+          <div><dt className="text-[10px] text-muted-foreground">STOP LOSS</dt><dd className="mt-1 font-mono text-short">−{fmtUsd(account.balance * 0.05)}</dd></div>
+          <div><dt className="text-[10px] text-muted-foreground">LAST SAVED PRICE</dt><dd className="mt-1 font-mono">{live === null ? '—' : fmtPrice(live)}</dd></div>
+        </dl>;
+      })()}
     </section>
     <section className="border-y border-border py-5">
       <div className="flex flex-wrap justify-between gap-2"><h2 className="text-sm font-semibold">Previous-candle breakout</h2><span className="font-mono text-xs text-muted-foreground">1 MIN · LONG + SHORT</span></div>
