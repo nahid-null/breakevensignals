@@ -1,3 +1,4 @@
 - Run Simulator report comparisons offline through the pure decimal replay module; never send replay trades to hosted APIs or Telegram, so history remains genuine.
 - Freeze reports to a named UTC window, save raw candle hashes and reconcile each breakeven; abort on SQL-equivalent arithmetic failures rather than count zero-margin phantom trades.
 - Register chronological profitability studies before evaluation, freeze development-only selections before reading later results, and keep fee/funding/lot-size simulations offline; this prevents holdout selection and live-history contamination.
+- Evaluate entry-quality candidates through the pure `src/lib/engine/entry-quality.ts` rule with a hashed protocol saved before any run and a holdout window no earlier study read; compare against the costed coin-flip rate so filters that merely shrink trade counts are not mistaken for skill.
