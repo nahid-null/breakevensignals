@@ -1025,6 +1025,51 @@ export type Database = {
         }
         Relationships: []
       }
+      sim_breakeven_confirmations: {
+        Row: {
+          breakeven_candle_time: number
+          breakeven_stop: number
+          confirm_close: number | null
+          confirm_open: number | null
+          created_at: string
+          decided_at: string | null
+          direction: string
+          reason: string | null
+          reference_price: number
+          status: string
+          symbol: string
+          trade_id: string
+        }
+        Insert: {
+          breakeven_candle_time: number
+          breakeven_stop: number
+          confirm_close?: number | null
+          confirm_open?: number | null
+          created_at?: string
+          decided_at?: string | null
+          direction: string
+          reason?: string | null
+          reference_price: number
+          status?: string
+          symbol: string
+          trade_id: string
+        }
+        Update: {
+          breakeven_candle_time?: number
+          breakeven_stop?: number
+          confirm_close?: number | null
+          confirm_open?: number | null
+          created_at?: string
+          decided_at?: string | null
+          direction?: string
+          reason?: string | null
+          reference_price?: number
+          status?: string
+          symbol?: string
+          trade_id?: string
+        }
+        Relationships: []
+      }
       sim_deposits: {
         Row: {
           amount: number
