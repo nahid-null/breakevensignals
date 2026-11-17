@@ -1,9 +1,10 @@
 # Independent Crypto Signal Terminal
 
 ## Current prompt-37 — independent profitability study, no live changes
-- [ ] Verify reported React diagnostic and freeze a new chronological development/validation/holdout candle window.
-- [ ] Test 10x/20x, 5%/10% margin, LONG/SHORT separately and net 1:1/1:1.5/1:2 exits with 15m Trend Identify, 5m EMA9/21 and closed-1m confirmation; include fees, slippage and exchange feasibility.
-- [ ] Reject weak samples/overfitting; save metrics, frozen selection and reproducible evidence in Files; keep current Simulator, Pine, settings/history and publication unchanged.
+- [x] Hook already imports React, build OK; freeze Sep1–22 development, Sep22–29 validation, Sep29–Oct13 final holdout before evaluation; 1353600 contiguous validated candles/20coins, actual funding, WILD unavailable.
+- [x] 144 base runs (24 configs×$5/$1000×3periods), 4 frozen-selection stress runs; 10x/20x, 5%/10%, independent sides, net1/1.5/2, closed15m Trend Identify/5mEMA9/21/next1mconfirmation→next-open fills. 34accounting/trend tests pass; every10087breakeven reconciles; max balance residual1.14e-12.
+- [x] No profitable run: $5 traded losses or exchange-minimum rejection; all72$1000runs negative. Neither side qualifies on development; diagnostic10x/5%/net1:2 final LONG−10.49%/80trades, SHORT−7.62%/80trades, no modeled liquidations; stress also negative.
+- [x] Save detailed report,144-runCSV,160final-tradeCSV and inspected189-entry evidence ZIP in existing Simulator Performance Reports collection (membership returned pending); no live code/settings/history/publish changes. Existing unrelated approval/deployment blockers remain deferred, not authorized by prompt37.
 
 ## Current prompt-36 — read-only Simulator audit
 - [x] Hook already imports React; automatic check OK. Separate genuine $2.10626 account/18 trades from replay; old report contained26zero-margin phantom closes+1open;37older native skip outcomes absent from saved ledger and explicitly disclosed.
