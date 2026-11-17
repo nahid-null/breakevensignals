@@ -1,6 +1,6 @@
 /** Pure Simulator 2 replay; formulas mirror simulate2_engine_candle (50x, 80% margin, 0.05% fee/side, 1 tick/side). */
 export type Candle = { time: number; open: number; high: number; low: number; close: number };
-export type Rules = { trend: boolean; realistic: boolean; share?: number; base?: 'balance' | 'margin'; lev?: number; hold?: number; extra?: Sim2Variant };
+export type Rules = { trend: boolean; realistic: boolean; share?: number; base?: 'balance' | 'margin'; lev?: number; hold?: number; extra?: Sim2Variant | undefined };
 export type Sim2Variant = 'trend20' | 'retest' | 'noExtend' | 'vol' | 'room';
 export type Sim2Trade = { symbol: string; direction: 'LONG' | 'SHORT'; signalTime: number; entry: number; tp: number; sl: number; exit: number; reason: string; pnl: number; balanceAfter: number; cost: number; held: number };
 export const SIM2 = { lev: 50, share: 0.8, fee: 0.0005, target: 0.10, risk: 0.05, body: 0.60, trendLen: 20, rangeLen: 5 } as const;
