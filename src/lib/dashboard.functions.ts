@@ -36,6 +36,7 @@ export const readSimTrades = get.handler(async () => must(await (await db()).fro
 export const readSimulator2 = get.handler(async () => {
   const client = await db();
   const account = must(await client.from('sim2_account').select('*').eq('id', 1).single());
+  if (!account) throw new Error('Simulator 2 account unavailable');
   const trades = must(await client.from('sim2_trades').select('*').eq('session_id', account.session_id).order('closed_at', { ascending: false }));
   return { account, trades: trades ?? [] };
 });
