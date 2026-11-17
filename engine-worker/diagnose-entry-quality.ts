@@ -22,15 +22,16 @@ export function costedOutcome(bars: Candle[], i: number, d: Direction, stop: num
   const tf = (s * entry + rr * risk + FEE * entry) / (s - FEE);
   const target = (tf + s * tick * TICKS) / (1 - s * BPS / 1e4);
   const net = (exitRaw: number) => { const x = exitRaw * (1 - s * BPS / 1e4) - s * tick * TICKS; return (s * (x - entry) - FEE * (entry + x)) / risk; };
+  const pRandom = s * (entry - stop) / (s * (target - stop));
   let mfe = 0;
   for (let k = i; k < Math.min(bars.length, i + MAX_BARS); k++) { const b = bars[k]!;
     const fav = s === 1 ? b.high : b.low; const adv = s === 1 ? b.low : b.high;
-    if (s * (adv - stop) <= 0) return { result: 'STOP' as const, netR: net(s === 1 ? Math.min(b.open, stop) : Math.max(b.open, stop)), bars: k - i + 1, mfeR: mfe, costShare: (risk - s*(entry - stopFill)) / risk + (entry - c.open) * s / risk };
+    if (s * (adv - stop) <= 0) return { result: 'STOP' as const, netR: net(s === 1 ? Math.min(b.open, stop) : Math.max(b.open, stop)), bars: k - i + 1, mfeR: mfe, pRandom, costShare: (risk - s*(entry - stopFill)) / risk + (entry - c.open) * s / risk };
     mfe = Math.max(mfe, s * (fav - entry) / (s * (entry - stop)));
-    if (s * (fav - target) >= 0) return { result: 'TARGET' as const, netR: rr, bars: k - i + 1, mfeR: mfe, costShare: (risk - s*(entry - stopFill)) / risk };
+    if (s * (fav - target) >= 0) return { result: 'TARGET' as const, netR: rr, bars: k - i + 1, mfeR: mfe, pRandom, costShare: (risk - s*(entry - stopFill)) / risk };
   }
   const last = bars[Math.min(bars.length, i + MAX_BARS) - 1]!;
-  return { result: 'TIMEOUT' as const, netR: net(last.close), bars: MAX_BARS, mfeR: mfe };
+  return { result: 'TIMEOUT' as const, netR: net(last.close), bars: MAX_BARS, mfeR: mfe, pRandom };
 }
 const rows: unknown[] = [];
 for (const symbol of SYMBOLS) {
