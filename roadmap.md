@@ -65,3 +65,4 @@ Paper Robot30-trade collection, SMC/sweep rollout, chart rollout and MTF-filter 
 - [x] prompt-45: hard 24-hour close from entry time (market price, fees), slot reusable immediately; 7-day report
 - [x] prompt-46: liquidity-sweep strategy (no Pine LONG/SHORT, trend filter kept) — 7- and 30-day test report only; live Simulator unchanged, waits on user approval
 - [x] prompt-47/48: multi-setup (A–F) + 0–100 score, trend filter kept, no Pine LONG/SHORT — 7-day comparison + prior-week check; no config reached 100 trades profitably; live Simulator unchanged, waits on user decision
+- [x] prompt-49: Pullback score 60+, no time close, 5-way risk test (100/200/300% thresholds, no forced exit, dynamic liquidity protection) with account-level cross margin — report only; live Simulator unchanged
