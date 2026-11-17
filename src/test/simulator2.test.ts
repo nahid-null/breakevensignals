@@ -147,7 +147,9 @@ describe('Simulator 2 independent one-minute breakout rules', () => {
   });
   it('recorded Binance restriction rejects a commit before any Simulator 2 settlement', async () => {
     await signal(); await db.exec("update engine_health set status='ERROR',error='BINANCE_ACCESS_RESTRICTED: HTTP 451'");
+    await db.exec('SAVEPOINT restricted_commit');
     await expect(candle(180000, 100, 101, 99.999, 100)).rejects.toThrow();
+    await db.exec('ROLLBACK TO SAVEPOINT restricted_commit');
     expect(await trades()).toHaveLength(0); expect(Number((await account())?.balance)).toBe(5);
   });
   it('browser roles have no table access or reset/enable execution', async () => {
