@@ -1192,6 +1192,7 @@ export type Database = {
       }
       sim2_account: {
         Row: {
+          available_after_time: number
           balance: number
           enabled: boolean
           id: number
@@ -1204,6 +1205,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          available_after_time?: number
           balance?: number
           enabled?: boolean
           id: number
@@ -1216,6 +1218,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          available_after_time?: number
           balance?: number
           enabled?: boolean
           id?: number
