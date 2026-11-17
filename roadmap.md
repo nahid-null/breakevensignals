@@ -1,5 +1,10 @@
 # Independent Crypto Signal Terminal
 
+## Current prompt-38 — entry-quality investigation, no live changes
+- [x] Hook already imports React; no fix needed. Diagnose 34241 dev + 22804 untouched-holdout Pine events: costs vs tight stops are the main loss cause, breakeven timing adds lateness/fast reversals; trend/momentum tags alone ≤3pt effect.
+- [x] Register one retest/rejection/trend/momentum/structure-stop/cost/room rule (sha 5d2d8e88…) before evaluation; dev −0.056R/115 trades, Oct13–Nov10 holdout −0.124R/55 trades, beats coin-flip but FAILS; 13 rule tests pass.
+- [x] Save report, trade CSV and evidence ZIP to Simulator Performance Reports. No Simulator/settings/history/Telegram/publish change.
+
 ## Current prompt-37 — independent profitability study, no live changes
 - [x] Hook already imports React, build OK; freeze Sep1–22 development, Sep22–29 validation, Sep29–Oct13 final holdout before evaluation; 1353600 contiguous validated candles/20coins, actual funding, WILD unavailable.
 - [x] 144 base runs (24 configs×$5/$1000×3periods), 4 frozen-selection stress runs; 10x/20x, 5%/10%, independent sides, net1/1.5/2, closed15m Trend Identify/5mEMA9/21/next1mconfirmation→next-open fills. 34accounting/trend tests pass; every10087breakeven reconciles; max balance residual1.14e-12.
