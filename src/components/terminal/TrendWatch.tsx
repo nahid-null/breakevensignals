@@ -19,7 +19,7 @@ export function TrendWatch({ tz }: { tz: string }) {
   const watched = rows.filter((r) => r.side);
   return (
     <section className="grid gap-4 lg:grid-cols-2">
-      <div className="border border-border bg-card/40">
+      <div className="min-w-0 border border-border bg-card/40">
         <h2 className="flex items-center gap-2 border-b border-border px-3 py-2 text-xs uppercase tracking-widest text-muted-foreground">
           <Eye className="size-3" /> Special watch · {watched.length} of {rows.length} coins
         </h2>
@@ -42,7 +42,7 @@ export function TrendWatch({ tz }: { tz: string }) {
           </table>
         </div>
       </div>
-      <div className="border border-border bg-card/40">
+      <div className="min-w-0 border border-border bg-card/40">
         <h2 className="border-b border-border px-3 py-2 text-xs uppercase tracking-widest text-muted-foreground">Breakeven decisions</h2>
         <div className="max-h-[460px] overflow-auto">
           <table className="w-full min-w-[480px] text-xs">
