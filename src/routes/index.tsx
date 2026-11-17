@@ -3,7 +3,7 @@ import { Activity, ArrowRight, Wallet } from "lucide-react";
 import { fmtTime, useEvents, useSettings, useStatuses, useTelegramLogs } from "@/lib/data";
 import { StatusBadge } from "@/components/terminal/StatusBadge";
 import { sentSignalSummary } from "@/lib/signal-summary";
-import { fmtSignedUsd, fmtUsd, simSummary, todayPnl, useSimAccount, useSimTrades } from "@/lib/simulator";
+import { fmtSignedUsd, fmtUsd, simSessionTrades, simSummary, todayPnl, useSimAccount, useSimTrades } from "@/lib/simulator";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
@@ -39,7 +39,9 @@ function Dashboard() {
   const trades = useSimTrades();
   const tz = settings.data?.display_timezone ?? "UTC";
   const sig = sentSignalSummary(logs.data ?? [], events.data ?? []);
-  const sim = simSummary(trades.data ?? []);
+  const sim = simSummary(simSessionTrades(trades.data ?? [], account.data?.session_started_at));
+  const signalsReady = logs.isSuccess && events.isSuccess;
+  const simReady = trades.isSuccess && account.isSuccess && account.data !== null;
   const today = todayPnl(trades.data ?? [], new Date(), tz);
   const open = trades.data?.find((t) => t.status === 'OPEN');
   const statuses: [string, string][] = [["System", s.system], ["Cloud", s.cloud], ["Scanner", s.scanner], ["Binance", s.binance], ["WebSocket", s.websocket], ["Telegram", s.telegram]];
@@ -70,12 +72,12 @@ function Dashboard() {
       <section className="space-y-3">
         <h2 className="text-xs uppercase tracking-widest text-muted-foreground">Signals sent to Telegram</h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-          <Tile label="Signals sent" value={logs.isLoading ? '—' : sig.sent} />
-          <Tile label="Success rate" value={sig.successRate === null ? '—' : `${sig.successRate.toFixed(1)}%`} tone="text-long" hint="Take profits ÷ closed signals" />
-          <Tile label="Take profit" value={sig.takeProfit} tone="text-long" />
-          <Tile label="Stop loss" value={sig.stopLoss} tone="text-short" />
-          <Tile label="Breakeven exit" value={sig.breakeven} tone="text-breakeven" />
-          <Tile label="Still open" value={sig.open} tone="text-active" />
+          <Tile label="Signals sent" value={logs.isSuccess ? sig.sent : '—'} />
+          <Tile label="Success rate" value={!signalsReady || sig.successRate === null ? '—' : `${sig.successRate.toFixed(1)}%`} tone="text-long" hint="Take profits ÷ closed Pine signals" />
+          <Tile label="Take profit" value={signalsReady ? sig.takeProfit : '—'} tone="text-long" />
+          <Tile label="Stop loss" value={signalsReady ? sig.stopLoss : '—'} tone="text-short" />
+          <Tile label="Breakeven exit" value={signalsReady ? sig.breakeven : '—'} tone="text-breakeven" />
+          <Tile label="Still open" value={signalsReady ? sig.open : '—'} tone="text-active" />
         </div>
       </section>
 
@@ -86,10 +88,10 @@ function Dashboard() {
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           <Tile label="Balance" value={fmtUsd(account.data?.balance)} />
-          <Tile label="Today's P&L" value={fmtSignedUsd(today)} tone={today > 0 ? 'text-long' : today < 0 ? 'text-short' : undefined} />
-          <Tile label="Total P&L" value={fmtSignedUsd(sim.totalPnl)} tone={sim.totalPnl > 0 ? 'text-long' : sim.totalPnl < 0 ? 'text-short' : undefined} />
-          <Tile label="Win rate" value={sim.winRate === null ? '—' : `${sim.winRate.toFixed(1)}%`} hint={`${sim.closed} closed trades`} />
-          <Tile label="Open trade" value={open ? `${open.symbol.replace('USDT', '')} ${open.direction}` : 'None'} tone={open ? (open.direction === 'LONG' ? 'text-long' : 'text-short') : 'text-muted-foreground'} hint={open ? `${open.leverage}x · ${open.strength}` : undefined} />
+          <Tile label="Today's P&L" value={trades.isSuccess ? fmtSignedUsd(today) : '—'} tone={today > 0 ? 'text-long' : today < 0 ? 'text-short' : undefined} />
+          <Tile label="Session P&L" value={simReady ? fmtSignedUsd(sim.totalPnl) : '—'} tone={sim.totalPnl > 0 ? 'text-long' : sim.totalPnl < 0 ? 'text-short' : undefined} />
+          <Tile label="Win rate" value={!simReady || sim.winRate === null ? '—' : `${sim.winRate.toFixed(1)}%`} hint={simReady ? `${sim.closed} closed session trades` : undefined} />
+          <Tile label="Open trade" value={!simReady ? '—' : open ? `${open.symbol.replace('USDT', '')} ${open.direction}` : 'None'} tone={open ? (open.direction === 'LONG' ? 'text-long' : 'text-short') : 'text-muted-foreground'} hint={open ? `${open.leverage}x · ${open.rule_version === 'LEGACY' ? 'previous rules' : 'Pine'}` : undefined} />
         </div>
       </section>
     </div>

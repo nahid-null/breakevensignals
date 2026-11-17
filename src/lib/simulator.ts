@@ -30,6 +30,13 @@ export function simSummary(trades: Pick<SimTrade, 'status' | 'pnl'>[]) {
     totalPnl: closed.reduce((s, t) => s + Number(t.pnl ?? 0), 0) };
 }
 
+/** A restart begins a new performance session without deleting previous trades. */
+export function simSessionTrades<T extends Pick<SimTrade, 'opened_at'>>(trades: T[], startedAt: string | null | undefined): T[] {
+  if (!startedAt) return trades;
+  const start = Date.parse(startedAt);
+  return trades.filter((t) => Date.parse(t.opened_at) >= start);
+}
+
 export const fmtUsd = (n: number | null | undefined) => n === null || n === undefined || !Number.isFinite(Number(n)) ? '—'
   : `${Number(n) < 0 ? '-' : ''}$${Math.abs(Number(n)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 export const fmtSignedUsd = (n: number | null | undefined) => n === null || n === undefined ? '—' : `${Number(n) > 0 ? '+' : ''}${fmtUsd(n)}`;

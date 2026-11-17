@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { emptyTimeframe, signalStrength, type MtfState } from '@/lib/engine/mtf-trend';
 import { sentSignalSummary } from '@/lib/signal-summary';
-import { SIM_RULES, todayPnl, unrealizedPnl } from '@/lib/simulator';
+import { SIM_RULES, simSessionTrades, todayPnl, unrealizedPnl } from '@/lib/simulator';
 import { simulatorControlsAllowed } from '@/lib/simulator-control-policy';
 
 const tf = (minutes: number, bull: number, bear: number, adx: number) => ({ ...emptyTimeframe(minutes), bullScore: bull, bearScore: bear, adxValue: adx });
@@ -48,6 +48,11 @@ describe('simulator display numbers', () => {
       { status: 'CLOSED', pnl: 5, closed_at: '2026-11-16T18:30:00Z' }, // 00:30 Dhaka on 17th
     ];
     expect(todayPnl(trades, new Date('2026-11-16T12:00:00Z'), 'Asia/Dhaka')).toBe(10);
+  });
+  it('starts performance anew at the reset time while retaining earlier trade history', () => {
+    const history = [{ opened_at: '2026-11-17T04:59:59Z' }, { opened_at: '2026-11-17T05:00:00Z' }, { opened_at: '2026-11-17T05:01:00Z' }];
+    expect(simSessionTrades(history, '2026-11-17T05:00:00Z')).toEqual(history.slice(1));
+    expect(history).toHaveLength(3);
   });
 });
 
