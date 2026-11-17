@@ -1,6 +1,6 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, Link, useHydrated } from '@tanstack/react-router';
 import { useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
-import { useHydrated, useServerFn } from '@tanstack/react-start';
+import { useServerFn } from '@tanstack/react-start';
 import { useState } from 'react';
 import { ArrowDownRight, ArrowUpRight, Clock3, RotateCcw, Wallet } from 'lucide-react';
 import { toast } from 'sonner';
