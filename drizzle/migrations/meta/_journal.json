@@ -169,6 +169,13 @@
       "when": 1794891067602,
       "tag": "0023_pine_breakeven_simulator",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1794891588546,
+      "tag": "0024_retired_robot_resume_guard",
+      "breakpoints": true
     }
   ]
 }

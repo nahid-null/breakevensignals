@@ -122,8 +122,13 @@ describe('original Pine practice trading (isolated PostgreSQL)', () => {
   });
   it('rolls back settlement and result alerts when a commit hits a recorded Binance restriction', async () => {
     await candle([ev('entry_confirmed','t1')]); const tp=Number((await trade('t1')).take_profit);
-    await db.query('select engine_heartbeat($1::jsonb)',[JSON.stringify({instance_id:instance,status:'ERROR',websocket_connected:false,binance_connected:false,error:'BINANCE_ACCESS_RESTRICTED: HTTP451'})]);
+    await db.query('select engine_heartbeat($1::jsonb)',[JSON.stringify({instance_id:instance,status:'ERROR',websocket_connected:false,binance_connected:false,available_symbols:20,error:'BINANCE_ACCESS_RESTRICTED: HTTP451'})]);
     await db.exec('SAVEPOINT blocked');await expect(candle([],99.9,tp)).rejects.toThrow('Binance access blocked');await db.exec('ROLLBACK TO blocked');
     expect((await trade('t1')).status).toBe('OPEN');expect(await balance()).toBe(5);expect(await count('telegram_logs')).toBe(0);
+  });
+  it('prevents a retained older page from resuming the retired robot', async () => {
+    await db.exec('SAVEPOINT resume');await expect(db.query('select robot_resume()')).rejects.toThrow('retired');await db.exec('ROLLBACK TO resume');
+    await db.exec('SAVEPOINT settings');await expect(db.exec('update robot_settings set enabled=true,emergency_stop=false')).rejects.toThrow('retired');await db.exec('ROLLBACK TO settings');
+    expect(await count('robot_positions')).toBe(0);
   });
 });
