@@ -235,3 +235,8 @@
 ## 2026-11-17 09:05 UTC — prompt-32 entry variants (backtest only, live unchanged)
 - Same 7 days/20 coins, 20% margin, 20x, ±10/5% margin net, 1-candle exit. Variants added in sim2-backtest.ts (extra: trend20/retest/noExtend/vol/room), each on top of Training 3.
 - Baseline 90 tr 17.8% −$2.06 DD41.2%; A trend20 54 tr 22.2% −$1.11 DD24.2%; B retest 49 tr 36.7% −$0.61 DD13.0%; C not-overextended 13 tr 30.8% −$0.19 DD3.9%; D vol 30 tr 23.3% −$0.64 DD12.8%; E room 71 tr 16.9% −$1.63 DD32.6%. All net-negative; B/C/D/A slightly positive before costs. Break-even win rate 33.3%. Awaiting user.
+
+## 2026-11-17 09:08 UTC — prompt-33 B (retest) 14-day test (live unchanged)
+- 11-03 08:51 → 11-17 08:51, 20 coins, 20% margin, 20x, ±10/5% margin net, 1-candle exit.
+- Training 3: 135 tr, 24W/111L 17.8%, gross −$0.50, costs $2.28, net −$2.79, DD 55.7%, $2.21, TP7 SL100 time28, avg −$0.0206/trade.
+- B retest: 69 tr, 22W/47L 31.9%, gross +$0.57, costs $1.54, net −$0.97, DD 20.4%, $4.03, TP6 SL42 time21, avg −$0.0140/trade. Not profitable after costs. Awaiting user.
