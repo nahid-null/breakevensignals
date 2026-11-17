@@ -1,5 +1,13 @@
 # Independent Crypto Signal Terminal
 
+## Breakeven-only focus (prompt-22, 2026-11-17)
+- [x] Read both complete uploaded scripts and screenshots; scripts match original fixtures byte-for-byte. Reported hook already imports React; quoted instruction is absent.
+- [ ] Clarify conflicting 15%/10% targets and percentage basis, and executable entry timing versus historical Pine entry — awaiting user.
+- [ ] Remove added MTF approval from Pine signals; retain original script conditions and chronological breakeven behavior.
+- [ ] Simulator: only new genuine breakeven events, fixed50x,80%margin, confirmed net target, results to Telegram; audited balance controls/reset to5USDT without deleting history.
+- [ ] Retire Paper Robot and chart from active website use without erasing financial records; settle treatment of any open paper positions.
+- [ ] Add rule tests and isolated transaction checks, verify browser workflow, update central notes; actual Railway rollout depends on user deployment.
+
 ## Deployed sweep validation (prompt-18, 2026-11-16)
 - [x] Inspect genuine hosted evidence:40/40feeds, both directions evaluated; current decisions/trades still use old families, zero audited completed new sweeps. Actual paper leverage50x,target10,valid stops; open margin58.37% at18:13UTC. No thresholds/history changed.
 - [x] Add exact covered-source fingerprint and deployment status, full per-candle LONG/SHORT decisions, atomic runtime receipt and separate30-completed-new-sweep progress/performance. Old or temporary results excluded.
