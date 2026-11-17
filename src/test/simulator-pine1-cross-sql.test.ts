@@ -51,11 +51,18 @@ describe('prompt-40 Simulator: 1m Pine entries, trend gate, 50x, 20% margin, no 
     await enter('LONG', bias('LONG'), { timeframe: '5' });
     expect(await trades()).toHaveLength(0);
   });
-  it('trend gate kept: 1m against the trend is skipped, 15m/5m disagreement skipped', async () => {
-    await enter('LONG', bias('LONG', -1));
-    await enter('LONG', { m15: 1, m5: -1, m1: 0 }, {}, 't2');
-    expect(await trades()).toHaveLength(0);
-    expect((await decision())?.reason).toBe('ONE_MINUTE_OPPOSITE');
+  it('prompt-41: no trend filter — a LONG against the trend and with no reading still opens', async () => {
+    await enter('LONG', { m15: -1, m5: -1, m1: -1 });
+    expect(await trades()).toHaveLength(1);
+  });
+  it('prompt-41: a trade is closed at market after 24 hours', async () => {
+    await enter('LONG');
+    for (let k = 0; k < 3; k++) await candle([], 100, 99.5, 'live', 100, 99.4);
+    expect((await trades())[0]!.status).toBe('OPEN');
+    minute += 86_400_000 - 4 * 60_000;
+    await candle([], 99.5, 99.5, 'live', 99.6, 99.4);
+    const t = (await trades())[0]!; expect(t.status).toBe('CLOSED'); expect(t.exit_reason).toBe('TIME_EXIT'); expect(Number(t.exit_price)).toBe(99.5);
+    expect((await messages())[0]).toContain('Closed after 24 hours');
   });
   it('only one trade at a time', async () => {
     await enter('LONG'); await enter('LONG', bias('LONG'), {}, 't2');

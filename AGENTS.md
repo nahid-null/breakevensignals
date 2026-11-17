@@ -59,4 +59,4 @@ use the editor.
 - Fail closed for hosted balance controls until Invite-only access is verified; localhost checks never authorize remote callers.
 - Ship both pure engine trees in the worker Docker image and smoke-test that COPY set; audit unused initial-capital corrections separately from deposits to preserve ledger history.
 - Retained parity tools reuse `processCandle` and intact Pine fixtures; retired chart modules remain unrouted to preserve verification evidence.
-- Simulator trades original 1-minute Pine entries (rule PINE1_CROSS) carrying their prior-closed Trend Identify reading; 5-minute Pine bars (`src/lib/engine/five-minute.ts`) still run but never open trades, so signals stay unaltered.
+- Simulator trades every original 1-minute Pine entry (rule PINE1_CROSS, no trend gate, 24h max hold); 5-minute Pine bars (`src/lib/engine/five-minute.ts`) still run but never open trades, so signals stay unaltered.

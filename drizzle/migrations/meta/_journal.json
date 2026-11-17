@@ -225,6 +225,13 @@
       "when": 1794928052493,
       "tag": "0031_simulator_pine1_cross_margin",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1794929120076,
+      "tag": "0032_simulator_no_trend_24h_exit",
+      "breakpoints": true
     }
   ]
 }

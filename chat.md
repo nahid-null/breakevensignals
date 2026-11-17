@@ -273,3 +273,7 @@
 - Live now (migration 0031, rule PINE1_CROSS): 1m Pine entries with the trend gate kept · 50x · 20% of balance margin · no stop loss · close at +25% net of margin · cross-margin liquidation on the whole balance · results-only Telegram.
 - Code: 1m entries re-enabled in processMinute and carry their mtf_trend (needs Railway redeploy before trend-gated trades can open live). Report tool: engine-worker/report-pine1-cross.ts.
 - 7-day replay: 34 trades, 33 TP, 0 losses, $10 → $50.03. No-stop risk: a ~9–10% adverse move wipes out the balance.
+
+## prompt-41 (2026-11-17)
+- Trend filter removed (migration 0032): every 1m Pine entry is taken; a trade closes at +25% margin or at market after 24h (TIME_EXIT, "Closed after 24 hours"). Special-watch trend table removed from the Simulator page.
+- 7-day replay: 16 trades, 12 TP, 3 closed after 24h at a loss, 1 liquidated → $10 → $0.

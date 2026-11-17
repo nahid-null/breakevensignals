@@ -21,9 +21,9 @@ export const Route = createFileRoute("/simulator")({
   head: () => ({
     meta: [
       { title: "Simulator Trading — Crypto Signal Terminal" },
-      { name: "description", content: "Practice trades on original 1-minute Pine LONG/SHORT entries that match the 15m/5m trend, at 50x with 20% of balance, no stop loss and a +25% margin target." },
+      { name: "description", content: "Practice trades on original 1-minute Pine LONG/SHORT entries with no trend filter, at 50x with 20% of balance, no stop loss and a +25% margin target." },
       { property: "og:title", content: "Simulator Trading — Crypto Signal Terminal" },
-      { property: "og:description", content: "1-minute Pine entries filtered by the 15m/5m/1m trend, 50x, 20% margin, +25% target, cross margin." },
+      { property: "og:description", content: "1-minute Pine entries with no trend filter, 50x, 20% margin, +25% target or 24h close, cross margin." },
       { property: 'og:type', content: 'website' },
       { name: 'twitter:card', content: 'summary_large_image' },
     ],
@@ -31,10 +31,10 @@ export const Route = createFileRoute("/simulator")({
   component: Simulator,
 });
 
-const REASON: Record<string, string> = { TAKE_PROFIT: 'TAKE PROFIT HIT', STOP_LOSS: 'STOP LOSS HIT', BREAKEVEN: 'BREAKEVEN', LIQUIDATED: 'LIQUIDATED' };
+const REASON: Record<string, string> = { TAKE_PROFIT: 'TAKE PROFIT HIT', STOP_LOSS: 'STOP LOSS HIT', BREAKEVEN: 'BREAKEVEN', LIQUIDATED: 'LIQUIDATED', TIME_EXIT: 'CLOSED AFTER 24H' };
 /** prompt-39 trades show only the two receipt statuses; earlier trades keep their original labels. */
 const resultLabel = (t: { rule_version: string; exit_reason: string | null }) =>
-  !t.exit_reason ? '—' : (t.rule_version === 'PINE5_TREND' || t.rule_version === 'PINE1_CROSS') ? (t.exit_reason === 'TAKE_PROFIT' ? 'TAKE PROFIT HIT' : 'STOP LOSS HIT') : REASON[t.exit_reason] ?? '—';
+  !t.exit_reason ? '—' : (t.rule_version === 'PINE5_TREND' || t.rule_version === 'PINE1_CROSS') ? (t.exit_reason === 'TAKE_PROFIT' ? 'TAKE PROFIT HIT' : t.exit_reason === 'TIME_EXIT' ? 'CLOSED AFTER 24H' : 'STOP LOSS HIT') : REASON[t.exit_reason] ?? '—';
 const pnlTone = (n: number | null | undefined) => (Number(n) > 0 ? 'text-long' : Number(n) < 0 ? 'text-short' : 'text-muted-foreground');
 
 function Tile({ label, value, tone, hint }: { label: string; value: string; tone?: string | undefined; hint?: string | undefined }) {
@@ -145,7 +145,8 @@ function Simulator() {
             <dt className="text-muted-foreground">Allocated margin</dt><dd className="font-mono">{SIM_RULES.marginShare * 100}% of balance</dd>
             <dt className="text-muted-foreground">Signals</dt><dd>LONG/SHORT indicators on 1m chart</dd>
             <dt className="text-muted-foreground">Entry</dt><dd>Indicator entry price</dd>
-            <dt className="text-muted-foreground">Trend filter</dt><dd>15m = 5m = side; 1m sideways or same</dd>
+            <dt className="text-muted-foreground">Trend filter</dt><dd>None — every signal is used</dd>
+            <dt className="text-muted-foreground">Max time open</dt><dd>24 hours, then closed at market</dd>
             <dt className="text-muted-foreground">Take profit</dt><dd>+25% of margin after fees</dd>
             <dt className="text-muted-foreground">Stop loss</dt><dd>None — cross margin (whole balance backs the trade)</dd>
             <dt className="text-muted-foreground">Telegram</dt><dd>Trade results only</dd>
@@ -209,7 +210,7 @@ function Simulator() {
       <AlertDialog open={edit !== null} onOpenChange={(v) => { if (!v && !busy) setEdit(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>{edit === 'RESET' ? 'Restart simulator at $10?' : 'Edit practice balance?'}</AlertDialogTitle>
-            <AlertDialogDescription>{edit === 'RESET' ? 'Restores $10 and enables new practice trades: 50x leverage, 20% of balance as margin, take profit at +25% of margin, no stop loss (cross margin). Today’s P&L, session P&L and trade counters start at zero. Previous trades, lifetime deposits and results stay in history.' : 'This is a recorded capital adjustment, not trading profit or a deposit. Existing history stays unchanged.'}</AlertDialogDescription></AlertDialogHeader>
+            <AlertDialogDescription>{edit === 'RESET' ? 'Restores $10 and enables new practice trades: 50x leverage, 20% of balance as margin, take profit at +25% of margin or close after 24 hours, no stop loss (cross margin). Today’s P&L, session P&L and trade counters start at zero. Previous trades, lifetime deposits and results stay in history.' : 'This is a recorded capital adjustment, not trading profit or a deposit. Existing history stays unchanged.'}</AlertDialogDescription></AlertDialogHeader>
           {edit === 'EDIT' && <Input aria-label="New practice balance" type="number" min="0" step="0.01" value={newBalance} onChange={(e) => setNewBalance(e.target.value)} />}
           <AlertDialogFooter><AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel><Button disabled={busy} onClick={() => void changeBalance()}>{edit === 'RESET' ? 'Restart at $10' : 'Save balance'}</Button></AlertDialogFooter>
         </AlertDialogContent>
