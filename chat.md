@@ -287,3 +287,11 @@
 - 2 slots now use 10% of balance each; open trades force-close at market after 1 hour ("Closed after 1 hour"). Trend filter, 1m entries, no SL, 50x, +25% target unchanged (migration 0036).
 - 7-day replay: 272 trades, 142 TP, 130 closed after 1h, 0 liquidated → $10 → $1.08.
 - No live trades today: all 47 live signals skipped as "Trend not ready" — online Railway scanner still runs old code without trend readings.
+
+## prompt-50 (2026-11-18) — AI Analyst research test (live unchanged)
+- TS2686 in use-mobile.tsx not reproduced (React imported as module). Request was in prompt-50.txt.
+- Added research-only `src/lib/engine/ai-analyst.ts` + `engine-worker/report-ai-analyst.ts` + `src/test/ai-analyst.test.ts` (5 pass). Deterministic multi-evidence engine; rules frozen (sha recorded) before running.
+- Exits: TP, closed-15m thesis invalidation, emergency level (0.5% equity incl. costs), isolated liquidation on mark; no time exit. Isolated margin, ≤20x with liq ≥3× emergency distance, max 5 open, 2.5% open-risk cap, 3% daily / 10% DD entry halts.
+- Data: Binance 1m+taker volume, mark, funding, data.binance.vision bookDepth (±1%) and OI metrics. No historical liquidation-cluster or event-calendar data (disclosed). WILD missing.
+- Results ($10): standard (≥6 conf.) 0 trades both weeks on 20 coins; 51 liquid coins 1 main/3 unseen, all losses. Relaxed: 6–17/week; 20-coin main +$0.06, others −$0.09 to −$0.41, PF 0.19–0.51. 30/day never reached. Max DD ≤5%, worst trade −$0.05, 0 liquidations. Recommendation: do not activate.
+- Files: ai-analyst-report.md, ai-analyst-all-trades.csv, ai-analyst-daily-counts.csv, ai-analyst-summary.json in Simulator Performance Reports.

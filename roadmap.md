@@ -1,5 +1,9 @@
 # Independent Crypto Signal Terminal
 
+## Current prompt-50 — AI Analyst research test, no live changes
+- [x] Hook already imports React; TS2686 not reproduced. Build multi-evidence analyst (1m-4h trend, structure, pools, real order-book depth, OI, taker flow, FVG/OB, VWAP, POC, BTC), no fixed SL, 0.5% emergency risk, isolated margin, account halts.
+- [x] Freeze rules, test 10-17 Nov + unseen 3-10 Nov on 20 project and 51 liquid coins; 30/day never reached (0-17 trades/week), no positive expectancy shown, 0 liquidations. Report/CSVs saved to Simulator Performance Reports; nothing activated.
+
 ## Current prompt-38 — entry-quality investigation, no live changes
 - [x] Hook already imports React; no fix needed. Diagnose 34241 dev + 22804 untouched-holdout Pine events: costs vs tight stops are the main loss cause, breakeven timing adds lateness/fast reversals; trend/momentum tags alone ≤3pt effect.
 - [x] Register one retest/rejection/trend/momentum/structure-stop/cost/room rule (sha 5d2d8e88…) before evaluation; dev −0.056R/115 trades, Oct13–Nov10 holdout −0.124R/55 trades, beats coin-flip but FAILS; 13 rule tests pass.
