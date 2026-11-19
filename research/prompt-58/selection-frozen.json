@@ -1,0 +1,14 @@
+{
+ "selected": {
+  "a": 1.0,
+  "q": 0.99,
+  "msd": 2,
+  "beta": "none",
+  "thr": 0.8112810166047759
+ },
+ "validation_net": 526.3406079464825,
+ "dev_net": 397831.5424662383,
+ "validation_passed": true,
+ "configs_tested": 120,
+ "frozen_utc": "2026-11-19T18:07:46.591463Z"
+}
