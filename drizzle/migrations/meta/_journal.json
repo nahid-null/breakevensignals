@@ -309,6 +309,13 @@
       "when": 1795082767971,
       "tag": "0043_terminal_statistics_active_twelve_coins",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1795084465158,
+      "tag": "0044_simulator_same_coin_replacement",
+      "breakpoints": true
     }
   ]
 }

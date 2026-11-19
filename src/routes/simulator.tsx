@@ -31,13 +31,13 @@ export const Route = createFileRoute("/simulator")({
   component: Simulator,
 });
 
-const REASON: Record<string, string> = { TAKE_PROFIT: 'TAKE PROFIT HIT', STOP_LOSS: 'STOP LOSS HIT', BREAKEVEN: 'BREAKEVEN', LIQUIDATED: 'LIQUIDATED', TIME_EXIT: 'CLOSED AT TIME LIMIT', MANUAL_CLOSE: 'CLOSED MANUALLY' };
+const REASON: Record<string, string> = { TAKE_PROFIT: 'TAKE PROFIT HIT', STOP_LOSS: 'STOP LOSS HIT', BREAKEVEN: 'BREAKEVEN', LIQUIDATED: 'LIQUIDATED', TIME_EXIT: 'CLOSED AT TIME LIMIT', MANUAL_CLOSE: 'CLOSED MANUALLY', REPLACED_BY_SIGNAL: 'REPLACED BY NEW SIGNAL (4H LOSS)' };
 /** prompt-39 trades show only the two receipt statuses; earlier trades keep their original labels. */
 /** Time-limit closes are labelled by how long the trade was actually open (older trades used a 1-hour limit, current ones 24 hours). */
 const timeLabel = (t: { opened_at?: string | null; closed_at?: string | null }) =>
   t.opened_at && t.closed_at && new Date(t.closed_at).getTime() - new Date(t.opened_at).getTime() >= 23 * 3_600_000 ? 'CLOSED AFTER 24H' : 'CLOSED AFTER 1H';
 const resultLabel = (t: { rule_version: string; exit_reason: string | null; opened_at?: string | null; closed_at?: string | null }) =>
-  !t.exit_reason ? '—' : (t.rule_version === 'PINE5_TREND' || t.rule_version === 'PINE1_CROSS' || t.rule_version === 'OBVP5_CROSS') ? (t.exit_reason === 'TAKE_PROFIT' ? 'TAKE PROFIT HIT' : t.exit_reason === 'TIME_EXIT' ? timeLabel(t) : t.exit_reason === 'MANUAL_CLOSE' ? 'CLOSED MANUALLY' : 'STOP LOSS HIT') : REASON[t.exit_reason] ?? '—';
+  !t.exit_reason ? '—' : (t.rule_version === 'PINE5_TREND' || t.rule_version === 'PINE1_CROSS' || t.rule_version === 'OBVP5_CROSS') ? (t.exit_reason === 'TAKE_PROFIT' ? 'TAKE PROFIT HIT' : t.exit_reason === 'TIME_EXIT' ? timeLabel(t) : t.exit_reason === 'MANUAL_CLOSE' ? 'CLOSED MANUALLY' : t.exit_reason === 'REPLACED_BY_SIGNAL' ? 'REPLACED BY NEW SIGNAL (4H LOSS)' : 'STOP LOSS HIT') : REASON[t.exit_reason] ?? '—';
 const pnlTone = (n: number | null | undefined) => (Number(n) > 0 ? 'text-long' : Number(n) < 0 ? 'text-short' : 'text-muted-foreground');
 
 function Tile({ label, value, tone, hint }: { label: string; value: string; tone?: string | undefined; hint?: string | undefined }) {
@@ -168,6 +168,7 @@ function Simulator() {
             <dt className="text-muted-foreground">Entry</dt><dd>Exact indicator entry price (signal candle close)</dd>
             <dt className="text-muted-foreground">Trend filter</dt><dd>None — every indicator signal is followed</dd>
             <dt className="text-muted-foreground">Max time open</dt><dd>No limit — stays open until +25% (or close manually)</dd>
+            <dt className="text-muted-foreground">Same-coin replace</dt><dd>Open 3.5h+ and losing: a new signal on the same coin closes it and the new trade is taken</dd>
             <dt className="text-muted-foreground">Take profit</dt><dd>+25% of margin after fees</dd>
             <dt className="text-muted-foreground">Stop loss</dt><dd>None — cross margin (whole balance backs the trade)</dd>
             <dt className="text-muted-foreground">Telegram</dt><dd>Trade results only</dd>

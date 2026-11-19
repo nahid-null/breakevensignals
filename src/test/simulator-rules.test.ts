@@ -104,3 +104,11 @@ describe('prompt-53 sizing: 75x, 5% of balance, +25% of margin target', () => {
     expect(Number(p.target)).toBeCloseTo(99.45 / 1.0005, 10);
   });
 });
+
+import { shouldReplace } from '../lib/engine/pine1-cross';
+describe('prompt-55 same-coin replacement (pure replay rule)', () => {
+  const pos = (direction: 'LONG' | 'SHORT') => ({ tradeId: 'x', symbol: 'BTCUSDT', direction, openedCandle: 0, entry: '100', target: '101', liquidation: '1',
+    margin: '0.5', quantity: '0.375', entryFee: '0.01875', slippage: '0.01', balanceBefore: '10', trend: null }) as never;
+  it('needs 3.5 hours open', () => { expect(shouldReplace(pos('LONG'), 209 * 60_000, 99)).toBe(false); expect(shouldReplace(pos('LONG'), 210 * 60_000, 99)).toBe(true); });
+  it('needs the trade to be in a loss at the new entry price', () => { expect(shouldReplace(pos('LONG'), 240 * 60_000, 101)).toBe(false); expect(shouldReplace(pos('SHORT'), 240 * 60_000, 101)).toBe(true); });
+});

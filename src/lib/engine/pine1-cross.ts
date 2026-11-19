@@ -13,7 +13,7 @@ const dec = (n: Decimal.Value) => new Decimal(n);
 
 export interface Pine1Position { tradeId: string; symbol: string; direction: 'LONG' | 'SHORT'; openedCandle: number; entry: string;
   target: string; liquidation: string; margin: string; quantity: string; entryFee: string; slippage: string; balanceBefore: string; trend: MtfSnapshot | null }
-export interface Pine1Trade extends Pine1Position { closedCandle: number; exit: string; reason: 'TAKE_PROFIT' | 'LIQUIDATED' | 'TIME_EXIT'; exitFee: string; pnl: string; balanceAfter: string }
+export interface Pine1Trade extends Pine1Position { closedCandle: number; exit: string; reason: 'TAKE_PROFIT' | 'LIQUIDATED' | 'TIME_EXIT' | 'REPLACED_BY_SIGNAL'; exitFee: string; pnl: string; balanceAfter: string }
 
 /** prompt-42: trend gate restored; up to two open trades, never two on the same coin. */
 export function pine1Skip(e: Signal, balance: Decimal.Value, open: { symbol: string }[]): string | null {
@@ -48,10 +48,19 @@ export function pine1Exit(p: Pine1Position, c: Candle): Pine1Trade['reason'] | n
 
 export function closePine1(p: Pine1Position, reason: Pine1Trade['reason'], candleTime: number, balance: Decimal.Value, close?: Decimal.Value, other: Decimal.Value = 0): Pine1Trade {
   const s = p.direction === 'LONG' ? 1 : -1; const q = dec(p.quantity);
-  const px = dec(reason === 'LIQUIDATED' ? p.liquidation : reason === 'TIME_EXIT' ? close! : p.target);
+  const px = dec(reason === 'LIQUIDATED' ? p.liquidation : reason === 'TIME_EXIT' || reason === 'REPLACED_BY_SIGNAL' ? close! : p.target);
   const cap = dec(balance).minus(other).minus(p.entryFee).neg();
   const gross = reason === 'LIQUIDATED' ? cap : Decimal.max(q.mul(px.minus(p.entry)).mul(s).minus(q.mul(p.slippage).mul(2)), cap);
   const exitFee = reason === 'LIQUIDATED' ? dec(0) : q.mul(px).mul(PINE1.feeRate);
   const after = Decimal.max(dec(balance).plus(gross).minus(p.entryFee).minus(exitFee), 0);
   return { ...p, closedCandle: candleTime, exit: px.toString(), reason, exitFee: exitFee.toString(), pnl: after.minus(balance).toString(), balanceAfter: after.toString() };
+}
+
+/** prompt-55: a same-coin signal replaces an open trade only when it has been open >= 3.5h (4h minus the 30-min early window)
+ * and would lose money (after both fees and slippage) at the new signal's entry price. Mirrors public.simulate_engine_candle. */
+export const REPLACE_MIN_AGE_MS = 210 * 60_000;
+export function shouldReplace(p: Pine1Position, candleTime: number, price: number): boolean {
+  if (candleTime - p.openedCandle < REPLACE_MIN_AGE_MS) return false;
+  const q = dec(p.quantity); const s = p.direction === 'LONG' ? 1 : -1;
+  return q.mul(dec(price).minus(p.entry)).mul(s).minus(q.mul(p.slippage).mul(2)).minus(p.entryFee).minus(q.mul(price).mul(PINE1.feeRate)).lt(0);
 }

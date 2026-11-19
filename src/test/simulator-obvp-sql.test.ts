@@ -131,3 +131,30 @@ describe('prompt-53 Simulator: OB + Weighted VP 5m entries only, 12 coins, 6 slo
     expect(await trades()).toHaveLength(0); expect((await decision('inj1'))?.reason).toBe('COIN_NOT_APPROVED');
   });
 });
+
+// prompt-55: same-coin 4-hour losing-trade replacement (eligible from 3.5h = 4h minus the 30-minute early window).
+describe('same-coin replacement of a losing trade', () => {
+  const signalAt = (px: number, d: Dir, id: string) => candle([], px, px, 'live', undefined, undefined, [ob(d, id, { entry_price: px })]);
+  it('closes a LONG losing after 4h at the new SHORT entry and opens the SHORT', async () => {
+    await enter('LONG', 'old'); minute += 240 * 60_000; await signalAt(99, 'SHORT', 'new');
+    const [old, fresh] = await trades();
+    expect(old).toMatchObject({ status: 'CLOSED', exit_reason: 'REPLACED_BY_SIGNAL' }); expect(Number(old!.exit_price)).toBe(99);
+    expect(fresh).toMatchObject({ status: 'OPEN', direction: 'SHORT' }); expect(Number(fresh!.entry_price)).toBe(99);
+  });
+  it('also replaces when the signal comes 30 minutes before the 4h mark', async () => {
+    await enter('LONG', 'old'); minute += 210 * 60_000; await signalAt(99, 'SHORT', 'new');
+    expect((await trades()).map((t) => t.status)).toEqual(['CLOSED', 'OPEN']);
+  });
+  it('keeps the trade when the signal comes earlier than 3.5h', async () => {
+    await enter('LONG', 'old'); minute += 200 * 60_000; await signalAt(99, 'SHORT', 'new');
+    expect((await trades()).map((t) => t.status)).toEqual(['OPEN']); expect((await decision('new'))?.reason).toBe('COIN_ALREADY_OPEN');
+  });
+  it('keeps a trade that is in profit after 4h', async () => {
+    await enter('LONG', 'old'); minute += 240 * 60_000; await signalAt(100.3, 'SHORT', 'new');
+    expect((await trades()).map((t) => t.status)).toEqual(['OPEN']);
+  });
+  it('never closes on time alone without a new signal', async () => {
+    await enter('LONG', 'old'); minute += 300 * 60_000; await candle([], 99, 99);
+    expect((await trades()).map((t) => t.status)).toEqual(['OPEN']);
+  });
+});
