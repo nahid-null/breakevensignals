@@ -79,10 +79,19 @@ export const heartbeatSchema = z.object({
   last_scan_at: z.string().datetime().nullable().default(null),
   feed_health: feedHealthSchema.nullable().default(null),
 });
+/** prompt-51: OB + Weighted VP 5-minute entry for the Simulator only (never a Pine position or signal event). */
+export const simulatorEntrySchema = z.object({
+  trade_id: z.string().min(3).max(200), symbol: z.enum(SYMBOLS), direction: z.enum(['LONG','SHORT']),
+  indicator: z.literal('OB + Weighted VP 5m'), timeframe: z.literal('5'),
+  entry_price: finite.positive(), stop_loss: finite.positive(), take_profit: finite.positive(),
+  score: z.number().int().min(0).max(6), rr: finite.positive(), signal_time: z.string().datetime(),
+});
 export const commitSchema = z.object({
   instance_id: z.string().uuid(), symbol: z.enum(SYMBOLS), expected_revision: z.number().int().min(0),
   checkpoint: checkpointSchema,
   market: marketSchema,
   mode: z.enum(["live", "warmup", "recovery"]),
   events: z.array(signalSchema).max(12),
-}).refine((p) => p.market.symbol === p.symbol && p.checkpoint['symbol'] === p.symbol && p.events.every((e) => e.symbol === p.symbol), "Symbol mismatch");
+  simulator_entries: z.array(simulatorEntrySchema).max(2).default([]),
+}).refine((p) => p.market.symbol === p.symbol && p.checkpoint['symbol'] === p.symbol && p.events.every((e) => e.symbol === p.symbol)
+  && p.simulator_entries.every((e) => e.symbol === p.symbol), "Symbol mismatch");

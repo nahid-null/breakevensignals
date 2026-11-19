@@ -70,3 +70,5 @@ Paper Robot30-trade collection, SMC/sweep rollout, chart rollout and MTF-filter 
 - [x] prompt-46: liquidity-sweep strategy (no Pine LONG/SHORT, trend filter kept) — 7- and 30-day test report only; live Simulator unchanged, waits on user approval
 - [x] prompt-47/48: multi-setup (A–F) + 0–100 score, trend filter kept, no Pine LONG/SHORT — 7-day comparison + prior-week check; no config reached 100 trades profitably; live Simulator unchanged, waits on user decision
 - [x] prompt-49: Pullback score 60+, no time close, 5-way risk test (100/200/300% thresholds, no forced exit, dynamic liquidity protection) with account-level cross margin — report only; live Simulator unchanged
+- [x] prompt-51: OB + Weighted VP 5m indicator is the only Simulator entry source; trend filter and Pine entries removed from trading; 24h close removed; 3 slots x 10%, 50x, no SL, +25% target, manual close kept; 7-day replay
+- [ ] prompt-51: publish the site and redeploy the Railway scanner so live OB + Weighted VP signals reach the Simulator — waits on user

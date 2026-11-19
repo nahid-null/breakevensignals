@@ -1,0 +1,388 @@
+//@version=5
+indicator("OB + Weighted VP | Entry Signals (5m)", shorttitle = "OB-VP Signals", overlay = true, max_boxes_count = 50, max_lines_count = 500, max_labels_count = 500, max_bars_back = 1000)
+
+// =====================================================================
+//  STRATEGY LOGIC
+//  1) Swing High/Low + Break of Structure (BOS) -> Order Block zone
+//  2) Volume delta of the impulse must agree with the zone direction
+//  3) Price RETESTS the zone, then rejection / engulfing candle -> signal
+//  4) SL = beyond the zone (+ATR buffer)
+//  5) Signal STRENGTH SCORE (0-6) decides the Risk:Reward
+//       score <=2 -> 1:2 | 3 -> 1:3 | 4 -> 1:4 | 5 -> 1:5 | 6 -> 1:6
+//  6) Close through the zone = zone invalid (removed)
+//
+//  Strength points (1 each):
+//   a) Strong rejection wick (or engulfing)
+//   b) Volume spike on the signal candle
+//   c) Strong volume delta in the impulse that created the zone
+//   d) POC alignment (Long: close above POC | Short: close below POC)
+//   e) Trend alignment (EMA fast vs EMA slow)
+//   f) Tight zone (small zone = small SL)
+// =====================================================================
+
+// ------------------------------ Inputs --------------------------------
+swingLen   = input.int(10, "Swing Length", minval = 2, group = "Order Block")
+maxZones   = input.int(8, "Max Active Zones", minval = 1, maxval = 40, group = "Order Block")
+maxZoneATR = input.float(3.0, "Max Zone Height (x ATR)", minval = 0.5, step = 0.5, group = "Order Block", tooltip = "Zone-er height ei value-r cheye boro hole zone ignore hobe")
+useDelta   = input.bool(true, "Require Volume Delta Confirmation", group = "Order Block")
+showZones  = input.bool(true, "Show Zones", group = "Order Block")
+bullColor  = input.color(color.new(color.green, 80), "Bullish Zone", group = "Order Block")
+bearColor  = input.color(color.new(color.red, 80), "Bearish Zone", group = "Order Block")
+
+wickPct    = input.float(30.0, "Min Rejection Wick % of Candle", minval = 5, maxval = 90, group = "Entry")
+useEngulf  = input.bool(true, "Also accept Engulfing Candle", group = "Entry")
+midClose   = input.bool(true, "Close must be beyond Zone Midpoint", group = "Entry")
+oneSig     = input.bool(true, "One Signal Per Zone", group = "Entry")
+minScore   = input.int(0, "Minimum Strength Score to Show Signal", minval = 0, maxval = 6, group = "Entry", tooltip = "0 = shob signal dekhabe. 3 ba 4 dile shudhu strong signal dekhabe")
+
+atrLen     = input.int(14, "ATR Length", minval = 1, group = "Risk")
+slBuf      = input.float(0.2, "SL Buffer (x ATR)", minval = 0, step = 0.05, group = "Risk")
+showTP     = input.bool(true, "Show TP Line", group = "Risk")
+lineLen    = input.int(15, "SL/TP Line Length (bars)", minval = 3, group = "Risk")
+entryShift = input.int(16, "Entry Label Offset (bars after SL/TP labels)", minval = 0, maxval = 100, group = "Risk", tooltip = "ENTRY PRICE label SL/TP label-er dane boshe, jate overlap na hoy. Kache ante chaile kom koro")
+
+rrBase     = input.float(2.0, "RR for Score 0-2 (Normal)", minval = 1, step = 0.5, group = "Risk Reward by Strength")
+rr3        = input.float(3.0, "RR for Score 3", minval = 1, step = 0.5, group = "Risk Reward by Strength")
+rr4        = input.float(4.0, "RR for Score 4", minval = 1, step = 0.5, group = "Risk Reward by Strength")
+rr5        = input.float(5.0, "RR for Score 5", minval = 1, step = 0.5, group = "Risk Reward by Strength")
+rr6        = input.float(6.0, "RR for Score 6 (Strongest)", minval = 1, step = 0.5, group = "Risk Reward by Strength")
+
+strongWick = input.float(50.0, "Strong Wick % (point a)", minval = 20, maxval = 90, group = "Strength Scoring")
+volMult    = input.float(1.5, "Volume Spike x Average (point b)", minval = 1, step = 0.1, group = "Strength Scoring")
+deltaStr   = input.float(0.25, "Min Delta Dominance (point c)", minval = 0.05, maxval = 1, step = 0.05, group = "Strength Scoring", tooltip = "Impulse-er total volume-er koto % ekdike (buy ba sell) hote hobe")
+emaFastLen = input.int(50, "Fast EMA (point e)", minval = 2, group = "Strength Scoring")
+emaSlowLen = input.int(200, "Slow EMA (point e)", minval = 5, group = "Strength Scoring")
+tightATR   = input.float(1.5, "Tight Zone (x ATR) (point f)", minval = 0.3, step = 0.1, group = "Strength Scoring")
+
+useExit    = input.bool(true, "Enable Early Exit Signals", group = "Early Exit", tooltip = "Trade open thakle, TP hit korbe na mone hole oi candle-e EXIT label ar exit price dekhabe")
+exitStruct = input.bool(true, "Exit: Opposite BOS (structure flip)", group = "Early Exit")
+exitEngulf = input.bool(true, "Exit: Strong opposite engulfing candle beyond entry", group = "Early Exit")
+exitPocBrk = input.bool(true, "Exit: POC broken against the trade", group = "Early Exit")
+exitGive   = input.bool(true, "Exit: Gave back profit (price back to entry)", group = "Early Exit")
+giveBackPct= input.float(40.0, "Give-back: min progress to TP before it counts (%)", minval = 10, maxval = 90, group = "Early Exit")
+exitStall  = input.bool(true, "Exit: Trade stalled (no progress)", group = "Early Exit")
+stallBars  = input.int(24, "Stall: bars after entry (24 = 2h on 5m)", minval = 3, group = "Early Exit")
+stallPct   = input.float(25.0, "Stall: min progress to TP (%)", minval = 5, maxval = 90, group = "Early Exit")
+minBarsExit= input.int(2, "Min bars after entry before exit can trigger", minval = 1, group = "Early Exit")
+
+vpBars     = input.int(200, "Analyze Bars", minval = 20, maxval = 1000, group = "Weighted Volume Profile")
+vpRows     = input.int(30, "Row Count", minval = 5, maxval = 200, group = "Weighted Volume Profile")
+vpWeight   = input.string("Normal", "Volume Weighting", options = ["Recent", "Normal", "Past"], group = "Weighted Volume Profile")
+pocHard    = input.bool(false, "POC Hard Filter (Long: close>POC, Short: close<POC)", group = "Weighted Volume Profile", tooltip = "Default OFF. On korle prai shob Long block hoye jete pare, karon Long zone shob shomoy POC-er niche thake. Strength score-e POC already ek point hishebe ache")
+showPOC    = input.bool(true, "Show POC Line", group = "Weighted Volume Profile")
+pocColor   = input.color(color.yellow, "POC Color", group = "Weighted Volume Profile")
+
+// ------------------------------ Core series ----------------------------
+atr = ta.atr(atrLen)
+ph  = ta.pivothigh(high, swingLen, swingLen)
+pl  = ta.pivotlow(low, swingLen, swingLen)
+vpTop = ta.highest(high, vpBars)
+vpBot = ta.lowest(low, vpBars)
+volMA   = ta.sma(volume, 20)
+emaFast = ta.ema(close, emaFastLen)
+emaSlow = ta.ema(close, emaSlowLen)
+
+// ------------------------------ Weighted VP POC -----------------------
+var float poc = na
+if barstate.isconfirmed and not na(vpTop) and not na(vpBot) and vpTop > vpBot
+    float stp = (vpTop - vpBot) / vpRows
+    rowVol = array.new_float(vpRows, 0.0)
+    for i = 0 to vpBars - 1
+        if not na(high[i])
+            float v = nz(volume[i])
+            if vpWeight == "Recent"
+                v := (v * 0.85) / (i + 1) + v * 0.15
+            else if vpWeight == "Past"
+                v := (v * 0.85) * ((i + 1.0) / vpBars) + v * 0.15
+            int r1 = math.max(0, math.min(vpRows - 1, int(math.floor((vpTop - high[i]) / stp))))
+            int r2 = math.max(0, math.min(vpRows - 1, int(math.floor((vpTop - low[i]) / stp))))
+            for r = r1 to r2
+                rowVol.set(r, rowVol.get(r) + v)
+    float mx = rowVol.max()
+    int mxIdx = rowVol.indexof(mx)
+    poc := vpTop - stp * (mxIdx + 0.5)
+
+plot(showPOC ? poc : na, "POC", color = pocColor, linewidth = 2, style = plot.style_linebr)
+bool pocXDn = ta.crossunder(close, poc)
+bool pocXUp = ta.crossover(close, poc)
+
+// ------------------------------ Zone storage ---------------------------
+var array<float> zTop  = array.new_float()
+var array<float> zBot  = array.new_float()
+var array<float> zStr  = array.new_float()
+var array<int>   zDir  = array.new_int()
+var array<int>   zBar  = array.new_int()
+var array<bool>  zUsed = array.new_bool()
+var array<box>   zBox  = array.new_box()
+
+// Open trades tracked for the Early Exit system
+var array<int>   tDir   = array.new_int()
+var array<float> tEntry = array.new_float()
+var array<float> tSl    = array.new_float()
+var array<float> tTp    = array.new_float()
+var array<int>   tBar   = array.new_int()
+var array<float> tBest  = array.new_float()
+
+var float shP = na
+var int   shI = na
+var bool  shBroken = true
+var float slP = na
+var int   slI = na
+var bool  slBroken = true
+
+addZone(float t, float b, int dir, int leftBar, float dRatio) =>
+    if zTop.size() >= maxZones
+        box.delete(zBox.shift())
+        zTop.shift()
+        zBot.shift()
+        zStr.shift()
+        zDir.shift()
+        zBar.shift()
+        zUsed.shift()
+    color fillC = dir == 1 ? bullColor : bearColor
+    color brdC  = dir == 1 ? color.green : color.red
+    box bx = box.new(leftBar, t, bar_index, b, border_color = showZones ? brdC : na, bgcolor = showZones ? fillC : na, extend = extend.right)
+    zTop.push(t)
+    zBot.push(b)
+    zStr.push(dRatio)
+    zDir.push(dir)
+    zBar.push(bar_index)
+    zUsed.push(false)
+    zBox.push(bx)
+
+removeZone(int k) =>
+    box.delete(zBox.get(k))
+    zBox.remove(k)
+    zTop.remove(k)
+    zBot.remove(k)
+    zStr.remove(k)
+    zDir.remove(k)
+    zBar.remove(k)
+    zUsed.remove(k)
+
+drawSignal(bool isLong, float entry, float sl, float tp, float rrUse, int score) =>
+    // Entry = close of the confirmed signal candle (fixed, never repaints).
+    // Risk   = |Entry - SL|      Reward = |TP - Entry|      RR shown = Reward / Risk (measured from the real prices)
+    float riskDist   = math.abs(entry - sl)
+    float rewardDist = math.abs(tp - entry)
+    float rrActual   = riskDist > 0 ? rewardDist / riskDist : rrUse
+    string rrTxt = "1:" + str.tostring(rrActual, "#.#")
+    string head  = (score >= 4 ? "★ " : "") + (isLong ? "LONG " : "SHORT ") + rrTxt
+    string txt   = head + "\n" + "Score " + str.tostring(score) + "/6" + "\n" + "Risk " + str.tostring(riskDist, format.mintick) + " | Reward " + str.tostring(rewardDist, format.mintick)
+    if isLong
+        label.new(bar_index, low, txt, yloc = yloc.price, style = label.style_label_up, color = color.green, textcolor = color.white, size = size.small)
+    else
+        label.new(bar_index, high, txt, yloc = yloc.price, style = label.style_label_down, color = color.red, textcolor = color.white, size = size.small)
+    line.new(bar_index, sl, bar_index + lineLen, sl, color = color.red, style = line.style_dashed, width = 1)
+    label.new(bar_index + lineLen, sl, "SL " + str.tostring(sl, format.mintick), style = label.style_none, textcolor = color.red, size = size.small)
+    if showTP
+        line.new(bar_index, tp, bar_index + lineLen, tp, color = color.green, style = line.style_dashed, width = 1)
+        label.new(bar_index + lineLen, tp, "TP " + rrTxt + "  " + str.tostring(tp, format.mintick), style = label.style_none, textcolor = color.green, size = size.small)
+    // ENTRY PRICE line + label (label body sits directly BELOW the entry line)
+    int entryX = bar_index + lineLen + entryShift
+    line.new(bar_index, entry, entryX, entry, color = color.aqua, style = line.style_solid, width = 2)
+    label.new(entryX, entry, (isLong ? "LONG" : "SHORT") + " ENTRY PRICE\n" + str.tostring(entry, format.mintick), yloc = yloc.price, style = label.style_label_up, color = isLong ? color.green : color.red, textcolor = color.white, size = size.small)
+
+addTrade(int dir, float entry, float sl, float tp) =>
+    if tDir.size() >= 50
+        tDir.shift()
+        tEntry.shift()
+        tSl.shift()
+        tTp.shift()
+        tBar.shift()
+        tBest.shift()
+    tDir.push(dir)
+    tEntry.push(entry)
+    tSl.push(sl)
+    tTp.push(tp)
+    tBar.push(bar_index)
+    tBest.push(entry)
+
+removeTrade(int q) =>
+    tDir.remove(q)
+    tEntry.remove(q)
+    tSl.remove(q)
+    tTp.remove(q)
+    tBar.remove(q)
+    tBest.remove(q)
+
+drawExit(bool wasLong, float exitPx, float plR, string why, float yOff) =>
+    string side  = wasLong ? "LONG" : "SHORT"
+    string plTxt = (plR > 0 ? "+" : "") + str.tostring(plR, "#.##") + "R"
+    string txt   = "EXIT THE " + side + " POSITION\nExit Price " + str.tostring(exitPx, format.mintick) + "  (" + plTxt + ")\n" + why
+    if wasLong
+        label.new(bar_index, high + yOff, txt, yloc = yloc.price, style = label.style_label_down, color = color.orange, textcolor = color.black, size = size.small)
+    else
+        label.new(bar_index, low - yOff, txt, yloc = yloc.price, style = label.style_label_up, color = color.orange, textcolor = color.black, size = size.small)
+    line.new(bar_index, exitPx, bar_index + 8, exitPx, color = color.orange, style = line.style_dotted, width = 2)
+
+// ------------------------------ Candle patterns ------------------------
+float rng       = high - low
+float lowerWick = math.min(open, close) - low
+float upperWick = high - math.max(open, close)
+bool bullRej    = close > open and rng > 0 and (lowerWick / rng) >= wickPct / 100.0
+bool bearRej    = close < open and rng > 0 and (upperWick / rng) >= wickPct / 100.0
+bool bullEng    = useEngulf and close > open and close[1] < open[1] and close > open[1]
+bool bearEng    = useEngulf and close < open and close[1] > open[1] and close < open[1]
+bool engUp      = close > open and close[1] < open[1] and close > open[1]
+bool engDn      = close < open and close[1] > open[1] and close < open[1]
+bool bullTrig   = bullRej or bullEng
+bool bearTrig   = bearRej or bearEng
+
+bool longSig  = false
+bool shortSig = false
+bool bullBOS  = false
+bool bearBOS  = false
+bool exitLongSig  = false
+bool exitShortSig = false
+
+// ------------------------------ Main logic (on bar close) --------------
+if barstate.isconfirmed
+    // ---- swing update
+    if not na(ph)
+        shP := ph
+        shI := bar_index - swingLen
+        shBroken := false
+    if not na(pl)
+        slP := pl
+        slI := bar_index - swingLen
+        slBroken := false
+
+    // ---- Bullish BOS -> Bullish OB (lowest candle between swing high and BOS)
+    if not na(shP) and not shBroken and close > shP
+        shBroken := true
+        bullBOS := true
+        int n = math.max(1, math.min(bar_index - shI, 300))
+        float ext = low
+        int off = 0
+        for i = 1 to n
+            if low[i] < ext
+                ext := low[i]
+                off := i
+        float zt = high[off]
+        float zb = low[off]
+        float delta = 0.0
+        float totV = 0.0
+        for i = 0 to off
+            delta += (close[i] > open[i] ? 1 : -1) * nz(volume[i])
+            totV += nz(volume[i])
+        float dRatio = totV > 0 ? math.abs(delta) / totV : 0.0
+        if (zt - zb) <= atr * maxZoneATR and (not useDelta or delta > 0)
+            addZone(zt, zb, 1, bar_index - off, dRatio)
+
+    // ---- Bearish BOS -> Bearish OB (highest candle between swing low and BOS)
+    if not na(slP) and not slBroken and close < slP
+        slBroken := true
+        bearBOS := true
+        int n = math.max(1, math.min(bar_index - slI, 300))
+        float ext = high
+        int off = 0
+        for i = 1 to n
+            if high[i] > ext
+                ext := high[i]
+                off := i
+        float zt = high[off]
+        float zb = low[off]
+        float delta = 0.0
+        float totV = 0.0
+        for i = 0 to off
+            delta += (close[i] > open[i] ? 1 : -1) * nz(volume[i])
+            totV += nz(volume[i])
+        float dRatio = totV > 0 ? math.abs(delta) / totV : 0.0
+        if (zt - zb) <= atr * maxZoneATR and (not useDelta or delta < 0)
+            addZone(zt, zb, -1, bar_index - off, dRatio)
+
+    // ---- Process zones: invalidation + retest signals
+    if zTop.size() > 0
+        for k = zTop.size() - 1 to 0
+            float t = zTop.get(k)
+            float b = zBot.get(k)
+            int d = zDir.get(k)
+            bool broken = d == 1 ? close < b : close > t
+            if broken
+                removeZone(k)
+            else if bar_index > zBar.get(k) and not (oneSig and zUsed.get(k))
+                float mid = (t + b) / 2.0
+                float dR  = zStr.get(k)
+                bool volSpike = volume > volMA * volMult
+                bool tight    = (t - b) <= atr * tightATR
+
+                if d == 1 and not longSig and low <= t and close > b and bullTrig and (not midClose or close > mid) and (not pocHard or na(poc) or close > poc)
+                    int score = 0
+                    score += ((rng > 0 and lowerWick / rng >= strongWick / 100.0) or bullEng) ? 1 : 0
+                    score += volSpike ? 1 : 0
+                    score += dR >= deltaStr ? 1 : 0
+                    score += (not na(poc) and close > poc) ? 1 : 0
+                    score += emaFast > emaSlow ? 1 : 0
+                    score += tight ? 1 : 0
+                    if score >= minScore
+                        float rrUse = score >= 6 ? rr6 : score == 5 ? rr5 : score == 4 ? rr4 : score == 3 ? rr3 : rrBase
+                        float sl = b - atr * slBuf
+                        float tp = close + (close - sl) * rrUse
+                        longSig := true
+                        zUsed.set(k, true)
+                        drawSignal(true, close, sl, tp, rrUse, score)
+                        addTrade(1, close, sl, tp)
+
+                else if d == -1 and not shortSig and high >= b and close < t and bearTrig and (not midClose or close < mid) and (not pocHard or na(poc) or close < poc)
+                    int score = 0
+                    score += ((rng > 0 and upperWick / rng >= strongWick / 100.0) or bearEng) ? 1 : 0
+                    score += volSpike ? 1 : 0
+                    score += dR >= deltaStr ? 1 : 0
+                    score += (not na(poc) and close < poc) ? 1 : 0
+                    score += emaFast < emaSlow ? 1 : 0
+                    score += tight ? 1 : 0
+                    if score >= minScore
+                        float rrUse = score >= 6 ? rr6 : score == 5 ? rr5 : score == 4 ? rr4 : score == 3 ? rr3 : rrBase
+                        float sl = t + atr * slBuf
+                        float tp = close - (sl - close) * rrUse
+                        shortSig := true
+                        zUsed.set(k, true)
+                        drawSignal(false, close, sl, tp, rrUse, score)
+                        addTrade(-1, close, sl, tp)
+
+    // ---- Open trade management: SL/TP closes the trade, otherwise look for an EARLY EXIT
+    if tDir.size() > 0
+        for q = tDir.size() - 1 to 0
+            int   dq = tDir.get(q)
+            float en = tEntry.get(q)
+            float sq = tSl.get(q)
+            float tq = tTp.get(q)
+            int   bq = tBar.get(q)
+            if bar_index > bq
+                float best = dq == 1 ? math.max(tBest.get(q), high) : math.min(tBest.get(q), low)
+                tBest.set(q, best)
+                bool slHit = dq == 1 ? low <= sq : high >= sq
+                bool tpHit = dq == 1 ? high >= tq : low <= tq
+                if slHit or tpHit
+                    removeTrade(q)
+                else if useExit and (bar_index - bq) >= minBarsExit
+                    float riskQ = math.abs(en - sq)
+                    float prog  = dq == 1 ? (best - en) / (tq - en) : (en - best) / (en - tq)
+                    bool  backAtEntry = dq == 1 ? close <= en : close >= en
+                    string why = ""
+                    if exitStruct and (dq == 1 ? bearBOS : bullBOS)
+                        why := "Structure flip (opposite BOS)"
+                    else if exitEngulf and ((dq == 1 and engDn and close < en) or (dq == -1 and engUp and close > en))
+                        why := "Strong opposite candle"
+                    else if exitPocBrk and ((dq == 1 and pocXDn and close < en) or (dq == -1 and pocXUp and close > en))
+                        why := "POC broken against trade"
+                    else if exitGive and prog >= giveBackPct / 100.0 and backAtEntry
+                        why := "Profit given back (price at entry)"
+                    else if exitStall and (bar_index - bq) >= stallBars and prog < stallPct / 100.0
+                        why := "Stalled - no progress to TP"
+                    if why != ""
+                        float plR = riskQ > 0 ? (dq == 1 ? (close - en) : (en - close)) / riskQ : 0.0
+                        bool clash = dq == 1 ? shortSig : longSig
+                        drawExit(dq == 1, close, plR, why, clash ? atr * 2.5 : 0.0)
+                        if dq == 1
+                            exitLongSig := true
+                        else
+                            exitShortSig := true
+                        removeTrade(q)
+
+// ------------------------------ Alerts ---------------------------------
+alertcondition(longSig, "LONG Signal", "LONG signal on {{ticker}} ({{interval}})")
+alertcondition(shortSig, "SHORT Signal", "SHORT signal on {{ticker}} ({{interval}})")
+alertcondition(exitLongSig, "EXIT LONG", "EXIT the LONG position on {{ticker}} ({{interval}})")
+alertcondition(exitShortSig, "EXIT SHORT", "EXIT the SHORT position on {{ticker}} ({{interval}})")

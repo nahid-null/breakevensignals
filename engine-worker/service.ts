@@ -3,6 +3,7 @@ import { SYMBOLS, INDICATORS, type Symbol } from "../src/lib/config";
 import { initialState, ENGINE_VERSION, MINUTE, PARAMETERS, validateCandle, type EngineState, type Candle, type Analysis, type Signal } from "../src/lib/engine/model";
 import { processCandle } from "../src/lib/engine/scalper";
 import { buildFive, bucketStart, processMinute } from "../src/lib/engine/five-minute";
+import type { SimulatorEntry } from "../src/lib/engine/ob-vp";
 import { BINANCE_WS, BinanceRequestError, binanceFetch, checkWebSocketAccess, history, delay, backoff } from "./binance";
 import { initMtf, snapshot as trendSnapshot, type MtfSnapshot } from "../src/lib/engine/mtf-trend";
 import { feedHasLiveEvidence, MESSAGE_MAX_AGE_MS, type FeedHealth } from '../src/lib/engine/feed-health';
@@ -108,7 +109,7 @@ export class SignalService {
     if (this.running && !this.marketPaused) this.lastRestAt = Date.now();
     return buildFive(symbol, tick, lastTime, fives, partial);
   }
-  private async commit(symbol: Symbol, tentative: EngineState, market: Market, events: Signal[], mode: 'live' | 'warmup' | 'recovery') {
+  private async commit(symbol: Symbol, tentative: EngineState, market: Market, events: Signal[], mode: 'live' | 'warmup' | 'recovery', entries: SimulatorEntry[] = []) {
     if (!this.running || this.marketPaused) return;
     const previous = this.checkpoints.get(symbol);
     if (this.observeOnly) {
@@ -118,8 +119,10 @@ export class SignalService {
       return;
     }
     try {
+      // The OB + Weighted VP state stays in memory (rebuilt from Binance after restart) to keep each checkpoint small.
+      const { obvp: _obvp, ...checkpoint } = tentative;
       const r = await this.app<{ conflict: boolean; revision: number }>('commit', { instance_id: this.instance,
-        symbol, expected_revision: previous?.revision ?? 0, checkpoint: tentative, market, events, mode });
+        symbol, expected_revision: previous?.revision ?? 0, checkpoint, market, events, mode, simulator_entries: entries });
       if (r.conflict) throw new Error("Checkpoint revision conflict");
       this.checkpoints.set(symbol, { state: tentative, revision: r.revision });
       this.markets.set(symbol, market);
@@ -128,7 +131,11 @@ export class SignalService {
       // If the response was lost after commit, re-read durable state. Never reuse a stale revision.
       const r = await this.app<{ checkpoints: { symbol: Symbol; revision: number; state: EngineState }[] }>('state', {});
       const saved = r.checkpoints.find((x) => x.symbol === symbol);
-      if (saved) this.checkpoints.set(symbol, saved);
+      if (saved) {
+        // The saved state never carries OB + Weighted VP; keep ours only when this exact candle was committed, else rebuild later.
+        const { obvp: _drop, ...state } = saved.state;
+        this.checkpoints.set(symbol, { ...saved, state: saved.state.lastTime === tentative.lastTime && tentative.obvp ? { ...state, obvp: tentative.obvp } : state });
+      }
       if (saved?.state.lastTime === tentative.lastTime) { this.markets.set(symbol, market); this.recordCommit(symbol, tentative, mode); return; }
       throw e;
     }
@@ -214,6 +221,7 @@ export class SignalService {
         const built = await this.fiveState(symbol, tick, last.time);
         if (!this.running || this.marketPaused) return;
         state.five = built.five;
+        state.obvp = built.obvp;
         // Replay every trading rule, including locking/cooldown. Do not publish backtest
         // trades as live signals. If a real historical trade is still open, adopt it with
         // explicit historical provenance, no notification, and its original entry levels.
@@ -349,18 +357,19 @@ export class SignalService {
     if (this.marketPaused) return;
     const saved = this.checkpoints.get(symbol);
     if (!saved || c.time <= (saved.state.lastTime ?? -1)) return;
-    if (!saved.state.five && saved.state.lastTime !== null) {
+    if ((!saved.state.five || !saved.state.obvp) && saved.state.lastTime !== null) {
       // Checkpoint saved before the 5-minute switch: build it once; its still-open Pine trades are adopted.
+      // prompt-51: the OB + Weighted VP state is never saved, so it is rebuilt from Binance's 5-minute bars up to the saved candle.
       const built = await this.fiveState(symbol, saved.state.tickSize, saved.state.lastTime);
       if (!this.running || this.marketPaused) return;
-      saved.state.five = built.five;
-      this.adoption.set(symbol, built.adopted);
+      if (!saved.state.five) { saved.state.five = built.five; this.adoption.set(symbol, built.adopted); }
+      saved.state.obvp = built.obvp;
     }
     const tentative = structuredClone(saved.state);
     const result = processMinute(tentative, c);
     if (!this.running || this.marketPaused) return;
     const events = [...(this.adoption.get(symbol) ?? []), ...result.signals];
-    await this.commit(symbol, tentative, this.market(symbol, tentative, c, result.analysis, mode === 'live' ? 'LIVE' : 'RECOVERING'), events, mode);
+    await this.commit(symbol, tentative, this.market(symbol, tentative, c, result.analysis, mode === 'live' ? 'LIVE' : 'RECOVERING'), events, mode, result.entries);
     if (this.checkpoints.get(symbol)?.state.five) this.adoption.delete(symbol);
   }
   private async recover(symbol: Symbol, until: number) {

@@ -295,3 +295,12 @@
 - Data: Binance 1m+taker volume, mark, funding, data.binance.vision bookDepth (±1%) and OI metrics. No historical liquidation-cluster or event-calendar data (disclosed). WILD missing.
 - Results ($10): standard (≥6 conf.) 0 trades both weeks on 20 coins; 51 liquid coins 1 main/3 unseen, all losses. Relaxed: 6–17/week; 20-coin main +$0.06, others −$0.09 to −$0.41, PF 0.19–0.51. 30/day never reached. Max DD ≤5%, worst trade −$0.05, 0 liquidations. Recommendation: do not activate.
 - Files: ai-analyst-report.md, ai-analyst-all-trades.csv, ai-analyst-daily-counts.csv, ai-analyst-summary.json in Simulator Performance Reports.
+
+## prompt-51 (2026-11-19) — OB + Weighted VP 5m indicator is the only Simulator entry source (live)
+- TS2686 in use-mobile.tsx not reproduced (React imported as module); request was in prompt-51.txt.
+- User answers: remove 24h close; keep manual Close button; keep 3 slots x 10%; target is always 25% of margin ($50 → $12.5).
+- Indicator source saved intact as src/pine/ob-vp-entry.pine; entry logic ported to src/lib/engine/ob-vp.ts (default inputs) and run on the same 5m bars as five-minute.ts. Its SL/TP/Early Exit are not used for trading. Entries go to the engine API as `simulator_entries` (never Pine positions); state kept in worker memory, rebuilt from Binance 5m history on restart.
+- Migration 0039: OBVP5_CROSS — only these entries open trades; no trend filter; Pine 1m/5m entries never trade; 50x, 10%/slot, 3 slots, one per coin, no SL, +25% net margin target, cross-margin liquidation; 24h close removed (also for open PINE1_CROSS trades). Decision log stores signal score.
+- Simulator/Dashboard labels updated. Tests: new ob-vp.test.ts (6) + simulator-obvp-sql.test.ts (11, replaces pine1-cross SQL test); full suite passes; fingerprint updated.
+- 7-day replay 11-12 09:00 → 11-19 09:00 UTC, 20 coins (WILD unlisted): 541 signals, 34 trades, 30 TP, 1 liquidation, 3 still open; $10 → $3.94 balance, but open HBAR LONG (since 11-13) is −$8.59 unrealized, so account value is below zero (would be wiped). Files: obvp5-7day-summary.json, obvp5-7day-trades.csv.
+- Live needs: publish site + redeploy Railway scanner. Until then the Simulator opens no trades (old scanner sends no OB-VP entries).

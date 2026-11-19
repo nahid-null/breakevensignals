@@ -1039,6 +1039,7 @@ export type Database = {
           reason: string | null
           reference_price: number
           rule_version: string | null
+          signal_score: number | null
           status: string
           symbol: string
           take_profit: number | null
@@ -1057,6 +1058,7 @@ export type Database = {
           reason?: string | null
           reference_price: number
           rule_version?: string | null
+          signal_score?: number | null
           status?: string
           symbol: string
           take_profit?: number | null
@@ -1075,6 +1077,7 @@ export type Database = {
           reason?: string | null
           reference_price?: number
           rule_version?: string | null
+          signal_score?: number | null
           status?: string
           symbol?: string
           take_profit?: number | null

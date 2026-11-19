@@ -21,9 +21,9 @@ export const Route = createFileRoute("/simulator")({
   head: () => ({
     meta: [
       { title: "Simulator Trading — Crypto Signal Terminal" },
-      { name: "description", content: "Practice trades on original 1-minute Pine LONG/SHORT entries that match the 15m/5m trend, up to 3 at a time, at 50x with 10% of balance per slot, no stop loss and a +25% margin target." },
+      { name: "description", content: "Practice trades on every OB + Weighted VP 5-minute signal, up to 3 at a time, at 50x with 10% of balance per slot, no stop loss, no time limit and a +25% margin target." },
       { property: "og:title", content: "Simulator Trading — Crypto Signal Terminal" },
-      { property: "og:description", content: "1-minute Pine entries filtered by the 15m/5m/1m trend, 3 slots, 50x, 10% margin each, +25% target, 24h max hold or manual close, cross margin." },
+      { property: "og:description", content: "Entries only from the OB + Weighted VP 5-minute indicator, 3 slots, 50x, 10% margin each, +25% target, no time limit, manual close, cross margin." },
       { property: 'og:type', content: 'website' },
       { name: 'twitter:card', content: 'summary_large_image' },
     ],
@@ -37,7 +37,7 @@ const REASON: Record<string, string> = { TAKE_PROFIT: 'TAKE PROFIT HIT', STOP_LO
 const timeLabel = (t: { opened_at?: string | null; closed_at?: string | null }) =>
   t.opened_at && t.closed_at && new Date(t.closed_at).getTime() - new Date(t.opened_at).getTime() >= 23 * 3_600_000 ? 'CLOSED AFTER 24H' : 'CLOSED AFTER 1H';
 const resultLabel = (t: { rule_version: string; exit_reason: string | null; opened_at?: string | null; closed_at?: string | null }) =>
-  !t.exit_reason ? '—' : (t.rule_version === 'PINE5_TREND' || t.rule_version === 'PINE1_CROSS') ? (t.exit_reason === 'TAKE_PROFIT' ? 'TAKE PROFIT HIT' : t.exit_reason === 'TIME_EXIT' ? timeLabel(t) : t.exit_reason === 'MANUAL_CLOSE' ? 'CLOSED MANUALLY' : 'STOP LOSS HIT') : REASON[t.exit_reason] ?? '—';
+  !t.exit_reason ? '—' : (t.rule_version === 'PINE5_TREND' || t.rule_version === 'PINE1_CROSS' || t.rule_version === 'OBVP5_CROSS') ? (t.exit_reason === 'TAKE_PROFIT' ? 'TAKE PROFIT HIT' : t.exit_reason === 'TIME_EXIT' ? timeLabel(t) : t.exit_reason === 'MANUAL_CLOSE' ? 'CLOSED MANUALLY' : 'STOP LOSS HIT') : REASON[t.exit_reason] ?? '—';
 const pnlTone = (n: number | null | undefined) => (Number(n) > 0 ? 'text-long' : Number(n) < 0 ? 'text-short' : 'text-muted-foreground');
 
 function Tile({ label, value, tone, hint }: { label: string; value: string; tone?: string | undefined; hint?: string | undefined }) {
@@ -164,10 +164,10 @@ function Simulator() {
           <dl className="grid grid-cols-2 gap-x-3 gap-y-2 border-t border-border pt-3 text-xs">
             <dt className="text-muted-foreground">New trade leverage</dt><dd className="font-mono">{SIM_RULES.leverage}x</dd>
             <dt className="text-muted-foreground">Allocated margin</dt><dd className="font-mono">{SIM_RULES.marginShare * 100}% of balance per trade</dd>
-            <dt className="text-muted-foreground">Signals</dt><dd>LONG/SHORT indicators on 1m chart</dd>
-            <dt className="text-muted-foreground">Entry</dt><dd>Indicator entry price</dd>
-            <dt className="text-muted-foreground">Trend filter</dt><dd>15m = 5m = side; 1m sideways or same</dd>
-            <dt className="text-muted-foreground">Max time open</dt><dd>24 hours from entry, then closed at market (or close manually)</dd>
+            <dt className="text-muted-foreground">Signals</dt><dd>OB + Weighted VP indicator on 5m chart only</dd>
+            <dt className="text-muted-foreground">Entry</dt><dd>Exact indicator entry price (signal candle close)</dd>
+            <dt className="text-muted-foreground">Trend filter</dt><dd>None — every indicator signal is followed</dd>
+            <dt className="text-muted-foreground">Max time open</dt><dd>No limit — stays open until +25% (or close manually)</dd>
             <dt className="text-muted-foreground">Take profit</dt><dd>+25% of margin after fees</dd>
             <dt className="text-muted-foreground">Stop loss</dt><dd>None — cross margin (whole balance backs the trade)</dd>
             <dt className="text-muted-foreground">Telegram</dt><dd>Trade results only</dd>
@@ -178,16 +178,16 @@ function Simulator() {
         <div className="space-y-3 border border-border bg-card/40 p-4">
           <h2 className="text-xs uppercase tracking-widest text-muted-foreground">Open positions · {opens.length} of {SIM_RULES.slots} slots</h2>
           {open && <SavedMarketNotice />}
-          {!performanceReady ? <p className="text-sm text-muted-foreground">{account.isError || trades.isError ? 'Could not load practice account or trades.' : 'Loading practice account…'}</p> : !open ? <p className="text-sm text-muted-foreground">{!account.data?.enabled ? 'Paused — no new practice entries.' : balance > 0 ? 'Waiting for a 1-minute indicator signal that matches the trend.' : 'Practice balance is zero.'}</p> : (
+          {!performanceReady ? <p className="text-sm text-muted-foreground">{account.isError || trades.isError ? 'Could not load practice account or trades.' : 'Loading practice account…'}</p> : !open ? <p className="text-sm text-muted-foreground">{!account.data?.enabled ? 'Paused — no new practice entries.' : balance > 0 ? 'Waiting for a 5-minute OB + Weighted VP signal.' : 'Practice balance is zero.'}</p> : (
             <div className="space-y-4">{view.map(({ o: open, market, feed, price, live }) => (
             <div key={open.trade_id} className="grid grid-cols-2 gap-x-6 gap-y-2 border-t border-border/50 pt-3 font-mono text-sm first:border-t-0 first:pt-0 sm:grid-cols-3">
               <div><div className="text-[10px] text-muted-foreground">COIN</div>{open.symbol}</div>
               <div><div className="text-[10px] text-muted-foreground">SIDE</div><StatusBadge value={open.direction} /></div>
-              <div><div className="text-[10px] text-muted-foreground">LEVERAGE</div>{open.leverage}x · {open.rule_version === 'PINE1_CROSS' ? '1M PINE · CROSS' : open.rule_version === 'PINE5_TREND' ? '5M PINE + TREND' : open.rule_version === 'PINE_BE_TREND' ? 'BE + TREND' : open.rule_version === 'LEGACY' ? 'PREVIOUS RULES' : 'PINE'}</div>
+              <div><div className="text-[10px] text-muted-foreground">LEVERAGE</div>{open.leverage}x · {open.rule_version === 'OBVP5_CROSS' ? 'OB-VP 5M · CROSS' : open.rule_version === 'PINE1_CROSS' ? '1M PINE · CROSS' : open.rule_version === 'PINE5_TREND' ? '5M PINE + TREND' : open.rule_version === 'PINE_BE_TREND' ? 'BE + TREND' : open.rule_version === 'LEGACY' ? 'PREVIOUS RULES' : 'PINE'}</div>
               <div><div className="text-[10px] text-muted-foreground">MARGIN</div>{fmtUsd(open.margin)}</div>
               <div><div className="text-[10px] text-muted-foreground">ENTRY</div>{fmtPrice(open.entry_price)}</div>
               <div><div className="text-[10px] text-muted-foreground">PRICE · {feed === 'LIVE' ? 'LIVE' : 'LAST SAVED'}</div>{Number.isFinite(price) ? fmtPrice(price) : '—'}{feed !== 'LIVE' && <div className="text-[10px] text-waiting">{feed} · {fmtTime(market?.last_candle_at, tz)}</div>}</div>
-              <div><div className="text-[10px] text-muted-foreground">STOP LOSS</div>{open.rule_version === 'PINE1_CROSS' ? <span className="text-muted-foreground">None</span> : <span className={open.breakeven ? 'text-breakeven' : 'text-short'}>{fmtPrice(open.stop_loss)}</span>}</div>
+              <div><div className="text-[10px] text-muted-foreground">STOP LOSS</div>{open.rule_version === 'PINE1_CROSS' || open.rule_version === 'OBVP5_CROSS' ? <span className="text-muted-foreground">None</span> : <span className={open.breakeven ? 'text-breakeven' : 'text-short'}>{fmtPrice(open.stop_loss)}</span>}</div>
 
               <div><div className="text-[10px] text-muted-foreground">TAKE PROFIT</div><span className="text-long">{fmtPrice(open.take_profit)}</span></div>
               <div><div className="text-[10px] text-muted-foreground">LIQUIDATION</div>{Number(open.liquidation_price).toPrecision(6)}</div>
@@ -230,7 +230,7 @@ function Simulator() {
                   <td className="px-3 py-2">{fmtTime(t.opened_at, tz)}</td>
                   <td className="px-3 py-2">{t.symbol}</td>
                   <td className="px-3 py-2"><StatusBadge value={t.direction} /></td>
-                  <td className="px-3 py-2">{t.leverage}x <span className="text-muted-foreground">{t.rule_version === 'PINE1_CROSS' ? '1M PINE · CROSS' : t.rule_version === 'PINE5_TREND' ? '5M PINE + TREND' : t.rule_version === 'PINE_BE_TREND' ? 'BE + TREND' : t.rule_version === 'LEGACY' ? 'PREVIOUS RULES' : 'PINE'}</span></td>
+                  <td className="px-3 py-2">{t.leverage}x <span className="text-muted-foreground">{t.rule_version === 'OBVP5_CROSS' ? 'OB-VP 5M · CROSS' : t.rule_version === 'PINE1_CROSS' ? '1M PINE · CROSS' : t.rule_version === 'PINE5_TREND' ? '5M PINE + TREND' : t.rule_version === 'PINE_BE_TREND' ? 'BE + TREND' : t.rule_version === 'LEGACY' ? 'PREVIOUS RULES' : 'PINE'}</span></td>
                   <td className="px-3 py-2">{fmtUsd(t.margin)}</td>
                   <td className="px-3 py-2">{fmtPrice(t.entry_price)}</td>
                   <td className="px-3 py-2">{t.exit_price === null ? '—' : Number(t.exit_price).toPrecision(6)}</td>
@@ -248,7 +248,7 @@ function Simulator() {
       <AlertDialog open={edit !== null} onOpenChange={(v) => { if (!v && !busy) setEdit(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>{edit === 'RESET' ? 'Restart simulator at $10?' : 'Edit practice balance?'}</AlertDialogTitle>
-            <AlertDialogDescription>{edit === 'RESET' ? 'Restores $10 and enables new practice trades: 50x leverage, 10% of balance per trade (3 slots), take profit at +25% of margin, closed at market after 24 hours (or close manually), no stop loss (cross margin). Today’s P&L, session P&L and trade counters start at zero. Previous trades, lifetime deposits and results stay in history.' : 'This is a recorded capital adjustment, not trading profit or a deposit. Existing history stays unchanged.'}</AlertDialogDescription></AlertDialogHeader>
+            <AlertDialogDescription>{edit === 'RESET' ? 'Restores $10 and enables new practice trades: 50x leverage, 10% of balance per trade (3 slots), take profit at +25% of margin, no time limit (or close manually), no stop loss (cross margin). Today’s P&L, session P&L and trade counters start at zero. Previous trades, lifetime deposits and results stay in history.' : 'This is a recorded capital adjustment, not trading profit or a deposit. Existing history stays unchanged.'}</AlertDialogDescription></AlertDialogHeader>
           {edit === 'EDIT' && <Input aria-label="New practice balance" type="number" min="0" step="0.01" value={newBalance} onChange={(e) => setNewBalance(e.target.value)} />}
           <AlertDialogFooter><AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel><Button disabled={busy} onClick={() => void changeBalance()}>{edit === 'RESET' ? 'Restart at $10' : 'Save balance'}</Button></AlertDialogFooter>
         </AlertDialogContent>
