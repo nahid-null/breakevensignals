@@ -28,7 +28,7 @@ describe('retained legacy strength calculation (not a simulator leverage gate)',
 
 describe('simulator display numbers', () => {
   it('shows the prompt-52 rule: 50x, 6 slots x 5% margin, $10 default', () => {
-    expect(SIM_RULES).toMatchObject({ leverage: 50, marginShare: 0.05, slots: 6, defaultBalance: 10 });
+    expect(SIM_RULES).toMatchObject({ leverage: 75, marginShare: 0.05, slots: 6, defaultBalance: 10 });
   });
   it('blocks hosted balance controls until the privacy gate is verified', () => {
     expect(simulatorControlsAllowed('http://localhost:8080/simulator')).toBe(true);
@@ -84,5 +84,23 @@ describe('Telegram signal summary', () => {
     );
     expect({ ...s, successRate: undefined }).toEqual({ sent: 4, open: 1, takeProfit: 1, stopLoss: 1, breakeven: 1, closed: 3, successRate: undefined });
     expect(s.successRate).toBeCloseTo(33.333, 2);
+  });
+});
+
+import { openPine1 } from '@/lib/engine/pine1-cross';
+import { OBVP_SIM } from '@/lib/engine/ob-vp';
+describe('prompt-53 sizing: 75x, 5% of balance, +25% of margin target', () => {
+  it('a $1000 balance opens $50 margin, $3750 position, target exactly +$12.50 net', () => {
+    expect(OBVP_SIM).toMatchObject({ slots: 6, marginShare: 0.05, leverage: 75 });
+    const p = openPine1({ trade_id: 'x', symbol: 'BTCUSDT', direction: 'LONG', entry_price: 100 } as never, 0, 0, 1000, 0, OBVP_SIM.marginShare, OBVP_SIM.leverage);
+    expect(Number(p.margin)).toBe(50);
+    const q = Number(p.quantity), tp = Number(p.target);
+    expect(q * 100).toBeCloseTo(3750, 8);
+    const net = q * (tp - 100) - 3750 * 0.0005 - q * tp * 0.0005;
+    expect(net).toBeCloseTo(12.5, 8);
+  });
+  it('keeps the 50x target formula unchanged for older trades', () => {
+    const p = openPine1({ trade_id: 'x', symbol: 'NEARUSDT', direction: 'SHORT', entry_price: 100 } as never, 0, 0, 10);
+    expect(Number(p.target)).toBeCloseTo(99.45 / 1.0005, 10);
   });
 });

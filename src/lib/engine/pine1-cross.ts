@@ -23,11 +23,13 @@ export function pine1Skip(e: Signal, balance: Decimal.Value, open: { symbol: str
     : open.some((o) => o.symbol === e.symbol) ? 'COIN_ALREADY_OPEN' : open.length >= PINE1.slots ? 'ALL_SLOTS_IN_USE' : null);
 }
 
-export function openPine1(e: Signal, candleTime: number, tick: number, balance: Decimal.Value, reserved: Decimal.Value = 0, share: number = PINE1.marginShare): Pine1Position {
+export function openPine1(e: Signal, candleTime: number, tick: number, balance: Decimal.Value, reserved: Decimal.Value = 0, share: number = PINE1.marginShare, leverage: number = PINE1.leverage): Pine1Position {
   const s = e.direction === 'LONG' ? 1 : -1; const pe = dec(e.entry_price); const slip = dec(tick);
-  const margin = dec(balance).mul(share).toDecimalPlaces(8); const notional = margin.mul(PINE1.leverage);
+  const margin = dec(balance).mul(share).toDecimalPlaces(8); const notional = margin.mul(leverage);
   const q = notional.div(pe); const fee = notional.mul(PINE1.feeRate);
-  const target = s === 1 ? pe.mul(1.0055).plus(slip.mul(2)).div(0.9995) : pe.mul(0.9945).minus(slip.mul(2)).div(1.0005);
+  // Net +targetRoe of margin after both fees and slippage: 1 ± fee ± targetRoe/leverage (50x -> 1.0055 / 0.9945).
+  const move = dec(PINE1.targetRoe).div(leverage).plus(PINE1.feeRate);
+  const target = s === 1 ? pe.mul(dec(1).plus(move)).plus(slip.mul(2)).div(0.9995) : pe.mul(dec(1).minus(move)).minus(slip.mul(2)).div(1.0005);
   const liq = Decimal.max(pe.minus(dec(balance).minus(reserved).minus(fee).minus(notional.mul(PINE1.maintenance)).div(q).mul(s)), 0);
   return { tradeId: e.trade_id, symbol: e.symbol, direction: e.direction, openedCandle: candleTime, entry: pe.toString(), target: target.toString(),
     liquidation: liq.toString(), margin: margin.toString(), quantity: q.toString(), entryFee: fee.toString(), slippage: slip.toString(),

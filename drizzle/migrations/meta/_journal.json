@@ -288,6 +288,20 @@
       "when": 1795080112067,
       "tag": "0040_simulator_obvp5_six_slots_five_percent",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1795082332558,
+      "tag": "0041_simulator_obvp5_75x_twelve_coins",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1795082427191,
+      "tag": "0042_sim_trades_allow_75x",
+      "breakpoints": true
     }
   ]
 }

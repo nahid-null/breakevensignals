@@ -313,3 +313,13 @@
 - Migration 0040: 6 slots, 5% of balance per slot (OBVP_SIM in ob-vp.ts; SIM_RULES updated; UI text updated). Tests 12 SQL + 3 parity pass; full suite pass; fingerprint updated.
 - 7-day replay (11-12 09:20 → 11-19 09:20, 20 coins, futures candles): 542 signals, 62 trades, 56 TP, 0 liquidated, 6 open; median time to TP 1.1h, 41/56 within 3h, slowest 89h. Balance $10 → $19.66 but 6 open LONGs are −$26.28 unrealized → account value below zero. Files: obvp5-6slots-7day-summary.json, obvp5-6slots-7day-trades.csv.
 - Open: user to choose spot vs futures candles for signals (or switch TradingView chart to UNIUSDT.P); publish + Railway redeploy.
+
+## prompt-53 (2026-11-19) — 12 coins only, 75x
+- TS2686 in use-mobile.tsx not reproduced (React imported as module); request was in prompt-53.txt.
+- User answers: close the open INJUSDT trade now and remove INJ; 75x only for new trades.
+- INJUSDT SHORT closed manually at 7.266 (−$3.92). NEAR and XRP trades stay open at 50x.
+- Coin list (`src/lib/config.ts`) is now BTC ETH SOL XRP BNB DOGE LINK NEAR BCH LTC ADA AVAX. All 12 checked live on Binance futures and spot.
+- Migration 0041: new OB-VP trades 75x, +25% net margin target recalculated for 75x, signals on unlisted coins are skipped ("Coin not in approved list"). Migration 0042: saved-trade leverage limit raised from 50 to 75 (without it every 75x trade would have failed to save).
+- `OBVP_SIM.leverage = 75`, `SIM_RULES.leverage = 75`, `openPine1` takes leverage. Page text updated (Simulator, Markets, Setup). Pine verification tool accepts fixtures of retired coins (evidence kept).
+- Tests: 317 pass (new: 75x sizing/$12.50 target, coin-not-approved). Fingerprint b85d8828….
+- Live needs: publish + redeploy Railway scanner; until then the old scanner keeps sending old coins, which are now rejected.

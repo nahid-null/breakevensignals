@@ -29,7 +29,7 @@ describe('worker path: indicator fed from spot bars via advanceObvp after each f
   const from = Date.UTC(2026, 10, 18, 15);
   const run = (skip?: number) => {
     // Same warm-up depth as the worker: the latest 1000 spot bars before the start.
-    const state = initialState('UNIUSDT', 0.001); state.obvp = initialObvp();
+    const state = initialState('UNIUSDT' as never, 0.001); state.obvp = initialObvp();
     const before = bars.filter((b) => b.time < from).slice(-1000); for (const b of before) processObvp(state.obvp, b);
     const out: SimulatorEntry[] = [];
     for (const b of bars.filter((x) => x.time >= from)) {

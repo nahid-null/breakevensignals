@@ -191,4 +191,4 @@ export function toSimulatorEntry(symbol: string, x: ObvpSignal): SimulatorEntry 
 }
 
 /** prompt-52 Simulator sizing for these entries (mirrored in public.simulate_engine_candle OBVP5_CROSS): 6 slots, 5% of balance each. */
-export const OBVP_SIM = { slots: 6, marginShare: 0.05 } as const;
+export const OBVP_SIM = { slots: 6, marginShare: 0.05, leverage: 75 } as const;

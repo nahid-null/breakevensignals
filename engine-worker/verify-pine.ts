@@ -7,10 +7,9 @@ import { initialState, MINUTE, validateCandle } from '../src/lib/engine/model';
 import { processCandle } from '../src/lib/engine/scalper';
 import { comparePineRows, type ParityRow, type ParityValue } from '../src/lib/engine/parity';
 import { runCorrectedPine } from './pine-runtime';
-import { SYMBOLS } from '../src/lib/config';
 
 // Verification-only: no engine API, secrets, database or notification imports.
-const fixtureSchema = z.object({ symbol: z.enum(SYMBOLS), tickSize: z.number().positive(),
+const fixtureSchema = z.object({ symbol: z.string().regex(/^[A-Z0-9]+USDT$/) /* prompt-53: retained fixtures may be retired coins; verification only */, tickSize: z.number().positive(),
   candles: z.array(z.object({ time: z.number().int(), open: z.number(), high: z.number(), low: z.number(), close: z.number(), volume: z.number() })).min(200) });
 const args = process.argv.slice(2);
 const fixtureArgument = args.find((arg) => arg.startsWith('--fixture='))?.slice('--fixture='.length);

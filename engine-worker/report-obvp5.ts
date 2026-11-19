@@ -1,6 +1,6 @@
 /**
  * prompt-51 previous-N-day offline replay of the live Simulator rule: entries ONLY from the OB + Weighted VP indicator on
- * Binance SPOT 5-minute bars (prompt-52, same advanceObvp path as the worker; trades settle on futures 1m prices), 50x, 5% of balance per slot, 6 slots (prompt-52), one per coin, no stop loss,
+ * Binance SPOT 5-minute bars (prompt-52, same advanceObvp path as the worker; trades settle on futures 1m prices), 75x (prompt-53), 5% of balance per slot, 6 slots (prompt-52), one per coin, no stop loss,
  * no time limit, +25% net of margin target, cross-margin liquidation (mirrors public.simulate_engine_candle OBVP5_CROSS).
  * Read-only: no database, no Telegram. Usage: bun engine-worker/report-obvp5.ts [days=7] [outDir=/tmp/obvp5-report]
  */
@@ -65,7 +65,7 @@ for (let t = from; t < now; t += MINUTE) for (const symbol of SYMBOLS) {
     const why = m.lte(0) || balance.minus(reserved()).lt(m) ? 'NO_BALANCE' : opens.some((o) => o.symbol === symbol) ? 'COIN_ALREADY_OPEN'
       : opens.length >= OBVP_SIM.slots ? 'ALL_SLOTS_IN_USE' : null;
     if (why) { skips[why] = (skips[why] ?? 0) + 1; continue; }
-    opens.push(openPine1({ trade_id: e.trade_id, symbol, direction: e.direction, entry_price: e.entry_price } as unknown as Signal, t, ticks.get(symbol)!, balance, reserved(), OBVP_SIM.marginShare));
+    opens.push(openPine1({ trade_id: e.trade_id, symbol, direction: e.direction, entry_price: e.entry_price } as unknown as Signal, t, ticks.get(symbol)!, balance, reserved(), OBVP_SIM.marginShare, OBVP_SIM.leverage));
   }
 }
 const lastPx = (s: string) => candles.get(s)?.get(now - MINUTE)?.close ?? 0;

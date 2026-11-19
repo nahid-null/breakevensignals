@@ -37,17 +37,17 @@ const ob = (direction: Dir, id = 't1', extra: Record<string, unknown> = {}) => (
   timeframe: '5', entry_price: 100, stop_loss: direction === 'LONG' ? 99 : 101, take_profit: direction === 'LONG' ? 102 : 98, score: 3, rr: 3,
   signal_time: new Date(minute + 120_000).toISOString(), ...extra });
 const enter = (d: Dir, id = 't1', extra: Record<string, unknown> = {}, mode = 'live') => candle([], 100, 100, mode, undefined, undefined, [ob(d, id, extra)]);
-const trades = async () => (await db.query<{ direction: string; entry_price: string; stop_loss: string; take_profit: string; leverage: number; margin: string; rule_version: string; status: string; exit_reason: string | null; exit_price: string | null }>('select * from sim_trades order by created_at')).rows;
+const trades = async () => (await db.query<{ direction: string; entry_price: string; stop_loss: string; take_profit: string; leverage: number; margin: string; rule_version: string; status: string; exit_reason: string | null; exit_price: string | null; notional: string }>('select * from sim_trades order by created_at')).rows;
 const decision = async (id = 't1') => (await db.query<{ status: string; reason: string | null }>('select status, reason from sim_breakeven_confirmations where trade_id=$1', [id])).rows[0];
 const messages = async () => (await db.query<{ message: string }>('select message from telegram_logs')).rows.map((r) => r.message);
 
-describe('prompt-52 Simulator: OB + Weighted VP 5m entries only, 6 slots x 5%, 50x, no stop, +25% target, no time limit', () => {
-  it('an indicator LONG opens at its exact entry price, 50x, 5% of balance, target +25% of margin', async () => {
+describe('prompt-53 Simulator: OB + Weighted VP 5m entries only, 12 coins, 6 slots x 5%, 75x, no stop, +25% target, no time limit', () => {
+  it('an indicator LONG opens at its exact entry price, 75x, 5% of balance, target +25% of margin', async () => {
     await enter('LONG');
     const t = (await trades())[0]!;
-    expect(t.rule_version).toBe('OBVP5_CROSS'); expect(t.leverage).toBe(50); expect(Number(t.margin)).toBe(0.5);
+    expect(t.rule_version).toBe('OBVP5_CROSS'); expect(t.leverage).toBe(75); expect(Number(t.notional)).toBe(37.5); expect(Number(t.margin)).toBe(0.5);
     expect(Number(t.entry_price)).toBe(100);
-    expect(Number(t.take_profit)).toBeCloseTo((100 * 1.0055 + 0.02) / 0.9995, 6);
+    expect(Number(t.take_profit)).toBeCloseTo((100 * (1.0005 + 0.25 / 75) + 0.02) / 0.9995, 6);
     expect((await decision())?.status).toBe('CONFIRMED');
   });
   it('an indicator SHORT opens with no trend reading at all', async () => {
@@ -76,9 +76,9 @@ describe('prompt-52 Simulator: OB + Weighted VP 5m entries only, 6 slots x 5%, 5
   });
   it('closes only at +25% of margin (0.125 on 0.5 margin), not at the indicator take profit', async () => {
     await enter('LONG');
-    await candle([], 100, 100.5, 'live', 100.5, 99.9);
+    await candle([], 100, 100.4, 'live', 100.42, 99.9);
     expect((await trades())[0]!.status).toBe('OPEN');
-    await candle([], 100.5, 101, 'live', 101, 100.4);
+    await candle([], 100.4, 100.5, 'live', 100.5, 100.3);
     const t = (await trades())[0]!; expect(t.status).toBe('CLOSED'); expect(t.exit_reason).toBe('TAKE_PROFIT');
     const bal = Number((await db.query<{ balance: string }>('select balance from sim_account')).rows[0]?.balance);
     expect(bal).toBeCloseTo(10.125, 6);
@@ -94,7 +94,7 @@ describe('prompt-52 Simulator: OB + Weighted VP 5m entries only, 6 slots x 5%, 5
   });
   it('six trades at once on different coins, each 5% of the main balance; a seventh is skipped', async () => {
     await enter('LONG');
-    const coins = [['LINKUSDT', 't2'], ['SUIUSDT', 't3'], ['INJUSDT', 't4'], ['TAOUSDT', 't5'], ['UNIUSDT', 't6'], ['ONDOUSDT', 't7']] as const;
+    const coins = [['LINKUSDT', 't2'], ['BTCUSDT', 't3'], ['ETHUSDT', 't4'], ['SOLUSDT', 't5'], ['XRPUSDT', 't6'], ['ADAUSDT', 't7']] as const;
     for (const [sym, id] of coins) {
       minute += 60_000; const r = rev++;
       await db.query('select commit_engine_candle($1::jsonb)', [JSON.stringify({ instance_id: instance, symbol: sym, expected_revision: 0, mode: 'live',
@@ -121,5 +121,13 @@ describe('prompt-52 Simulator: OB + Weighted VP 5m entries only, 6 slots x 5%, 5
     await candle([], 100, 55, 'live', 100, 55);
     expect((await trades())[0]!.exit_reason).toBe('LIQUIDATED');
     expect(Number((await db.query<{ balance: string }>('select balance from sim_account')).rows[0]?.balance)).toBe(0);
+  });
+  it('a signal on a coin outside the 12 approved coins never opens a trade', async () => {
+    minute += 60_000;
+    await db.query('select commit_engine_candle($1::jsonb)', [JSON.stringify({ instance_id: instance, symbol: 'INJUSDT', expected_revision: 0, mode: 'live',
+      checkpoint: { symbol: 'INJUSDT', tickSize: 0.01, lastTime: minute, candles: [{ time: minute, open: 100, high: 100.01, low: 99.99, close: 100, volume: 1 }] },
+      market: { symbol: 'INJUSDT', price: 100, trend: 'BULLISH', status: 'LIVE', last_candle_at: new Date(minute).toISOString(), long_score: 0, short_score: 0, error: null },
+      events: [], simulator_entries: [ob('LONG', 'inj1', { symbol: 'INJUSDT' })] })]);
+    expect(await trades()).toHaveLength(0); expect((await decision('inj1'))?.reason).toBe('COIN_NOT_APPROVED');
   });
 });

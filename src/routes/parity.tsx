@@ -24,7 +24,7 @@ export const Route = createFileRoute('/parity')({
 type Run = { title: string; reference: string; symbol: string; tf: string; first: number; last: number; direction: Direction; report: ParityReport; candleCheck?: { compared: number; identical: number; firstDiff: number | null }; note?: string | undefined };
 const iso = (t: number) => new Date(t).toISOString().slice(0, 16).replace('T', ' ');
 const fmt = (v: ParityValue | undefined) => v === undefined ? 'missing' : v === null ? 'na' : typeof v === 'boolean' ? (v ? 'true' : 'false') : Number(v.toPrecision(10)).toString();
-const PINE_COINS = SYMBOLS.filter((s) => s !== 'WILDUSDT');
+const PINE_COINS = [...SYMBOLS];
 
 function ParityPage() {
   const [symbol, setSymbol] = useState<string>('NEARUSDT'); const [tf, setTf] = useState<TimeframeId>('1m'); const [count, setCount] = useState(1500);
