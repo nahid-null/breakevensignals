@@ -346,4 +346,5 @@
 - research/prompt-59: exact port of Scalp Pro v.2 (8/10/8), BUY=crossover→LONG, SELL=crossunder→SHORT on Binance futures 5m closed candles; window 2026-11-12 18:25 → 11-19 18:25 UTC; 1m entries 60 s after close, 0.05% fee + 0.02% slip, real funding, 75x, 6 slots x $50 (5% of $1000), TP +25% net, no SL/time close.
 - Repaint: closed-candle signals never change (0 mismatches); forming candles flicker (1,098 of 6,562 intrabar signals gone/flipped).
 - Signals 5,686 (BUY 2,848 / SELL 2,838). Cross margin: 14 trades, 8 TP (+$100), 6 longs liquidated together on 2026-11-13 03:53 UTC (BTC mark fell ~4.75%) → account $0 after ~9 h. Isolated comparison: 37 trades, 15 TP, 22 liquidated, balance $45.95 by 11-13 03:18. Each signal alone: 60.1% TP-first vs ~80% needed.
+- Funding times from Binance can be a few ms past the minute; now rounded so every payment is charged (totals unchanged).
 - Files: prompt59-report.md, prompt59-trades.csv, prompt59-signals.csv, prompt59-evidence.zip (Simulator Performance Reports).

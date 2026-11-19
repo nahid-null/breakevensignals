@@ -74,6 +74,8 @@ def section(R, title):
     for side, ps_side in (('BUY → LONG', 'LONG'), ('SELL → SHORT', 'SHORT')):
         ps = [p for p in tr if p['side'] == ps_side]
         L.append(f"| {side} | {sum(x['side']==side[:4].strip() for x in R['signals'])} | {len(ps)} | {sum(p['status']=='TP' for p in ps)} | {sum(p['status']=='LIQUIDATED' for p in ps)} | {sum(p['status']=='OPEN' for p in ps)} | {money(sum(p.get('net', p.get('unreal_net_if_closed', 0)) for p in ps))} |")
+    if not op:
+        L.append("\n**Open trades at the end:** none, so there is no unrealized P&L and no open liquidation risk.")
     if op:
         L.append("\n**Open trades at the end:**\n\n| Coin | Side | Entry | Last price | Unrealized P&L | Isolated liquidation price |\n|---|---|---|---|---|---|")
         for p in op: L.append(f"| {p['sym'].replace('USDT','')} | {p['side']} | {px(p['entry'])} | {px(p['last_price'])} | {money(p['unreal_net_if_closed'])} | {px(p['isolated_liq_price'])} |")

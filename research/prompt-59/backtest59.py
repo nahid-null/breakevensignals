@@ -86,7 +86,7 @@ for s in SYMS:
     for i in idx:
         if buy[i] or sell[i]:
             sigs.append(dict(sym=s, side='BUY' if buy[i] else 'SELL', bar_open=t5[i], close_time=t5[i]+300000, close=c5[i], macd=macd[i], signal=sig[i]))
-    fund = [(int(f['fundingTime']), float(f['fundingRate']), float(f['markPrice']) if f.get('markPrice') not in (None, '') else None) for f in d['fund']]
+    fund = [(int(f['fundingTime'])//60000*60000, float(f['fundingRate']), float(f['markPrice']) if f.get('markPrice') not in (None, '') else None) for f in d['fund']]
     D[s] = dict(one=one, mark=mark, fund={t: (r, mp) for t, r, mp in fund}, step=step_of(s))
     assert all(t in one and t in mark for t in range(START, END, 60000)), f'missing 1m {s}'
 sigs.sort(key=lambda x: (x['close_time'], SYMS.index(x['sym'])))
