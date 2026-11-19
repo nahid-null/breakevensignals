@@ -1,16 +1,14 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { engineHealth } from './engine/health';
-import { SYMBOLS } from './config';
 
 export const getSystemHealth = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin: db } = await import('@/integrations/supabase/client.server');
   const [engine, markets, lastSignal, positions, lastDelivery] = await Promise.all([
     db.from("engine_health").select("*").eq('id',1).maybeSingle(),
-    // Only the approved coins count; retired coins keep their saved rows but are not scanned.
-    db.from("market_state").select("symbol, status, last_candle_at, successful_scans").in("symbol", [...SYMBOLS]),
+    db.from("market_state").select("symbol, status, last_candle_at, successful_scans"),
     db.from("signal_events").select("timestamp").order("timestamp", { ascending: false }).limit(1).maybeSingle(),
-    db.from("active_positions").select("id", { count: 'exact', head: true }).in('status', ['ACTIVE', 'BREAKEVEN']).in('symbol', [...SYMBOLS]),
+    db.from("active_positions").select("id", { count: 'exact', head: true }).in('status', ['ACTIVE', 'BREAKEVEN']),
     db.from('telegram_logs').select('updated_at').eq('delivery_status', 'SENT').order('updated_at', { ascending: false }).limit(1).maybeSingle(),
   ]);
   const databaseOk = !engine.error && !markets.error && !lastSignal.error && !positions.error && !lastDelivery.error;

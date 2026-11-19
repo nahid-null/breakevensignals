@@ -10,7 +10,7 @@ const base = {
 };
 
 describe("webhook rules", () => {
-  it("monitors exactly the 6 approved symbols", () => expect(SYMBOLS).toHaveLength(6));
+  it("monitors exactly the 12 approved symbols", () => expect(SYMBOLS).toHaveLength(12));
   it("accepts TradingView .P tickers and normalizes them", () => {
     expect(webhookSchema.parse(base).symbol).toBe("NEARUSDT");
   });

@@ -77,6 +77,3 @@ Paper Robot30-trade collection, SMC/sweep rollout, chart rollout and MTF-filter 
 - [x] prompt-52: signal candles from Binance spot (user choice).
 - [x] prompt-53: only 12 coins (config + SQL allowlist), 75x new trades (leverage limit raised), INJ trade closed
 - [ ] prompt-53: publish the site and redeploy the Railway scanner so it scans the 12 new coins — waits on user
-- [x] prompt-55 same-coin 4h loss replacement + per-coin 7-day report
-- [x] prompt-56 remove 4h replacement, 6 coins only, actual 7-day report
-- [ ] Publish + Railway redeploy (waiting for user authorization)

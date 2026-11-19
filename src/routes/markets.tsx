@@ -16,9 +16,9 @@ export const Route = createFileRoute("/markets")({
   head: () => ({
     meta: [
       { title: "Coin Monitor — Crypto Signal Terminal" },
-      { name: "description", content: "Per-coin prices and original Pine LONG/SHORT positions for 6 Binance USDT futures pairs." },
+      { name: "description", content: "Per-coin prices and original Pine LONG/SHORT positions for 12 Binance USDT futures pairs." },
       { property: "og:title", content: "Coin Monitor — Crypto Signal Terminal" },
-      { property: "og:description", content: "Per-coin prices and original Pine LONG/SHORT positions for 6 Binance USDT futures pairs." },
+      { property: "og:description", content: "Per-coin prices and original Pine LONG/SHORT positions for 12 Binance USDT futures pairs." },
       { property: 'og:type', content: 'website' },
       { name: 'twitter:card', content: 'summary_large_image' },
     ],
@@ -87,7 +87,7 @@ function Markets() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div><div className="mb-2 flex items-center gap-2 font-mono text-[10px] text-primary"><Activity className="size-3" /> BINANCE USD-M FUTURES · 1 MINUTE</div><h1 className="text-2xl font-semibold">Market terminal</h1></div>
-        <div className="text-right font-mono text-xs text-muted-foreground">{SYMBOLS.length} PAIRS · {SYMBOLS.length * 2} INDEPENDENT SYSTEMS<br /><span className={system === 'ONLINE' ? 'text-long' : 'text-waiting'}>{scanner}</span></div>
+        <div className="text-right font-mono text-xs text-muted-foreground">12 PAIRS · 24 INDEPENDENT SYSTEMS<br /><span className={system === 'ONLINE' ? 'text-long' : 'text-waiting'}>{scanner}</span></div>
       </div>
       {(system !== 'ONLINE' || health?.engine?.runtime_mode === 'temporary') && <div className="border-l-2 border-waiting bg-waiting/5 px-4 py-3 text-sm text-waiting">{health?.engine?.runtime_mode === 'temporary'
         ? system === 'ONLINE' ? 'Temporary real-market verification is running. Permanent monitoring is not deployed.' : 'Temporary verification stopped. Prices are last saved values; permanent monitoring is not deployed.'

@@ -31,6 +31,6 @@ function Setup() {
     </section>
     <SetupReference configuration={health} />
     <section className="border-t border-border pt-5"><h2 className="mb-2 font-mono text-sm">SECURE CONNECTION</h2><p className="text-sm text-muted-foreground">The scanner sends updates over an encrypted connection using the private engine key. Its public address only answers "ok"; it exposes no trades, keys or controls.</p></section>
-    <section className="border-t border-border pt-5"><h2 className="mb-2 font-mono text-sm">CONTRACT AVAILABILITY</h2><p className="text-sm text-muted-foreground">Your 6 approved coins (XRP, DOGE, LINK, NEAR, BCH, LTC) are the only contracts scanned and traded.</p></section>
+    <section className="border-t border-border pt-5"><h2 className="mb-2 font-mono text-sm">CONTRACT AVAILABILITY</h2><p className="text-sm text-muted-foreground">Your 12 approved coins (BTC, ETH, SOL, XRP, BNB, DOGE, LINK, NEAR, BCH, LTC, ADA, AVAX) are the only contracts scanned and traded.</p></section>
   </div>;
 }

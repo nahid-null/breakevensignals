@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { SYMBOLS } from "@/lib/config";
 import { useServerFn } from '@tanstack/react-start';
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -22,9 +21,9 @@ export const Route = createFileRoute("/simulator")({
   head: () => ({
     meta: [
       { title: "Simulator Trading — Crypto Signal Terminal" },
-      { name: "description", content: "Practice trades on every OB + Weighted VP 5-minute signal from Binance spot candles, up to 6 at a time across 6 coins (XRP, DOGE, LINK, NEAR, BCH, LTC), at 75x with 5% of balance per slot, no stop loss, no time limit and a +25% margin target." },
+      { name: "description", content: "Practice trades on every OB + Weighted VP 5-minute signal from Binance spot candles, up to 6 at a time across 12 coins, at 75x with 5% of balance per slot, no stop loss, no time limit and a +25% margin target." },
       { property: "og:title", content: "Simulator Trading — Crypto Signal Terminal" },
-      { property: "og:description", content: "Entries only from the OB + Weighted VP 5-minute indicator, 6 coins, 6 slots, 75x, 5% margin each, +25% target, no time limit, manual close, cross margin." },
+      { property: "og:description", content: "Entries only from the OB + Weighted VP 5-minute indicator, 12 coins, 6 slots, 75x, 5% margin each, +25% target, no time limit, manual close, cross margin." },
       { property: 'og:type', content: 'website' },
       { name: 'twitter:card', content: 'summary_large_image' },
     ],
@@ -165,7 +164,6 @@ function Simulator() {
           <dl className="grid grid-cols-2 gap-x-3 gap-y-2 border-t border-border pt-3 text-xs">
             <dt className="text-muted-foreground">New trade leverage</dt><dd className="font-mono">{SIM_RULES.leverage}x</dd>
             <dt className="text-muted-foreground">Allocated margin</dt><dd className="font-mono">{SIM_RULES.marginShare * 100}% of balance per trade</dd>
-            <dt className="text-muted-foreground">Coins</dt><dd className="font-mono">{SYMBOLS.map((c) => c.replace(/USDT$/, '')).join(' · ')}</dd>
             <dt className="text-muted-foreground">Signals</dt><dd>OB + Weighted VP indicator on the Binance spot 5m chart only (exits use futures prices)</dd>
             <dt className="text-muted-foreground">Entry</dt><dd>Exact indicator entry price (signal candle close)</dd>
             <dt className="text-muted-foreground">Trend filter</dt><dd>None — every indicator signal is followed</dd>

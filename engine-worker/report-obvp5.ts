@@ -6,7 +6,7 @@
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import Decimal from 'decimal.js';
-import { SYMBOLS as ALL } from '../src/lib/config';
+import { SYMBOLS } from '../src/lib/config';
 import { initialState, MINUTE, type Candle, type Signal } from '../src/lib/engine/model';
 import { advanceObvp, buildFive, bucketStart, processMinute } from '../src/lib/engine/five-minute';
 import { PINE1, closePine1, openPine1, type Pine1Position, type Pine1Trade } from '../src/lib/engine/pine1-cross';
@@ -14,8 +14,6 @@ import { OBVP_SIM, type SimulatorEntry } from '../src/lib/engine/ob-vp';
 import { binanceFetch, history, spotHistory } from './binance';
 
 const days = Number(process.argv[2] ?? 7); const outDir = process.argv[3] ?? '/tmp/obvp5-report';
-// Optional 4th argument: comma-separated coins to replay alone (own $10 account) for per-coin comparison.
-const SYMBOLS = (process.argv[4] ? process.argv[4].split(',') : ALL) as typeof ALL;
 const now = bucketStart(Date.now()); const from = now - days * 86_400_000; const start = from;
 async function range(symbol: string, a: number, b: number) {
   const all: Candle[] = []; let t = a;
@@ -79,10 +77,7 @@ const summary = { window: { from: new Date(from).toISOString(), to: new Date(now
   skipped: skips, startBalance: PINE1.startBalance, endBalance: balance.toNumber(), unrealizedOnOpen: unrealized, maxDrawdownPct: maxDd.toNumber() };
 mkdirSync(outDir, { recursive: true });
 writeFileSync(`${outDir}/obvp5-summary.json`, JSON.stringify(summary, null, 2));
-writeFileSync(`${outDir}/obvp5-trades.csv`, ['symbol,side,opened_utc,closed_utc,duration_min,entry,exit,result,leverage,margin,entry_fee,exit_fee,net_pnl,balance_after',
-  ...trades.map((t) => [t.symbol, t.direction, new Date(t.openedCandle + MINUTE).toISOString(), new Date(t.closedCandle + MINUTE).toISOString(), (t.closedCandle - t.openedCandle) / MINUTE, t.entry, t.exit,
-    t.reason === 'TAKE_PROFIT' ? 'Take profit hit' : 'Liquidated (cross margin)', OBVP_SIM.leverage, t.margin, Number(t.entryFee).toFixed(6), Number(t.exitFee).toFixed(6), Number(t.pnl).toFixed(6), Number(t.balanceAfter).toFixed(6)].join(','))].join('\n'));
-writeFileSync(`${outDir}/obvp5-open.csv`, ['symbol,side,opened_utc,entry,last_price,margin,unrealized_pnl',
-  ...opens.map((o) => [o.symbol, o.direction, new Date(o.openedCandle + MINUTE).toISOString(), o.entry, lastPx(o.symbol), o.margin,
-    ((o.direction === 'LONG' ? 1 : -1) * Number(o.quantity) * (lastPx(o.symbol) - Number(o.entry))).toFixed(6)].join(','))].join('\n'));
+writeFileSync(`${outDir}/obvp5-trades.csv`, ['symbol,side,opened_utc,closed_utc,entry,exit,result,margin,net_pnl,balance_after',
+  ...trades.map((t) => [t.symbol, t.direction, new Date(t.openedCandle + MINUTE).toISOString(), new Date(t.closedCandle + MINUTE).toISOString(), t.entry, t.exit,
+    t.reason === 'TAKE_PROFIT' ? 'Take profit hit' : 'Liquidated (cross margin)', t.margin, Number(t.pnl).toFixed(6), Number(t.balanceAfter).toFixed(6)].join(','))].join('\n'));
 console.log(JSON.stringify(summary, null, 2));
