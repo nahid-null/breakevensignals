@@ -1,0 +1,1 @@
+- prompt-59 Scalp Pro backtest is offline research only: never wire `backtest59.py`/`report59.py` into the worker, SQL, Telegram or website, because its trades must not enter live history.
