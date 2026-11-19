@@ -1,0 +1,42 @@
+{
+  "study": "prompt-57 independent entry-strategy research (offline only, live Simulator untouched)",
+  "registered_utc": "2026-11-19T17:40:00Z",
+  "data": {
+    "source": "data.binance.vision USD-M futures 1m klines + 1m mark-price klines + funding + 5m metrics (open interest); fapi fundingRate for Nov; binance.com public leverage brackets; spot 5m klines only to replay the live OB+VP indicator",
+    "symbols": ["BTCUSDT","ETHUSDT","SOLUSDT","XRPUSDT","BNBUSDT","DOGEUSDT","LINKUSDT","NEARUSDT","BCHUSDT","LTCUSDT","ADAUSDT","AVAXUSDT"],
+    "window_utc": ["2026-08-01T00:00Z", "2026-11-19T00:00Z"]
+  },
+  "periods": {
+    "development": ["2026-08-01", "2026-10-01"],
+    "validation": ["2026-10-01", "2026-10-26"],
+    "out_of_sample": ["2026-10-26", "2026-11-19"],
+    "validation_batches": "calendar weeks (7 days) inside validation and out-of-sample; each must hold >= 20 completed trades",
+    "walk_forward": "train 28 days, test next 14 days, step 14 days, re-select parameters per family on each train window"
+  },
+  "trading": {
+    "leverage": 75, "slots": 6, "margin_share_of_wallet": 0.05, "one_trade_per_coin": true,
+    "target": "+25% NET of margin after taker fees (0.05% per side) and slippage (0.02% per side)",
+    "entry_fill": "open of the 1m bar that starts 1 minute after the 5m signal close, plus slippage (60 s latency, never the signal close)",
+    "exit_fill": "target trigger on last-price 1m high/low; emergency trigger on mark-price 1m extremes; same-minute ties resolved against the trade",
+    "funding": "actual 8h funding on mark notional while open",
+    "margin_mode": "cross; account liquidation when equity on worst 1m mark <= sum of tier-1 maintenance margin (Binance public brackets)",
+    "no_stop_loss": true, "no_time_close": true,
+    "emergency_exit_primary_k": 2.0,
+    "emergency_exit_meaning": "close a position when its loss incl. costs reaches k x its margin (k=2 -> 10% of the wallet per position); reported separately, never counted as a win",
+    "emergency_sensitivity_k": [1.0, 3.0, "none (live behaviour)"]
+  },
+  "selection_rule": {
+    "development": "per family pick the parameter set with the highest net margin-units per trade under k=2 with >= 175 completed trades on development",
+    "validation": "family winners ranked by validation net profit; candidate must have >= 20 completed trades in every validation week and positive net",
+    "out_of_sample": "evaluated once, after selection is frozen in selection-frozen.json; no further tuning",
+    "baseline": "costed coin-flip: random side at random 5m closes, same trade-count, same exits, 200 seeds"
+  },
+  "pass_criteria": [
+    ">= 20 completed trades in every validation and out-of-sample week",
+    "positive net profit after all costs in validation AND out-of-sample",
+    "net per trade above the 95th percentile of the costed coin-flip baseline in out-of-sample",
+    "no account liquidations; emergency exits reported",
+    "profitable on at least 7 of 12 coins in out-of-sample and no single coin providing more than 50% of net profit",
+    "walk-forward: positive net in at least 4 of the test folds"
+  ]
+}

@@ -1,0 +1,66 @@
+{
+ "selected": "C_vwap_volume",
+ "selected_params": {
+  "vz": 2.0,
+  "tr": "h4",
+  "dl": 0.3
+ },
+ "validation_passed": false,
+ "ranking": [
+  "C_vwap_volume",
+  "H_live_obvp",
+  "I_momentum_regime",
+  "D_rsi_macd_vol",
+  "B_ema_momentum",
+  "E_mtf_price_action",
+  "A_sweep",
+  "G_hybrid_score"
+ ],
+ "dev_picks": {
+  "A_sweep": {
+   "L": 48,
+   "vz": 2.5,
+   "tr": "none"
+  },
+  "B_ema_momentum": {
+   "htf": "h1",
+   "lvl": 55,
+   "m15": true
+  },
+  "C_vwap_volume": {
+   "vz": 2.0,
+   "tr": "h4",
+   "dl": 0.3
+  },
+  "D_rsi_macd_vol": {
+   "os_": 30,
+   "band": [
+    0.0,
+    0.7
+   ],
+   "tr": "h1"
+  },
+  "E_mtf_price_action": {
+   "pa": "engulf",
+   "strict": false
+  },
+  "F_fvg_orderflow": {
+   "g": 0.3,
+   "tr": "h1",
+   "wait": 6
+  },
+  "I_momentum_regime": {
+   "X": 4,
+   "Y": 0.5,
+   "fund": false
+  },
+  "G_hybrid_score": {
+   "thr": 0.89
+  },
+  "H_live_obvp": {
+   "minscore": 5,
+   "tr": "none"
+  }
+ },
+ "frozen_utc": "2026-11-19T17:26:23.256925Z"
+}
