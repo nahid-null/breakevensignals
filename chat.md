@@ -304,3 +304,12 @@
 - Simulator/Dashboard labels updated. Tests: new ob-vp.test.ts (6) + simulator-obvp-sql.test.ts (11, replaces pine1-cross SQL test); full suite passes; fingerprint updated.
 - 7-day replay 11-12 09:00 → 11-19 09:00 UTC, 20 coins (WILD unlisted): 541 signals, 34 trades, 30 TP, 1 liquidation, 3 still open; $10 → $3.94 balance, but open HBAR LONG (since 11-13) is −$8.59 unrealized, so account value is below zero (would be wiped). Files: obvp5-7day-summary.json, obvp5-7day-trades.csv.
 - Live needs: publish site + redeploy Railway scanner. Until then the Simulator opens no trades (old scanner sends no OB-VP entries).
+
+## prompt-52 (2026-11-19) — entry mismatch investigation + 6 slots x 5%
+- TS2686 in use-mobile.tsx not reproduced (React imported as module); request was in prompt-52.txt.
+- Root cause of entry mismatch: the TradingView screenshot is the Binance SPOT chart (UNI / TetherUS · 5 · Binance, no .P), while the scanner reads Binance USD-M Futures candles. On the same SPOT candles the port reproduces all 4 screenshot signals exactly (LONG 5.114, SHORT 5.204, ★SHORT 5/6 5.155 risk .030 reward .150, ★SHORT 4/6 5.167 risk .048 reward .193). On futures candles prices/volumes differ (5.152, 5.199, 5.17; one score differs). Indicator logic unchanged. Locked by src/test/ob-vp-tradingview-parity.test.ts (fixture binance-spot-uniusdt-5m.json).
+- Also: the indicator draws "ENTRY PRICE" labels 31 bars (≈2h35m) to the right of the signal candle; the real entry time is the signal candle close.
+- No live OB-VP trade has happened yet (Railway scanner not redeployed). All live trades/liquidation risk so far are old PINE1_CROSS 1m trades (XRP, INJ, NEAR still open).
+- Migration 0040: 6 slots, 5% of balance per slot (OBVP_SIM in ob-vp.ts; SIM_RULES updated; UI text updated). Tests 12 SQL + 3 parity pass; full suite pass; fingerprint updated.
+- 7-day replay (11-12 09:20 → 11-19 09:20, 20 coins, futures candles): 542 signals, 62 trades, 56 TP, 0 liquidated, 6 open; median time to TP 1.1h, 41/56 within 3h, slowest 89h. Balance $10 → $19.66 but 6 open LONGs are −$26.28 unrealized → account value below zero. Files: obvp5-6slots-7day-summary.json, obvp5-6slots-7day-trades.csv.
+- Open: user to choose spot vs futures candles for signals (or switch TradingView chart to UNIUSDT.P); publish + Railway redeploy.

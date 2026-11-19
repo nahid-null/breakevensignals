@@ -189,3 +189,6 @@ export function toSimulatorEntry(symbol: string, x: ObvpSignal): SimulatorEntry 
     indicator: OBVP_INDICATOR, timeframe: '5', entry_price: x.entry, stop_loss: x.stopLoss, take_profit: x.takeProfit,
     score: x.score, rr: x.rr, signal_time: new Date(x.time + 5 * 60_000).toISOString() };
 }
+
+/** prompt-52 Simulator sizing for these entries (mirrored in public.simulate_engine_candle OBVP5_CROSS): 6 slots, 5% of balance each. */
+export const OBVP_SIM = { slots: 6, marginShare: 0.05 } as const;

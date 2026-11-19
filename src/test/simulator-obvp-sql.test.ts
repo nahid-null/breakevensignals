@@ -41,11 +41,11 @@ const trades = async () => (await db.query<{ direction: string; entry_price: str
 const decision = async (id = 't1') => (await db.query<{ status: string; reason: string | null }>('select status, reason from sim_breakeven_confirmations where trade_id=$1', [id])).rows[0];
 const messages = async () => (await db.query<{ message: string }>('select message from telegram_logs')).rows.map((r) => r.message);
 
-describe('prompt-51 Simulator: OB + Weighted VP 5m entries only, 3 slots x 10%, 50x, no stop, +25% target, no time limit', () => {
-  it('an indicator LONG opens at its exact entry price, 50x, 10% of balance, target +25% of margin', async () => {
+describe('prompt-52 Simulator: OB + Weighted VP 5m entries only, 6 slots x 5%, 50x, no stop, +25% target, no time limit', () => {
+  it('an indicator LONG opens at its exact entry price, 50x, 5% of balance, target +25% of margin', async () => {
     await enter('LONG');
     const t = (await trades())[0]!;
-    expect(t.rule_version).toBe('OBVP5_CROSS'); expect(t.leverage).toBe(50); expect(Number(t.margin)).toBe(1);
+    expect(t.rule_version).toBe('OBVP5_CROSS'); expect(t.leverage).toBe(50); expect(Number(t.margin)).toBe(0.5);
     expect(Number(t.entry_price)).toBe(100);
     expect(Number(t.take_profit)).toBeCloseTo((100 * 1.0055 + 0.02) / 0.9995, 6);
     expect((await decision())?.status).toBe('CONFIRMED');
@@ -74,14 +74,14 @@ describe('prompt-51 Simulator: OB + Weighted VP 5m entries only, 3 slots x 10%, 
     await candle([], 100, 95, 'live', 100, 95);
     expect((await trades())[0]!.status).toBe('OPEN');
   });
-  it('closes only at +25% of margin (0.25 on 1 margin), not at the indicator take profit', async () => {
+  it('closes only at +25% of margin (0.125 on 0.5 margin), not at the indicator take profit', async () => {
     await enter('LONG');
     await candle([], 100, 100.5, 'live', 100.5, 99.9);
     expect((await trades())[0]!.status).toBe('OPEN');
     await candle([], 100.5, 101, 'live', 101, 100.4);
     const t = (await trades())[0]!; expect(t.status).toBe('CLOSED'); expect(t.exit_reason).toBe('TAKE_PROFIT');
     const bal = Number((await db.query<{ balance: string }>('select balance from sim_account')).rows[0]?.balance);
-    expect(bal).toBeCloseTo(10.25, 6);
+    expect(bal).toBeCloseTo(10.125, 6);
     const m = await messages(); expect(m).toHaveLength(1); expect(m[0]).toContain('Take profit hit'); expect(m[0]).toContain('Stop loss: none');
   });
   it('manual close still works and sends Closed manually', async () => {
@@ -92,9 +92,10 @@ describe('prompt-51 Simulator: OB + Weighted VP 5m entries only, 3 slots x 10%, 
     const t = (await trades())[0]!; expect(t.exit_reason).toBe('MANUAL_CLOSE'); expect(Number(t.exit_price)).toBe(100.2);
     expect((await messages())[0]).toContain('Closed manually');
   });
-  it('three trades at once on different coins, each 10% of balance; a fourth is skipped', async () => {
+  it('six trades at once on different coins, each 5% of the main balance; a seventh is skipped', async () => {
     await enter('LONG');
-    for (const [sym, id] of [['LINKUSDT', 't2'], ['SUIUSDT', 't3'], ['INJUSDT', 't4']] as const) {
+    const coins = [['LINKUSDT', 't2'], ['SUIUSDT', 't3'], ['INJUSDT', 't4'], ['TAOUSDT', 't5'], ['UNIUSDT', 't6'], ['ONDOUSDT', 't7']] as const;
+    for (const [sym, id] of coins) {
       minute += 60_000; const r = rev++;
       await db.query('select commit_engine_candle($1::jsonb)', [JSON.stringify({ instance_id: instance, symbol: sym, expected_revision: 0, mode: 'live',
         checkpoint: { symbol: sym, tickSize: 0.01, lastTime: minute, candles: [{ time: minute, open: 100, high: 100.01, low: 99.99, close: 100, volume: 1 }] },
@@ -103,8 +104,13 @@ describe('prompt-51 Simulator: OB + Weighted VP 5m entries only, 3 slots x 10%, 
       rev = r + 1;
     }
     const open = (await trades()).filter((t) => t.status === 'OPEN');
-    expect(open).toHaveLength(3); expect(open.map((t) => Number(t.margin))).toEqual([1, 1, 1]);
-    expect((await decision('t4'))?.reason).toBe('ALL_SLOTS_IN_USE');
+    expect(open).toHaveLength(6); expect(open.map((t) => Number(t.margin))).toEqual([0.5, 0.5, 0.5, 0.5, 0.5, 0.5]);
+    expect((await decision('t7'))?.reason).toBe('ALL_SLOTS_IN_USE');
+  });
+  it('5% of a $1000 main balance is $50 margin per slot', async () => {
+    await db.exec("update sim_account set balance=1000 where id=1");
+    await enter('LONG');
+    expect(Number((await trades())[0]!.margin)).toBe(50);
   });
   it('never two trades on the same coin', async () => {
     await enter('LONG'); await enter('SHORT', 't2');
@@ -112,7 +118,7 @@ describe('prompt-51 Simulator: OB + Weighted VP 5m entries only, 3 slots x 10%, 
   });
   it('cross margin: liquidation wipes the whole balance', async () => {
     await enter('LONG');
-    await candle([], 100, 75, 'live', 100, 75);
+    await candle([], 100, 55, 'live', 100, 55);
     expect((await trades())[0]!.exit_reason).toBe('LIQUIDATED');
     expect(Number((await db.query<{ balance: string }>('select balance from sim_account')).rows[0]?.balance)).toBe(0);
   });

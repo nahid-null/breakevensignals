@@ -21,9 +21,9 @@ export const Route = createFileRoute("/simulator")({
   head: () => ({
     meta: [
       { title: "Simulator Trading — Crypto Signal Terminal" },
-      { name: "description", content: "Practice trades on every OB + Weighted VP 5-minute signal, up to 3 at a time, at 50x with 10% of balance per slot, no stop loss, no time limit and a +25% margin target." },
+      { name: "description", content: "Practice trades on every OB + Weighted VP 5-minute signal, up to 6 at a time, at 50x with 5% of balance per slot, no stop loss, no time limit and a +25% margin target." },
       { property: "og:title", content: "Simulator Trading — Crypto Signal Terminal" },
-      { property: "og:description", content: "Entries only from the OB + Weighted VP 5-minute indicator, 3 slots, 50x, 10% margin each, +25% target, no time limit, manual close, cross margin." },
+      { property: "og:description", content: "Entries only from the OB + Weighted VP 5-minute indicator, 6 slots, 50x, 5% margin each, +25% target, no time limit, manual close, cross margin." },
       { property: 'og:type', content: 'website' },
       { name: 'twitter:card', content: 'summary_large_image' },
     ],
@@ -172,7 +172,7 @@ function Simulator() {
             <dt className="text-muted-foreground">Stop loss</dt><dd>None — cross margin (whole balance backs the trade)</dd>
             <dt className="text-muted-foreground">Telegram</dt><dd>Trade results only</dd>
             <dt className="text-muted-foreground">Costs</dt><dd>{SIM_RULES.feePercent}% per side + 1 tick per side</dd>
-            <dt className="text-muted-foreground">Concurrent trades</dt><dd>Up to {SIM_RULES.slots} (one per coin), 10% each</dd>
+            <dt className="text-muted-foreground">Concurrent trades</dt><dd>Up to {SIM_RULES.slots} (one per coin), {SIM_RULES.marginShare * 100}% of balance each</dd>
           </dl>
         </div>
         <div className="space-y-3 border border-border bg-card/40 p-4">
@@ -248,7 +248,7 @@ function Simulator() {
       <AlertDialog open={edit !== null} onOpenChange={(v) => { if (!v && !busy) setEdit(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>{edit === 'RESET' ? 'Restart simulator at $10?' : 'Edit practice balance?'}</AlertDialogTitle>
-            <AlertDialogDescription>{edit === 'RESET' ? 'Restores $10 and enables new practice trades: 50x leverage, 10% of balance per trade (3 slots), take profit at +25% of margin, no time limit (or close manually), no stop loss (cross margin). Today’s P&L, session P&L and trade counters start at zero. Previous trades, lifetime deposits and results stay in history.' : 'This is a recorded capital adjustment, not trading profit or a deposit. Existing history stays unchanged.'}</AlertDialogDescription></AlertDialogHeader>
+            <AlertDialogDescription>{edit === 'RESET' ? 'Restores $10 and enables new practice trades: 50x leverage, 5% of balance per trade (6 slots), take profit at +25% of margin, no time limit (or close manually), no stop loss (cross margin). Today’s P&L, session P&L and trade counters start at zero. Previous trades, lifetime deposits and results stay in history.' : 'This is a recorded capital adjustment, not trading profit or a deposit. Existing history stays unchanged.'}</AlertDialogDescription></AlertDialogHeader>
           {edit === 'EDIT' && <Input aria-label="New practice balance" type="number" min="0" step="0.01" value={newBalance} onChange={(e) => setNewBalance(e.target.value)} />}
           <AlertDialogFooter><AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel><Button disabled={busy} onClick={() => void changeBalance()}>{edit === 'RESET' ? 'Restart at $10' : 'Save balance'}</Button></AlertDialogFooter>
         </AlertDialogContent>

@@ -23,9 +23,9 @@ export function pine1Skip(e: Signal, balance: Decimal.Value, open: { symbol: str
     : open.some((o) => o.symbol === e.symbol) ? 'COIN_ALREADY_OPEN' : open.length >= PINE1.slots ? 'ALL_SLOTS_IN_USE' : null);
 }
 
-export function openPine1(e: Signal, candleTime: number, tick: number, balance: Decimal.Value, reserved: Decimal.Value = 0): Pine1Position {
+export function openPine1(e: Signal, candleTime: number, tick: number, balance: Decimal.Value, reserved: Decimal.Value = 0, share: number = PINE1.marginShare): Pine1Position {
   const s = e.direction === 'LONG' ? 1 : -1; const pe = dec(e.entry_price); const slip = dec(tick);
-  const margin = dec(balance).mul(PINE1.marginShare).toDecimalPlaces(8); const notional = margin.mul(PINE1.leverage);
+  const margin = dec(balance).mul(share).toDecimalPlaces(8); const notional = margin.mul(PINE1.leverage);
   const q = notional.div(pe); const fee = notional.mul(PINE1.feeRate);
   const target = s === 1 ? pe.mul(1.0055).plus(slip.mul(2)).div(0.9995) : pe.mul(0.9945).minus(slip.mul(2)).div(1.0005);
   const liq = Decimal.max(pe.minus(dec(balance).minus(reserved).minus(fee).minus(notional.mul(PINE1.maintenance)).div(q).mul(s)), 0);

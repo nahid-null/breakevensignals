@@ -1,6 +1,6 @@
 /**
  * prompt-51 previous-N-day offline replay of the live Simulator rule: entries ONLY from the OB + Weighted VP indicator on
- * 5-minute bars (same processMinute path as the worker), 50x, 10% of balance per slot, 3 slots, one per coin, no stop loss,
+ * 5-minute bars (same processMinute path as the worker), 50x, 5% of balance per slot, 6 slots (prompt-52), one per coin, no stop loss,
  * no time limit, +25% net of margin target, cross-margin liquidation (mirrors public.simulate_engine_candle OBVP5_CROSS).
  * Read-only: no database, no Telegram. Usage: bun engine-worker/report-obvp5.ts [days=7] [outDir=/tmp/obvp5-report]
  */
@@ -10,7 +10,7 @@ import { SYMBOLS } from '../src/lib/config';
 import { initialState, MINUTE, type Candle, type Signal } from '../src/lib/engine/model';
 import { buildFive, bucketStart, processMinute } from '../src/lib/engine/five-minute';
 import { PINE1, closePine1, openPine1, type Pine1Position, type Pine1Trade } from '../src/lib/engine/pine1-cross';
-import type { SimulatorEntry } from '../src/lib/engine/ob-vp';
+import { OBVP_SIM, type SimulatorEntry } from '../src/lib/engine/ob-vp';
 import { binanceFetch, history } from './binance';
 
 const days = Number(process.argv[2] ?? 7); const outDir = process.argv[3] ?? '/tmp/obvp5-report';
@@ -58,11 +58,11 @@ for (let t = from; t < now; t += MINUTE) for (const symbol of SYMBOLS) {
     }
   }
   for (const e of entries.get(symbol)?.get(t) ?? []) {
-    const m = balance.mul(PINE1.marginShare).toDecimalPlaces(8);
+    const m = balance.mul(OBVP_SIM.marginShare).toDecimalPlaces(8);
     const why = m.lte(0) || balance.minus(reserved()).lt(m) ? 'NO_BALANCE' : opens.some((o) => o.symbol === symbol) ? 'COIN_ALREADY_OPEN'
-      : opens.length >= PINE1.slots ? 'ALL_SLOTS_IN_USE' : null;
+      : opens.length >= OBVP_SIM.slots ? 'ALL_SLOTS_IN_USE' : null;
     if (why) { skips[why] = (skips[why] ?? 0) + 1; continue; }
-    opens.push(openPine1({ trade_id: e.trade_id, symbol, direction: e.direction, entry_price: e.entry_price } as unknown as Signal, t, ticks.get(symbol)!, balance, reserved()));
+    opens.push(openPine1({ trade_id: e.trade_id, symbol, direction: e.direction, entry_price: e.entry_price } as unknown as Signal, t, ticks.get(symbol)!, balance, reserved(), OBVP_SIM.marginShare));
   }
 }
 const lastPx = (s: string) => candles.get(s)?.get(now - MINUTE)?.close ?? 0;

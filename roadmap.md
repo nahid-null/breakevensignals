@@ -72,3 +72,6 @@ Paper Robot30-trade collection, SMC/sweep rollout, chart rollout and MTF-filter 
 - [x] prompt-49: Pullback score 60+, no time close, 5-way risk test (100/200/300% thresholds, no forced exit, dynamic liquidity protection) with account-level cross margin — report only; live Simulator unchanged
 - [x] prompt-51: OB + Weighted VP 5m indicator is the only Simulator entry source; trend filter and Pine entries removed from trading; 24h close removed; 3 slots x 10%, 50x, no SL, +25% target, manual close kept; 7-day replay
 - [ ] prompt-51: publish the site and redeploy the Railway scanner so live OB + Weighted VP signals reach the Simulator — waits on user
+
+- [x] prompt-52: investigate TradingView entry mismatch (cause: spot chart vs futures data); 6 slots x 5% (migration 0040).
+- [ ] prompt-52: user decision — signal candles from Binance spot (match TradingView chart) or keep futures (switch TradingView to .P).

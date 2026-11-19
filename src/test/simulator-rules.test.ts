@@ -27,8 +27,8 @@ describe('retained legacy strength calculation (not a simulator leverage gate)',
 });
 
 describe('simulator display numbers', () => {
-  it('shows the prompt-43 rule: 50x, 10% margin per slot, $10 default', () => {
-    expect(SIM_RULES).toMatchObject({ leverage: 50, marginShare: 0.1, defaultBalance: 10 });
+  it('shows the prompt-52 rule: 50x, 6 slots x 5% margin, $10 default', () => {
+    expect(SIM_RULES).toMatchObject({ leverage: 50, marginShare: 0.05, slots: 6, defaultBalance: 10 });
   });
   it('blocks hosted balance controls until the privacy gate is verified', () => {
     expect(simulatorControlsAllowed('http://localhost:8080/simulator')).toBe(true);

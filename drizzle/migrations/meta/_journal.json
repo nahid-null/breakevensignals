@@ -281,6 +281,13 @@
       "when": 1795078851130,
       "tag": "0039_simulator_obvp5_entries_no_time_limit",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1795080112067,
+      "tag": "0040_simulator_obvp5_six_slots_five_percent",
+      "breakpoints": true
     }
   ]
 }
