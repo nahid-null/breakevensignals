@@ -324,3 +324,10 @@
 - Tests: 317 pass (new: 75x sizing/$12.50 target, coin-not-approved). Fingerprint b85d8828….
 - Live needs: publish + redeploy Railway scanner; until then the old scanner keeps sending old coins, which are now rejected.
 - Flow sweep (prompt-53): coin counter on Markets/Health said "/ 21" → now "/ 12"; Active LONG/SHORT/Breakeven counters and the Positions "Active" tab now count only the 12 coins (migration 0043; old coins' records kept in history). Scanner skips saved data for removed coins on restart. Simulator "Signal decisions"/"Trade history" and Signals log still show old coins — these are past records, kept. Until Railway is redeployed, the counters show the old scanner's "20 / 12" and the status reads offline/recovering.
+
+## prompt-54 (2026-11-19) — live check + 7-day report
+- TS2686 in use-mobile.tsx not reproduced (React imported as module); request was in prompt-54.txt.
+- Live check 10:14 UTC: hosted scanner restarted 10:11, RUNNING 12/12 coins, INJ feed stopped 10:10; no open trades; balance reset to $10 by user 10:13 after manually closing XRP and NEAR. Database rule: OB-VP 5m only, 12-coin allowlist, 75x, 6x5%, +25% net, no time close.
+- Actual 7 days (all 32 recorded trades, old rules): 19 wins/13 losses, 59.4%, fees $3.49, net −$10.89, 0 liquidations; no funding recorded.
+- Simulated new rules (11-12 10:10→11-19 10:10, $10): 266 signals, 79 opened, 73 TP, 0 liq, 6 still open; realised $10→$24.41 but open LONGs −$16.28 (equity ≈$8.13).
+- Files: Simulator Performance Reports/prompt54-7day-report.md + .xlsx. report-obvp5.ts CSV now includes duration, leverage and fees.
