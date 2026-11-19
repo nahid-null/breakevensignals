@@ -1,0 +1,1 @@
+- Keep prompt-58 adverse-movement research in this folder (offline Python reusing the prompt-57 engine and hashed archives; protocol and frozen selection committed before out-of-sample); never imported by the app or worker.
