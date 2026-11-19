@@ -1,6 +1,6 @@
 /**
  * prompt-51 previous-N-day offline replay of the live Simulator rule: entries ONLY from the OB + Weighted VP indicator on
- * 5-minute bars (same processMinute path as the worker), 50x, 5% of balance per slot, 6 slots (prompt-52), one per coin, no stop loss,
+ * Binance SPOT 5-minute bars (prompt-52, same advanceObvp path as the worker; trades settle on futures 1m prices), 50x, 5% of balance per slot, 6 slots (prompt-52), one per coin, no stop loss,
  * no time limit, +25% net of margin target, cross-margin liquidation (mirrors public.simulate_engine_candle OBVP5_CROSS).
  * Read-only: no database, no Telegram. Usage: bun engine-worker/report-obvp5.ts [days=7] [outDir=/tmp/obvp5-report]
  */
@@ -8,10 +8,10 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import Decimal from 'decimal.js';
 import { SYMBOLS } from '../src/lib/config';
 import { initialState, MINUTE, type Candle, type Signal } from '../src/lib/engine/model';
-import { buildFive, bucketStart, processMinute } from '../src/lib/engine/five-minute';
+import { advanceObvp, buildFive, bucketStart, processMinute } from '../src/lib/engine/five-minute';
 import { PINE1, closePine1, openPine1, type Pine1Position, type Pine1Trade } from '../src/lib/engine/pine1-cross';
 import { OBVP_SIM, type SimulatorEntry } from '../src/lib/engine/ob-vp';
-import { binanceFetch, history } from './binance';
+import { binanceFetch, history, spotHistory } from './binance';
 
 const days = Number(process.argv[2] ?? 7); const outDir = process.argv[3] ?? '/tmp/obvp5-report';
 const now = bucketStart(Date.now()); const from = now - days * 86_400_000; const start = from;
@@ -29,14 +29,17 @@ for (const symbol of SYMBOLS) {
   if (!meta) { missing.push(symbol); continue; }
   const tick = Number(meta.filters.find((f) => f.filterType === 'PRICE_FILTER')?.tickSize); ticks.set(symbol, tick);
   const state = initialState(symbol, tick);
-  const built = buildFive(symbol, tick, start - MINUTE, await history(symbol, undefined, start, undefined, '5m'), []);
+  const spot: Candle[] = await spotHistory(symbol, undefined, start);
+  for (let t = start; t < now;) { const part = await spotHistory(symbol, t, now); if (!part.length) break; spot.push(...part); t = part.at(-1)!.time + 5 * MINUTE; }
+  const built = buildFive(symbol, tick, start - MINUTE, await history(symbol, undefined, start, undefined, '5m'), [], spot);
   state.five = built.five; state.obvp = built.obvp;
   const bars = await range(symbol, start, now);
   if (bars[0]?.time !== start || bars.length !== (now - start) / MINUTE) throw new Error(`${symbol}: incomplete 1-minute candles`);
   const map = new Map<number, Candle>(); const ev = new Map<number, SimulatorEntry[]>();
   for (const c of bars) {
     const r = processMinute(state, c); map.set(c.time, c);
-    if (r.entries.length) { ev.set(c.time, r.entries); signals += r.entries.length; perCoin[symbol] = (perCoin[symbol] ?? 0) + r.entries.length; }
+    const e = r.fiveClosed === null ? [] : advanceObvp(state, spot, r.fiveClosed).entries;
+    if (e.length) { ev.set(c.time, e); signals += e.length; perCoin[symbol] = (perCoin[symbol] ?? 0) + e.length; }
   }
   candles.set(symbol, map); entries.set(symbol, ev);
   console.error(`${symbol}: ${bars.length} candles, ${perCoin[symbol] ?? 0} indicator signals`);

@@ -2,6 +2,8 @@ import { MINUTE, validateCandle, type Candle } from "../src/lib/engine/model";
 import { BINANCE_ACCESS_RESTRICTED, BINANCE_IP_BANNED } from '../src/lib/engine/market-access';
 
 export const BINANCE_REST = "https://fapi.binance.com";
+/** prompt-52: public Binance SPOT market data, used only for the OB + Weighted VP entry indicator so it matches the user's TradingView spot chart. */
+export const BINANCE_SPOT_REST = "https://data-api.binance.vision";
 export const BINANCE_WS = "wss://fstream.binance.com/market/stream?streams=";
 export const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
@@ -36,16 +38,16 @@ function providerExplanation(text: string, fallback: string) {
   } catch { return fallback; }
 }
 
-export async function binanceFetch(path: string, signal?: AbortSignal): Promise<unknown> {
+export async function binanceFetch(path: string, signal?: AbortSignal, base: string = BINANCE_REST, attempts = 4, timeoutMs = 20_000): Promise<unknown> {
   let lastFailure: BinanceRequestError | null = null;
-  for (let attempt = 0; attempt < 4; attempt++) {
+  for (let attempt = 0; attempt < attempts; attempt++) {
     signal?.throwIfAborted();
     let response: Response;
-    try { response = await fetch(`${BINANCE_REST}${path}`, { signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(20_000)]) : AbortSignal.timeout(20_000) }); }
+    try { response = await fetch(`${base}${path}`, { signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(timeoutMs)]) : AbortSignal.timeout(timeoutMs) }); }
     catch {
       signal?.throwIfAborted();
       lastFailure = new BinanceRequestError('network', null, path, 'Market-data request timed out or could not connect.');
-      if (attempt === 3) throw lastFailure;
+      if (attempt === attempts - 1) throw lastFailure;
       await delay(1000 * 2 ** attempt); continue;
     }
     if (response.ok) return response.json();
@@ -56,7 +58,7 @@ export async function binanceFetch(path: string, signal?: AbortSignal): Promise<
     const explanation = providerExplanation(await response.text().catch(() => ''), fallback);
     lastFailure = new BinanceRequestError(kind, response.status, path, explanation);
     if (response.status === 429 || response.status >= 500) {
-      if (attempt === 3) throw lastFailure;
+      if (attempt === attempts - 1) throw lastFailure;
       const retryAfter = Number(response.headers.get('retry-after'));
       const seconds = Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter : 2 ** attempt;
       await delay(Math.max(1, seconds) * 1000);
@@ -85,6 +87,18 @@ export async function history(symbol: string, start?: number, end?: number, sign
   if (!Array.isArray(rows)) throw new Error("Malformed Binance history");
   const now = end ?? Date.now();
   const span = interval === '15m' ? 15 * MINUTE : interval === '5m' ? 5 * MINUTE : MINUTE;
+  return rows.map((row) => restCandle(row, span)).filter((c) => c.time + span <= now).sort((a, b) => a.time - b.time);
+}
+
+/** prompt-52: closed Binance SPOT 5-minute candles (max 1000 per call) for the OB + Weighted VP entry indicator. */
+export async function spotHistory(symbol: string, start?: number, end?: number, signal?: AbortSignal): Promise<Candle[]> {
+  const params = new URLSearchParams({ symbol, interval: '5m', limit: '1000' });
+  if (start !== undefined) params.set('startTime', String(start));
+  if (end !== undefined) params.set('endTime', String(end - 1));
+  // One short attempt: spot data only feeds entries, so an outage must never stall the futures scan.
+  const rows = await binanceFetch(`/api/v3/klines?${params}`, signal, BINANCE_SPOT_REST, 1, 5_000);
+  if (!Array.isArray(rows)) throw new Error("Malformed Binance spot history");
+  const now = Math.min(end ?? Date.now(), Date.now()); const span = 5 * MINUTE;
   return rows.map((row) => restCandle(row, span)).filter((c) => c.time + span <= now).sort((a, b) => a.time - b.time);
 }
 

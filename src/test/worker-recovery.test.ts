@@ -16,7 +16,7 @@ vi.mock('../../engine-worker/websocket', () => ({ default: class {
 } }));
 vi.mock('../../engine-worker/binance', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../engine-worker/binance')>();
-  return { ...actual, delay: async () => {}, binanceFetch: async () => ({ symbols: [
+  return { ...actual, spotHistory: async (sym: string, a?: number, b?: number) => (await import('./mock-history')).mockHistory(sym, a, b, undefined, '5m'), delay: async () => {}, binanceFetch: async () => ({ symbols: [
     { symbol: 'NEARUSDT', status: 'TRADING', filters: [{ filterType: 'PRICE_FILTER', tickSize: '0.001' }] },
   ] }), history: async (...a: [string, number?, number?, unknown?, ('1m' | '5m' | '15m')?]) => (await import('./mock-history')).mockHistory(...a) };
 });

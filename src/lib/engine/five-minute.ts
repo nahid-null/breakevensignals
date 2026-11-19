@@ -42,7 +42,7 @@ export function adoptionSignals(engine: EngineState): Signal[] {
  * Warm the 5-minute Pine engine from closed 5-minute bars ending at the bucket that contains lastTime,
  * then hold the partial bucket's 1-minute candles. Returns the state plus adoption events.
  */
-export function buildFive(symbol: EngineState['symbol'], tickSize: number, lastTime: number, fives: Candle[], partial: Candle[]) {
+export function buildFive(symbol: EngineState['symbol'], tickSize: number, lastTime: number, fives: Candle[], partial: Candle[], spotFives: Candle[] = []) {
   const start = bucketStart(lastTime);
   const complete = lastTime + MINUTE === start + FIVE_MINUTES;
   const until = complete ? start : start - FIVE_MINUTES; // open time of the last 5-minute bar to replay
@@ -51,9 +51,10 @@ export function buildFive(symbol: EngineState['symbol'], tickSize: number, lastT
   if (bars.at(-1)?.time !== until) throw new Error(`${symbol}: 5-minute history does not reach the saved candle`);
   const engine = fiveEngine(symbol, tickSize);
   for (const c of bars) processCandle(engine, c);
-  // prompt-51: warm the OB + Weighted VP entry indicator on the same closed 5-minute bars; warm-up signals are never traded.
+  // prompt-52: warm the OB + Weighted VP entry indicator on Binance SPOT 5-minute bars (the user's TradingView chart);
+  // warm-up signals are never traded. Any spot bar not yet published is caught up by advanceObvp on the next 5-minute close.
   const obvp = initialObvp();
-  for (const c of bars) processObvp(obvp, c);
+  for (const c of spotFives.filter((x) => x.time <= until).sort((a, b) => a.time - b.time)) processObvp(obvp, c);
   const bucket = complete ? [] : partial.filter((c) => c.time >= start && c.time <= lastTime);
   if (!complete && (bucket.length !== (lastTime - start) / MINUTE + 1 || bucket.some((c, i) => c.time !== start + i * MINUTE)))
     throw new Error(`${symbol}: incomplete 1-minute candles for the current 5-minute bar`);
@@ -61,10 +62,10 @@ export function buildFive(symbol: EngineState['symbol'], tickSize: number, lastT
 }
 
 /** Process one closed 1-minute candle: Trend Identify + display + legacy 1m exits, then 5m Pine on bucket close. */
-export function processMinute(state: EngineState, c: Candle): { signals: Signal[]; analysis: Analysis | null; duplicate: boolean; entries: SimulatorEntry[] } {
-  // prompt-51: Pine signals (1m and 5m) are still recorded for history; only the OB + Weighted VP 5m entries feed the Simulator.
+export function processMinute(state: EngineState, c: Candle): { signals: Signal[]; analysis: Analysis | null; duplicate: boolean; fiveClosed: number | null } {
+  // Pine signals (1m and 5m) are still recorded for history; Simulator entries come only from advanceObvp (spot 5m bars).
   const trend = state.mtf ? snapshot(state.mtf) : null;
-  const result = { ...processCandle(state, c, true), entries: [] as SimulatorEntry[] };
+  const result = { ...processCandle(state, c, true), fiveClosed: null as number | null };
   if (result.duplicate || !state.five) return result;
   const f = state.five; const start = bucketStart(c.time);
   f.bucket = [...f.bucket.filter((x) => bucketStart(x.time) === start), c];
@@ -73,9 +74,24 @@ export function processMinute(state: EngineState, c: Candle): { signals: Signal[
     const bar = aggregateFive(f.bucket);
     const five = processCandle(f.engine, bar, true, trend);
     result.signals.push(...five.signals);
-    // prompt-51: the only Simulator entry source. Pine signals above are still recorded but never open trades.
-    if (state.obvp) result.entries.push(...processObvp(state.obvp, bar).map((x) => toSimulatorEntry(state.symbol, x)));
+    // prompt-52: the futures 5-minute bar closed; the caller now feeds the matching SPOT bar to advanceObvp.
+    result.fiveClosed = start;
     f.bucket = [];
   }
   return result;
+}
+
+/**
+ * prompt-52: the only Simulator entry source. Feeds closed Binance SPOT 5-minute bars (the user's TradingView chart) newer than the
+ * indicator's last bar, up to `bucket`, into the unchanged OB + Weighted VP port. Only the bar opening at `bucket` may produce entries,
+ * so bars caught up after a missed fetch are never traded late. `reached` is false while the spot bar is not yet published.
+ */
+export function advanceObvp(state: EngineState, spot: Candle[], bucket: number): { entries: SimulatorEntry[]; reached: boolean } {
+  const o = state.obvp; if (!o) return { entries: [], reached: false };
+  const entries: SimulatorEntry[] = [];
+  for (const c of spot.filter((x) => x.time > (o.bars.at(-1)?.time ?? -Infinity) && x.time <= bucket).sort((a, b) => a.time - b.time)) {
+    const signals = processObvp(o, c);
+    if (c.time === bucket) entries.push(...signals.map((x) => toSimulatorEntry(state.symbol, x)));
+  }
+  return { entries, reached: (o.bars.at(-1)?.time ?? -Infinity) >= bucket };
 }

@@ -74,4 +74,4 @@ Paper Robot30-trade collection, SMC/sweep rollout, chart rollout and MTF-filter 
 - [ ] prompt-51: publish the site and redeploy the Railway scanner so live OB + Weighted VP signals reach the Simulator — waits on user
 
 - [x] prompt-52: investigate TradingView entry mismatch (cause: spot chart vs futures data); 6 slots x 5% (migration 0040).
-- [ ] prompt-52: user decision — signal candles from Binance spot (match TradingView chart) or keep futures (switch TradingView to .P).
+- [x] prompt-52: signal candles from Binance spot (user choice).

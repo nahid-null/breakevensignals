@@ -2,9 +2,9 @@ import WebSocket from './websocket';
 import { SYMBOLS, INDICATORS, type Symbol } from "../src/lib/config";
 import { initialState, ENGINE_VERSION, MINUTE, PARAMETERS, validateCandle, type EngineState, type Candle, type Analysis, type Signal } from "../src/lib/engine/model";
 import { processCandle } from "../src/lib/engine/scalper";
-import { buildFive, bucketStart, processMinute } from "../src/lib/engine/five-minute";
+import { advanceObvp, buildFive, bucketStart, processMinute } from "../src/lib/engine/five-minute";
 import type { SimulatorEntry } from "../src/lib/engine/ob-vp";
-import { BINANCE_WS, BinanceRequestError, binanceFetch, checkWebSocketAccess, history, delay, backoff } from "./binance";
+import { BINANCE_WS, BinanceRequestError, binanceFetch, checkWebSocketAccess, history, spotHistory, delay, backoff } from "./binance";
 import { initMtf, snapshot as trendSnapshot, type MtfSnapshot } from "../src/lib/engine/mtf-trend";
 import { feedHasLiveEvidence, MESSAGE_MAX_AGE_MS, type FeedHealth } from '../src/lib/engine/feed-health';
 
@@ -106,8 +106,30 @@ export class SignalService {
   private async fiveState(symbol: Symbol, tick: number, lastTime: number) {
     const fives = await history(symbol, undefined, bucketStart(lastTime) + 5 * MINUTE, this.marketAbort.signal, '5m');
     const partial = await history(symbol, bucketStart(lastTime), lastTime + MINUTE, this.marketAbort.signal, '1m');
+    // prompt-52: the entry indicator warms on Binance SPOT 5-minute bars (the user's TradingView chart).
+    const spot = await this.spotBars(symbol, undefined, bucketStart(lastTime) + 5 * MINUTE);
     if (this.running && !this.marketPaused) this.lastRestAt = Date.now();
-    return buildFive(symbol, tick, lastTime, fives, partial);
+    return buildFive(symbol, tick, lastTime, fives, partial, spot ?? []);
+  }
+  /** Spot data only feeds entries: a spot failure never pauses futures scanning, it only means no indicator entry for that bar. */
+  private async spotBars(symbol: Symbol, start: number | undefined, end: number): Promise<Candle[] | null> {
+    try { return await spotHistory(symbol, start, end, this.marketAbort.signal); }
+    catch (e) { if (this.marketAbort.signal.aborted) throw e; console.warn(`${symbol}: Binance spot 5m candles unavailable — ${e instanceof Error ? e.message : String(e)}`); return null; }
+  }
+  /** prompt-52: after a futures 5-minute close, feed the matching closed SPOT bar to the indicator (waits briefly for Binance to publish it). */
+  private async spotEntries(symbol: Symbol, state: EngineState, bucket: number): Promise<SimulatorEntry[]> {
+    const end = bucket + 5 * MINUTE;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const wait = end + 1500 * (attempt + 1) - Date.now(); if (wait > 0) await delay(Math.min(wait, 6000));
+      if (!this.running || this.marketPaused || !state.obvp) return [];
+      const last = state.obvp.bars.at(-1)?.time;
+      const spot = await this.spotBars(symbol, last === undefined ? undefined : last + 5 * MINUTE, end);
+      if (spot === null) return []; // provider failure: skip this bar's entry; the next close catches the indicator up
+      const r = advanceObvp(state, spot, bucket);
+      if (r.reached) return r.entries;
+    }
+    console.warn(`${symbol}: spot 5m bar ${new Date(bucket).toISOString()} not published; no indicator entry for it`);
+    return [];
   }
   private async commit(symbol: Symbol, tentative: EngineState, market: Market, events: Signal[], mode: 'live' | 'warmup' | 'recovery', entries: SimulatorEntry[] = []) {
     if (!this.running || this.marketPaused) return;
@@ -367,9 +389,10 @@ export class SignalService {
     }
     const tentative = structuredClone(saved.state);
     const result = processMinute(tentative, c);
+    const entries = result.fiveClosed !== null && tentative.obvp ? await this.spotEntries(symbol, tentative, result.fiveClosed) : [];
     if (!this.running || this.marketPaused) return;
     const events = [...(this.adoption.get(symbol) ?? []), ...result.signals];
-    await this.commit(symbol, tentative, this.market(symbol, tentative, c, result.analysis, mode === 'live' ? 'LIVE' : 'RECOVERING'), events, mode, result.entries);
+    await this.commit(symbol, tentative, this.market(symbol, tentative, c, result.analysis, mode === 'live' ? 'LIVE' : 'RECOVERING'), events, mode, entries);
     if (this.checkpoints.get(symbol)?.state.five) this.adoption.delete(symbol);
   }
   private async recover(symbol: Symbol, until: number) {
