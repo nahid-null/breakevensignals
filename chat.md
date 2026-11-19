@@ -324,3 +324,14 @@
 - Tests: 317 pass (new: 75x sizing/$12.50 target, coin-not-approved). Fingerprint b85d8828….
 - Live needs: publish + redeploy Railway scanner; until then the old scanner keeps sending old coins, which are now rejected.
 - Flow sweep (prompt-53): coin counter on Markets/Health said "/ 21" → now "/ 12"; Active LONG/SHORT/Breakeven counters and the Positions "Active" tab now count only the 12 coins (migration 0043; old coins' records kept in history). Scanner skips saved data for removed coins on restart. Simulator "Signal decisions"/"Trade history" and Signals log still show old coins — these are past records, kept. Until Railway is redeployed, the counters show the old scanner's "20 / 12" and the status reads offline/recovering.
+
+## prompt-57 (2026-11-19) — independent entry-strategy research (research only, live untouched)
+- TS2686 in use-mobile.tsx not reproduced (React imported as module); request was in prompt-57.txt.
+- Code had been reverted by the user to the prompt-53 state (12 coins, 75x, 6 x 5%). Memory updated to 12 coins.
+- Data: 110 days (2026-08-01 → 11-19) Binance futures 1m + mark 1m + funding + 5m OI for all 12 coins, 0 gaps; public leverage brackets; spot 5m for the live OB+VP replay. Raw file hashes saved.
+- Protocol registered first; dev Aug–Sep (bull), validation Oct 1–25 (mild bear), unseen Oct 26–Nov 18 (strong bear); weekly batches; walk-forward 6 folds; coin-flip baseline.
+- 9 families (A sweep, B EMA momentum, C VWAP+volume, D RSI/MACD, E MTF engulf, F FVG, I momentum+calm vol, G logistic hybrid, H live OB+VP), 139 parameter sets. Emergency exit 2x margin (research only), sensitivity 1x/3x/none.
+- Result: NO strategy passed. All lost in validation; 8/9 lost in unseen (I +$11 on $1000 after 56% DD). Live rules without emergency exit: 99 straight targets then account liquidated on 2026-08-19. Structural: target = 0.474% move, break-even win rate 80–92%, random entries already ~84–86%.
+- Best candidate under protocol (C VWAP reclaim + volume, 4h trend) still negative. Recommendation: not validated; more research needed.
+- Real balance $10.64 → $39.9 position, below Binance BTC minimum order.
+- Files: prompt57-research-report.md, prompt57-all-trades.csv, prompt57-summary.json, prompt57-evidence.zip (Simulator Performance Reports). Code: research/prompt-57/.
