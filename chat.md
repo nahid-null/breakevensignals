@@ -340,3 +340,4 @@
 - No open trades at change time; all 34 recorded trades intact.
 - Actual 7-day report (12–18 Nov UTC, closed trades): 28 trades (14 L/14 S), 18 W/10 L, 64.3%, gross +8.1477/−6.5742, fees 3.2290, funding not recorded, net −1.6556; avg 182.1 min (wins 279.2, losses 7.3). 6-coin trades: LINK 1 (+0.199), NEAR 1 (−0.956), BCH 1 (−0.809), XRP/DOGE/LTC 0. File: Simulator Performance Reports/prompt56-7day-actual-trades-report.xlsx.
 - Not done (needs user authorization): publish site; redeploy Railway scanner (until then it still scans 12 coins, but the database rejects trades on the other 6).
+- Flow sweep: Health page coin/active counts now limited to the 6 coins (ops.functions.ts). Preview Health/Markets show the scanner as disconnected because the still-running 12-coin scanner reports 12 feeds; publish and redeploy the scanner together.
