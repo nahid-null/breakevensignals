@@ -1,3 +1,4 @@
+import { SYMBOLS } from '@/lib/config';
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 import { usePositions, useSettings } from '@/lib/data';
@@ -14,7 +15,7 @@ function Positions() {
   const [tab, setTab] = useState<'ACTIVE' | 'COMPLETED'>('ACTIVE');
   const positions = usePositions();
   const timezone = useSettings().data?.display_timezone ?? 'UTC';
-  const rows = positions.data?.filter((p) => tab === 'ACTIVE' ? ['ACTIVE','BREAKEVEN'].includes(p.status) : !['ACTIVE','BREAKEVEN'].includes(p.status)) ?? [];
+  const rows = positions.data?.filter((p) => tab === 'ACTIVE' ? ['ACTIVE','BREAKEVEN'].includes(p.status) && (SYMBOLS as readonly string[]).includes(p.symbol) : !['ACTIVE','BREAKEVEN'].includes(p.status)) ?? [];
   return <div className="space-y-5"><h1 className="text-2xl font-semibold">Trade ledger</h1>
     {tab === 'ACTIVE' && <SavedMarketNotice />}
     <div className="flex gap-2 border-b border-border pb-3">{(['ACTIVE','COMPLETED'] as const).map((t) => <Button key={t} variant={tab === t ? 'secondary' : 'ghost'} size="sm" onClick={() => setTab(t)}>{t === 'ACTIVE' ? 'Active positions' : 'Completed trades'}</Button>)}</div>

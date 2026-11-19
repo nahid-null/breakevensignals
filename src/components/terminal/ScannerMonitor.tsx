@@ -1,3 +1,4 @@
+import { SYMBOLS } from '@/lib/config';
 import { useSettings, useStatuses } from '@/lib/data';
 import { fmtTime } from '@/lib/data';
 import { formatUptime } from '@/lib/engine/health';
@@ -18,6 +19,6 @@ export function ScannerMonitor() {
     <div><div className="mb-2 text-[10px] uppercase text-muted-foreground">Next scan · expected candle close</div><span className="font-mono text-xs">{fmtTime(s.health?.nextScanAt, timezone)}</span></div>
     <div><div className="mb-2 text-[10px] uppercase text-muted-foreground">Successful candle scans</div><span className="font-mono text-xs">{s.health?.successfulScans ?? '—'}</span></div>
     <div><div className="mb-2 text-[10px] uppercase text-muted-foreground">Last successful Telegram notification</div><span className="font-mono text-xs">{fmtTime(s.health?.lastTelegramAt, timezone)}</span></div>
-    <div className="text-xs sm:col-span-2 lg:col-span-4"><span className="text-muted-foreground">TOTAL COINS SCANNED </span><span className="mr-6 font-mono">{s.health?.scannedSymbols ?? '—'} / 21</span><span className="text-muted-foreground">LAST ERROR </span><span className="break-words font-mono text-short">{s.healthQuery.isError ? 'Health unavailable; connection cannot be confirmed.' : s.health?.engine?.error ?? '—'}</span></div>
+    <div className="text-xs sm:col-span-2 lg:col-span-4"><span className="text-muted-foreground">TOTAL COINS SCANNED </span><span className="mr-6 font-mono">{s.health?.scannedSymbols ?? '—'} / {SYMBOLS.length}</span><span className="text-muted-foreground">LAST ERROR </span><span className="break-words font-mono text-short">{s.healthQuery.isError ? 'Health unavailable; connection cannot be confirmed.' : s.health?.engine?.error ?? '—'}</span></div>
   </section>;
 }

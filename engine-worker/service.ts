@@ -214,6 +214,7 @@ export class SignalService {
         ...m, last_candle_at: m.last_candle_at ? new Date(m.last_candle_at).toISOString() : null,
       });
       for (const row of saved.checkpoints) {
+        if (!(SYMBOLS as readonly string[]).includes(row.symbol)) continue; // prompt-53: retired coins stay saved but are never loaded
         if (row.state.version !== ENGINE_VERSION) throw new Error('Unsupported checkpoint version; migration required');
         this.checkpoints.set(row.symbol, row);
       }

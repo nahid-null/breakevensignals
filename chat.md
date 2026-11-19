@@ -323,3 +323,4 @@
 - `OBVP_SIM.leverage = 75`, `SIM_RULES.leverage = 75`, `openPine1` takes leverage. Page text updated (Simulator, Markets, Setup). Pine verification tool accepts fixtures of retired coins (evidence kept).
 - Tests: 317 pass (new: 75x sizing/$12.50 target, coin-not-approved). Fingerprint b85d8828….
 - Live needs: publish + redeploy Railway scanner; until then the old scanner keeps sending old coins, which are now rejected.
+- Flow sweep (prompt-53): coin counter on Markets/Health said "/ 21" → now "/ 12"; Active LONG/SHORT/Breakeven counters and the Positions "Active" tab now count only the 12 coins (migration 0043; old coins' records kept in history). Scanner skips saved data for removed coins on restart. Simulator "Signal decisions"/"Trade history" and Signals log still show old coins — these are past records, kept. Until Railway is redeployed, the counters show the old scanner's "20 / 12" and the status reads offline/recovering.

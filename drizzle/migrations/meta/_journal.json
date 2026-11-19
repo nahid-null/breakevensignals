@@ -302,6 +302,13 @@
       "when": 1795082427191,
       "tag": "0042_sim_trades_allow_75x",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1795082767971,
+      "tag": "0043_terminal_statistics_active_twelve_coins",
+      "breakpoints": true
     }
   ]
 }
