@@ -60,4 +60,3 @@ use the editor.
 - Ship both pure engine trees in the worker Docker image and smoke-test that COPY set; audit unused initial-capital corrections separately from deposits to preserve ledger history.
 - Retained parity tools reuse `processCandle` and intact Pine fixtures; retired chart modules remain unrouted to preserve verification evidence.
 - Simulator trades only OB + Weighted VP 5m entries (`ob-vp.ts`, OBVP5_CROSS; `OBVP_SIM` sizing and `SYMBOLS` mirrored in SQL); Pine signals are recorded but never trade, so signals stay unaltered.
-- Keep prompt-57 strategy research in `research/prompt-57/` (offline Python over hashed Binance archives, protocol and frozen selection committed before out-of-sample); it is never imported by the app or worker, so research cannot alter live trading.

@@ -1,0 +1,1 @@
+- Keep prompt-57 strategy research in this folder (offline Python over hashed Binance archives, protocol and frozen selection committed before out-of-sample); it is never imported by the app or worker, so research cannot alter live trading.
