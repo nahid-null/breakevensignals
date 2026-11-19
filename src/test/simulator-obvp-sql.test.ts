@@ -37,11 +37,11 @@ const ob = (direction: Dir, id = 't1', extra: Record<string, unknown> = {}) => (
   timeframe: '5', entry_price: 100, stop_loss: direction === 'LONG' ? 99 : 101, take_profit: direction === 'LONG' ? 102 : 98, score: 3, rr: 3,
   signal_time: new Date(minute + 120_000).toISOString(), ...extra });
 const enter = (d: Dir, id = 't1', extra: Record<string, unknown> = {}, mode = 'live') => candle([], 100, 100, mode, undefined, undefined, [ob(d, id, extra)]);
-const trades = async () => (await db.query<{ direction: string; entry_price: string; stop_loss: string; take_profit: string; leverage: number; margin: string; rule_version: string; status: string; exit_reason: string | null; exit_price: string | null; notional: string }>('select * from sim_trades order by created_at')).rows;
+const trades = async () => (await db.query<{ direction: string; entry_price: string; stop_loss: string; take_profit: string; leverage: number; margin: string; rule_version: string; status: string; exit_reason: string | null; exit_price: string | null; notional: string; symbol: string }>('select * from sim_trades order by created_at')).rows;
 const decision = async (id = 't1') => (await db.query<{ status: string; reason: string | null }>('select status, reason from sim_breakeven_confirmations where trade_id=$1', [id])).rows[0];
 const messages = async () => (await db.query<{ message: string }>('select message from telegram_logs')).rows.map((r) => r.message);
 
-describe('prompt-53 Simulator: OB + Weighted VP 5m entries only, 12 coins, 6 slots x 5%, 75x, no stop, +25% target, no time limit', () => {
+describe('prompt-53 Simulator: OB + Weighted VP 5m entries only, 6 coins (prompt-56), 6 slots x 5%, 75x, no stop, +25% target, no time limit', () => {
   it('an indicator LONG opens at its exact entry price, 75x, 5% of balance, target +25% of margin', async () => {
     await enter('LONG');
     const t = (await trades())[0]!;
@@ -92,9 +92,9 @@ describe('prompt-53 Simulator: OB + Weighted VP 5m entries only, 12 coins, 6 slo
     const t = (await trades())[0]!; expect(t.exit_reason).toBe('MANUAL_CLOSE'); expect(Number(t.exit_price)).toBe(100.2);
     expect((await messages())[0]).toContain('Closed manually');
   });
-  it('six trades at once on different coins, each 5% of the main balance; a seventh is skipped', async () => {
+  it('six trades at once, one on each approved coin, each 5% of the main balance', async () => {
     await enter('LONG');
-    const coins = [['LINKUSDT', 't2'], ['BTCUSDT', 't3'], ['ETHUSDT', 't4'], ['SOLUSDT', 't5'], ['XRPUSDT', 't6'], ['ADAUSDT', 't7']] as const;
+    const coins = [['LINKUSDT', 't2'], ['XRPUSDT', 't3'], ['DOGEUSDT', 't4'], ['BCHUSDT', 't5'], ['LTCUSDT', 't6']] as const;
     for (const [sym, id] of coins) {
       minute += 60_000; const r = rev++;
       await db.query('select commit_engine_candle($1::jsonb)', [JSON.stringify({ instance_id: instance, symbol: sym, expected_revision: 0, mode: 'live',
@@ -105,7 +105,7 @@ describe('prompt-53 Simulator: OB + Weighted VP 5m entries only, 12 coins, 6 slo
     }
     const open = (await trades()).filter((t) => t.status === 'OPEN');
     expect(open).toHaveLength(6); expect(open.map((t) => Number(t.margin))).toEqual([0.5, 0.5, 0.5, 0.5, 0.5, 0.5]);
-    expect((await decision('t7'))?.reason).toBe('ALL_SLOTS_IN_USE');
+    expect(open.map((t) => t.symbol).sort()).toEqual(['BCHUSDT', 'DOGEUSDT', 'LINKUSDT', 'LTCUSDT', 'NEARUSDT', 'XRPUSDT']);
   });
   it('5% of a $1000 main balance is $50 margin per slot', async () => {
     await db.exec("update sim_account set balance=1000 where id=1");
@@ -122,39 +122,26 @@ describe('prompt-53 Simulator: OB + Weighted VP 5m entries only, 12 coins, 6 slo
     expect((await trades())[0]!.exit_reason).toBe('LIQUIDATED');
     expect(Number((await db.query<{ balance: string }>('select balance from sim_account')).rows[0]?.balance)).toBe(0);
   });
-  it('a signal on a coin outside the 12 approved coins never opens a trade', async () => {
+  it.each(['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'ADAUSDT', 'AVAXUSDT', 'INJUSDT'])('a signal on %s (outside the 6 approved coins) never opens a trade', async (sym) => {
     minute += 60_000;
-    await db.query('select commit_engine_candle($1::jsonb)', [JSON.stringify({ instance_id: instance, symbol: 'INJUSDT', expected_revision: 0, mode: 'live',
-      checkpoint: { symbol: 'INJUSDT', tickSize: 0.01, lastTime: minute, candles: [{ time: minute, open: 100, high: 100.01, low: 99.99, close: 100, volume: 1 }] },
-      market: { symbol: 'INJUSDT', price: 100, trend: 'BULLISH', status: 'LIVE', last_candle_at: new Date(minute).toISOString(), long_score: 0, short_score: 0, error: null },
-      events: [], simulator_entries: [ob('LONG', 'inj1', { symbol: 'INJUSDT' })] })]);
+    await db.query('select commit_engine_candle($1::jsonb)', [JSON.stringify({ instance_id: instance, symbol: sym, expected_revision: 0, mode: 'live',
+      checkpoint: { symbol: sym, tickSize: 0.01, lastTime: minute, candles: [{ time: minute, open: 100, high: 100.01, low: 99.99, close: 100, volume: 1 }] },
+      market: { symbol: sym, price: 100, trend: 'BULLISH', status: 'LIVE', last_candle_at: new Date(minute).toISOString(), long_score: 0, short_score: 0, error: null },
+      events: [], simulator_entries: [ob('LONG', 'inj1', { symbol: sym })] })]);
     expect(await trades()).toHaveLength(0); expect((await decision('inj1'))?.reason).toBe('COIN_NOT_APPROVED');
   });
 });
 
-// prompt-55: same-coin 4-hour losing-trade replacement (eligible from 3.5h = 4h minus the 30-minute early window).
-describe('same-coin replacement of a losing trade', () => {
+// prompt-56: the 4-hour same-coin replacement rule is removed; original behaviour restored.
+describe('prompt-56: no same-coin replacement', () => {
   const signalAt = (px: number, d: Dir, id: string) => candle([], px, px, 'live', undefined, undefined, [ob(d, id, { entry_price: px })]);
-  it('closes a LONG losing after 4h at the new SHORT entry and opens the SHORT', async () => {
+  it('a losing trade open 4h stays open when a new same-coin signal arrives; the new signal is skipped', async () => {
     await enter('LONG', 'old'); minute += 240 * 60_000; await signalAt(99, 'SHORT', 'new');
-    const [old, fresh] = await trades();
-    expect(old).toMatchObject({ status: 'CLOSED', exit_reason: 'REPLACED_BY_SIGNAL' }); expect(Number(old!.exit_price)).toBe(99);
-    expect(fresh).toMatchObject({ status: 'OPEN', direction: 'SHORT' }); expect(Number(fresh!.entry_price)).toBe(99);
+    const all = await trades(); expect(all).toHaveLength(1); expect(all[0]).toMatchObject({ status: 'OPEN', direction: 'LONG' });
+    expect((await decision('new'))?.reason).toBe('COIN_ALREADY_OPEN');
   });
-  it('also replaces when the signal comes 30 minutes before the 4h mark', async () => {
-    await enter('LONG', 'old'); minute += 210 * 60_000; await signalAt(99, 'SHORT', 'new');
-    expect((await trades()).map((t) => t.status)).toEqual(['CLOSED', 'OPEN']);
-  });
-  it('keeps the trade when the signal comes earlier than 3.5h', async () => {
-    await enter('LONG', 'old'); minute += 200 * 60_000; await signalAt(99, 'SHORT', 'new');
-    expect((await trades()).map((t) => t.status)).toEqual(['OPEN']); expect((await decision('new'))?.reason).toBe('COIN_ALREADY_OPEN');
-  });
-  it('keeps a trade that is in profit after 4h', async () => {
-    await enter('LONG', 'old'); minute += 240 * 60_000; await signalAt(100.3, 'SHORT', 'new');
-    expect((await trades()).map((t) => t.status)).toEqual(['OPEN']);
-  });
-  it('never closes on time alone without a new signal', async () => {
-    await enter('LONG', 'old'); minute += 300 * 60_000; await candle([], 99, 99);
-    expect((await trades()).map((t) => t.status)).toEqual(['OPEN']);
+  it('the replacement exit reason can no longer be saved', async () => {
+    await enter('LONG', 'old');
+    await expect(db.query("update sim_trades set exit_reason='REPLACED_BY_SIGNAL'")).rejects.toThrow();
   });
 });

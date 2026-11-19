@@ -14,8 +14,8 @@ const trade = (direction: 'LONG' | 'SHORT'): Trade => ({ id: 'native-NEARUSDT-te
   target: direction === 'LONG' ? 101.5 : 98.5, risk: 1, entryTime: 0, breakeven: false, breakevenTime: null });
 
 describe('original Pine calculation rules', () => {
-  it('keeps exactly the 12 approved contracts (prompt-53)', () => {
-    expect([...SYMBOLS]).toEqual(['BTCUSDT','ETHUSDT','SOLUSDT','XRPUSDT','BNBUSDT','DOGEUSDT','LINKUSDT','NEARUSDT','BCHUSDT','LTCUSDT','ADAUSDT','AVAXUSDT']);
+  it('keeps exactly the 6 approved contracts (prompt-56)', () => {
+    expect([...SYMBOLS]).toEqual(['XRPUSDT','DOGEUSDT','LINKUSDT','NEARUSDT','BCHUSDT','LTCUSDT']);
   });
   it('uses source score 70 and 1:1.5 reward', () => {
     expect(P.scoreThreshold).toBe(70); expect(P.rrMultiplier).toBe(1.5);

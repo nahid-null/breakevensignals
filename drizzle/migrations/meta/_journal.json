@@ -316,6 +316,13 @@
       "when": 1795084465158,
       "tag": "0044_simulator_same_coin_replacement",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1795085650245,
+      "tag": "0045_simulator_remove_replacement_six_coins",
+      "breakpoints": true
     }
   ]
 }

@@ -1,6 +1,5 @@
 export const SYMBOLS = [
-  "BTCUSDT", "ETHUSDT", "SOLUSDT", "XRPUSDT", "BNBUSDT", "DOGEUSDT",
-  "LINKUSDT", "NEARUSDT", "BCHUSDT", "LTCUSDT", "ADAUSDT", "AVAXUSDT",
+  "XRPUSDT", "DOGEUSDT", "LINKUSDT", "NEARUSDT", "BCHUSDT", "LTCUSDT",
 ] as const;
 export type Symbol = (typeof SYMBOLS)[number];
 export type Direction = "LONG" | "SHORT";
