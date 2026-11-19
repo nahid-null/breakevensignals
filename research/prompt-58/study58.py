@@ -37,7 +37,7 @@ def run(sigs, k, per, gate=None):
                 worst_simultaneous_unrealized=pf['max_unreal_loss'], liquidation=pf['liquidation'], skipped=pf['skipped'], open_end=len(pf['open']),
                 max_notional_x_wallet=mx_n / 1000, max_same_direction=mx_dir), pf
 GRID = dict(a=TH, q=[0.99, 0.995, 0.999], msd=[1, 2, 3, 6], beta=['none', 3])
-stage = sys.argv[1]
+stage = sys.argv[1] if len(sys.argv) > 1 and __name__ == "__main__" else None
 if stage == 'select':
     res = []
     for a, q, msd, beta in itertools.product(*GRID.values()):

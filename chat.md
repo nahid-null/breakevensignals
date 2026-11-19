@@ -335,3 +335,8 @@
 - Best candidate under protocol (C VWAP reclaim + volume, 4h trend) still negative. Recommendation: not validated; more research needed.
 - Real balance $10.64 → $39.9 position, below Binance BTC minimum order.
 - Files: prompt57-research-report.md, prompt57-all-trades.csv, prompt57-summary.json, prompt57-evidence.zip (Simulator Performance Reports). Code: research/prompt-57/.
+
+## prompt-58 (2026-11-19) — adverse-movement prediction research (offline only)
+- research/prompt-58: 32 entry-time features, target-first logistic model for 0.5–2% adverse limits, exposure-capped portfolio, A/B/C comparison, 100 random seeds, walk-forward.
+- Result: NO model passed. C: validation +52.6%, unseen −50.0% (random −94%); unseen AUC 0.534; walk-forward 3/6. Same-direction caps helped most. Liquidation clusters untested (no reliable free history).
+- Live Simulator/scanner/database/balance untouched; nothing published.
