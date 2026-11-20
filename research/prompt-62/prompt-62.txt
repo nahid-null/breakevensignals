@@ -1,0 +1,91 @@
+Implement the previously tested indicator directly into my LIVE PAPER SIMULATOR and activate it. Do not keep it in test mode.
+
+Use the exact indicator and trading logic from the previous 7-day test, which produced these results:
+
+Signals: 75 (27 LONG, 48 SHORT).
+
+Trades opened: 47.
+
+Signals skipped: 28 because all 6 slots were full.
+
+1. Trading Configuration
+
+Update the Simulator with these settings:
+
+Total trading slots: 7
+
+Margin per slot: 5% of the main account balance.
+
+Leverage: 75x.
+
+Take Profit: +50%.
+
+Keep all other existing trading rules unchanged.2. Coin Selection
+
+Previously, the system had 12 coins. Remove these three coins completely:
+
+BTC
+
+DOGE
+
+BNB
+
+Keep all the remaining coins from the existing 12-coin list. Do not add any new coins.
+
+3. Entry Price and Timeframe (IMPORTANT)
+
+There is an issue with the entry prices. You are saying signals come from TradingView, but I can see that the entry prices being used are different from the actual prices shown on my chart.
+
+Fix this properly:
+
+Use the exact Spot Price shown in the indicator/chart screenshot I provided as the entry price.
+
+Do not use Futures prices.
+
+Do not use estimated, calculated, or different market prices as substitutes for the actual Spot Price.
+
+All entries must be generated using the 5-minute (5m) chart timeframe.
+
+Make sure the entry price recorded in the Simulator matches the actual Spot Price at the moment the signal is generated.
+
+Apply the same price source consistently to LONG and SHORT trades.4. Implement the Indicator
+
+I am providing the indicator file again for your convenience.
+
+Carefully inspect the entire indicator and implement its original signal logic correctly. Do not unnecessarily modify its calculations, conditions, or entry rules.
+
+5. Activate and Run a New 7-Day Test
+
+Activate this indicator in the LIVE PAPER SIMULATOR.
+
+Start using the updated configuration.
+
+Run a new 7-day backtest using the same indicator and exact rules.
+
+Generate a complete report covering the 7-day period.6. Required Report
+
+Show me:
+
+Total signals generated.
+
+LONG and SHORT signal counts.
+
+Total trades opened.
+
+Winning and losing trades.
+
+Win rate.
+
+Total profit and loss.
+
+Final account balance.
+
+Maximum drawdown.
+
+Average trade duration.
+
+Results for each of the 7 trading days.
+
+Confirmation that all entries used the correct 5-minute Spot Price.
+
+Important: Activate the updated indicator in the LIVE PAPER SIMULATOR, not just in a separate testing environment. Keep all other existing system functionality and rules unchanged except for the specific updates requested above.Iam telling again no stop loss set, open trade untl it hit take profit.
