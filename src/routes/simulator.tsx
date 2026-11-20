@@ -9,6 +9,7 @@ import { fmtSignedUsd, fmtUsd, SIM_RULES, simSessionTrades, simSummary, todayPnl
 import { addSimBalance, setSimEnabled, changeSimBalance, readSimControlAccess, closeSimTrade } from "@/lib/simulator.functions";
 import { StatusBadge } from "@/components/terminal/StatusBadge";
 import { TrendWatch } from '@/components/terminal/TrendWatch';
+import { ScannerStatusPanel } from '@/components/terminal/ScannerStatusPanel';
 import { SavedMarketNotice } from '@/components/terminal/SavedMarketNotice';
 import { contractFeedStatus } from '@/lib/engine/market-policy';
 import { Button } from "@/components/ui/button";
@@ -212,6 +213,7 @@ function Simulator() {
         </AlertDialogContent>
       </AlertDialog>
 
+      <ScannerStatusPanel tz={tz} />
       <TrendWatch tz={tz} />
 
       <section className="overflow-hidden border-y border-border">

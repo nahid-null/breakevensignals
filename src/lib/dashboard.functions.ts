@@ -66,3 +66,13 @@ export const readRobotDecisionsFor = createServerFn({ method: 'GET' }).inputVali
 export const readSignalEventsFor = createServerFn({ method: 'GET' }).inputValidator((v: unknown) => z.object({ symbol: z.string().regex(/^[A-Z0-9]{2,20}USDT$/) }).parse(v))
   .handler(async ({ data }) => must(await (await db()).from('signal_events').select('event_type,direction,timestamp,entry_price,stop_loss,take_profit,exit_price,trade_id,source')
     .eq('symbol', data.symbol).order('timestamp', { ascending: false }).limit(1000)));
+
+/** prompt-64: read-only scanner status for the Simulator page (version inferred from the newest entry's rule). */
+export const readScannerStatus = get.handler(async () => {
+  const c = await db();
+  const health = must(await c.from('engine_health').select('status,last_heartbeat_at,started_at,host_kind,runtime_mode').eq('id', 1).maybeSingle());
+  const latest = must(await c.from('sim_breakeven_confirmations').select('symbol,direction,entry_price,rule_version,reason,status,created_at,breakeven_candle_time').order('created_at', { ascending: false }).limit(1).maybeSingle());
+  const strong = must(await c.from('sim_breakeven_confirmations').select('symbol,direction,entry_price,status,reason,signal_score,created_at,breakeven_candle_time').eq('rule_version', 'OBSTRONG5_SPOT').order('created_at', { ascending: false }).limit(1).maybeSingle());
+  const version = latest === null ? 'UNKNOWN' : latest.rule_version === 'OBSTRONG5_SPOT' ? 'NEW' : 'OLD';
+  return { health, latest, strong, version } as const;
+});

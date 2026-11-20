@@ -378,3 +378,8 @@
 - New live rule OBSTRONG5_SPOT (migration 0044): OB STRONG 5m on spot bars (`src/lib/engine/ob-strong.ts`), 9 coins, 7 slots x 5%, 75x, +50%, same coin allowed, spot 1m exits, OB+VP entries logged INDICATOR_RETIRED.
 - Port parity vs research ob61.py: 158/160 identical on 9 coins; 2 extra signals come from ob61's Python floor-division, the new code follows Pine's math.floor.
 - Balance set to $10 (new session). Website published. Railway scanner must redeploy from the new code before OB STRONG entries arrive.
+
+## prompt-64
+- Added Scanner status panel on Simulator (version inferred from newest entry rule, heartbeat, latest OB STRONG signal).
+- Offline 7-day backtest (research/prompt-64/backtest64.ts, no manual closes): 54 trades, 51 TP, 0 liq, 3 open; $10 -> $35.62 cash, $27.60 incl. open.
+- Manual closes earlier were only the user-chosen "Close all 4 now".
