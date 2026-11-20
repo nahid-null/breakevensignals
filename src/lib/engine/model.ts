@@ -1,6 +1,6 @@
 import type { Direction, EventType, Symbol } from "../config";
 import type { MtfState, MtfSnapshot, SignalStrength } from "./mtf-trend";
-import type { ObvpState } from "./ob-vp";
+import type { ObStrongState } from "./ob-strong";
 
 export const MINUTE = 60_000;
 export const FIVE_MINUTES = 5 * MINUTE;
@@ -40,8 +40,8 @@ export interface EngineState {
   interval?: number;
   /** Original Pine LONG/SHORT running on 5-minute bars built from this feed's closed 1-minute candles. */
   five?: { engine: EngineState; bucket: Candle[] };
-  /** prompt-51 OB + Weighted VP entry indicator on the same 5-minute bars. Kept in worker memory and rebuilt from Binance on restart. */
-  obvp?: ObvpState;
+  /** prompt-63 OB STRONG entry indicator on SPOT 5-minute bars (field name kept). Kept in worker memory and rebuilt from Binance on restart. */
+  obvp?: ObStrongState;
 }
 export interface Signal {
   event_id: string; trade_id: string; event: EventType; symbol: Symbol; direction: Direction;

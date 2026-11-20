@@ -372,3 +372,9 @@
 - Closed manually at saved price: DOGE LONG 0.05701 (−1.2673), LINK LONG 8.827 (−1.7303), NEAR LONG 3.004 (−2.9146), XRP LONG 0.9554 (−1.1918). Total −7.104. Balance 11.7473 → 4.6433. 0 open trades.
 - TS2686 text again contained the answer, not a real compile error; build passes.
 - OB STRONG live switch still to be implemented.
+
+## prompt-63 (20 Nov 2026) — OB STRONG activated in the live Simulator
+- Previous-system 7-day report delivered (prompt63-previous-system-7day-report.md).
+- New live rule OBSTRONG5_SPOT (migration 0044): OB STRONG 5m on spot bars (`src/lib/engine/ob-strong.ts`), 9 coins, 7 slots x 5%, 75x, +50%, same coin allowed, spot 1m exits, OB+VP entries logged INDICATOR_RETIRED.
+- Port parity vs research ob61.py: 158/160 identical on 9 coins; 2 extra signals come from ob61's Python floor-division, the new code follows Pine's math.floor.
+- Balance set to $10 (new session). Website published. Railway scanner must redeploy from the new code before OB STRONG entries arrive.

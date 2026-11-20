@@ -3,8 +3,8 @@ import { SYMBOLS, INDICATORS, type Symbol } from "../src/lib/config";
 import { initialState, ENGINE_VERSION, MINUTE, PARAMETERS, validateCandle, type EngineState, type Candle, type Analysis, type Signal } from "../src/lib/engine/model";
 import { processCandle } from "../src/lib/engine/scalper";
 import { advanceObvp, buildFive, bucketStart, processMinute } from "../src/lib/engine/five-minute";
-import type { SimulatorEntry } from "../src/lib/engine/ob-vp";
-import { BINANCE_WS, BinanceRequestError, binanceFetch, checkWebSocketAccess, history, spotHistory, delay, backoff } from "./binance";
+import { isTradingCoin, type SimulatorEntry } from "../src/lib/engine/ob-strong";
+import { BINANCE_WS, BinanceRequestError, binanceFetch, checkWebSocketAccess, history, spotHistory, spotMinute, delay, backoff } from "./binance";
 import { initMtf, snapshot as trendSnapshot, type MtfSnapshot } from "../src/lib/engine/mtf-trend";
 import { feedHasLiveEvidence, MESSAGE_MAX_AGE_MS, type FeedHealth } from '../src/lib/engine/feed-health';
 
@@ -107,7 +107,12 @@ export class SignalService {
     const fives = await history(symbol, undefined, bucketStart(lastTime) + 5 * MINUTE, this.marketAbort.signal, '5m');
     const partial = await history(symbol, bucketStart(lastTime), lastTime + MINUTE, this.marketAbort.signal, '1m');
     // prompt-52: the entry indicator warms on Binance SPOT 5-minute bars (the user's TradingView chart).
-    const spot = await this.spotBars(symbol, undefined, bucketStart(lastTime) + 5 * MINUTE);
+    // prompt-63: OB STRONG warms on about 10 days of SPOT 5-minute bars (three 1000-bar pages).
+    const end = bucketStart(lastTime) + 5 * MINUTE; const spot: Candle[] = [];
+    for (let from = end - 3000 * 5 * MINUTE; from < end; from += 1000 * 5 * MINUTE) {
+      const page = await this.spotBars(symbol, from, Math.min(end, from + 1000 * 5 * MINUTE)); if (page === null) { spot.length = 0; break; }
+      spot.push(...page.filter((c) => c.time >= from && c.time < from + 1000 * 5 * MINUTE));
+    }
     if (this.running && !this.marketPaused) this.lastRestAt = Date.now();
     return buildFive(symbol, tick, lastTime, fives, partial, spot ?? []);
   }
@@ -131,7 +136,18 @@ export class SignalService {
     console.warn(`${symbol}: spot 5m bar ${new Date(bucket).toISOString()} not published; no indicator entry for it`);
     return [];
   }
-  private async commit(symbol: Symbol, tentative: EngineState, market: Market, events: Signal[], mode: 'live' | 'warmup' | 'recovery', entries: SimulatorEntry[] = []) {
+  /** prompt-63: spot 1-minute candle for OB STRONG targets/liquidation; a failure only skips that minute's spot check. */
+  private async spotCandle(symbol: Symbol, time: number): Promise<Candle | null> {
+    if (!isTradingCoin(symbol)) return null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const wait = time + MINUTE + 1200 * (attempt + 1) - Date.now(); if (wait > 10_000) return null; if (wait > 0) await delay(wait);
+      if (!this.running || this.marketPaused) return null;
+      try { const c = await spotMinute(symbol, time, this.marketAbort.signal); if (c) return c; }
+      catch (e) { if (this.marketAbort.signal.aborted) throw e; console.warn(`${symbol}: Binance spot 1m candle unavailable — ${e instanceof Error ? e.message : String(e)}`); return null; }
+    }
+    return null;
+  }
+  private async commit(symbol: Symbol, tentative: EngineState, market: Market, events: Signal[], mode: 'live' | 'warmup' | 'recovery', entries: SimulatorEntry[] = [], spot: Candle | null = null) {
     if (!this.running || this.marketPaused) return;
     const previous = this.checkpoints.get(symbol);
     if (this.observeOnly) {
@@ -144,7 +160,7 @@ export class SignalService {
       // The OB + Weighted VP state stays in memory (rebuilt from Binance after restart) to keep each checkpoint small.
       const { obvp: _obvp, ...checkpoint } = tentative;
       const r = await this.app<{ conflict: boolean; revision: number }>('commit', { instance_id: this.instance,
-        symbol, expected_revision: previous?.revision ?? 0, checkpoint, market, events, mode, simulator_entries: entries });
+        symbol, expected_revision: previous?.revision ?? 0, checkpoint, market, events, mode, simulator_entries: entries, spot_candle: spot });
       if (r.conflict) throw new Error("Checkpoint revision conflict");
       this.checkpoints.set(symbol, { state: tentative, revision: r.revision });
       this.markets.set(symbol, market);
@@ -391,9 +407,10 @@ export class SignalService {
     const tentative = structuredClone(saved.state);
     const result = processMinute(tentative, c);
     const entries = result.fiveClosed !== null && tentative.obvp ? await this.spotEntries(symbol, tentative, result.fiveClosed) : [];
+    const spot = await this.spotCandle(symbol, c.time);
     if (!this.running || this.marketPaused) return;
     const events = [...(this.adoption.get(symbol) ?? []), ...result.signals];
-    await this.commit(symbol, tentative, this.market(symbol, tentative, c, result.analysis, mode === 'live' ? 'LIVE' : 'RECOVERING'), events, mode, entries);
+    await this.commit(symbol, tentative, this.market(symbol, tentative, c, result.analysis, mode === 'live' ? 'LIVE' : 'RECOVERING'), events, mode, entries, spot);
     if (this.checkpoints.get(symbol)?.state.five) this.adoption.delete(symbol);
   }
   private async recover(symbol: Symbol, until: number) {

@@ -1,7 +1,7 @@
 import { INDICATORS } from '../config';
 import { processCandle } from './scalper';
 import { snapshot } from './mtf-trend';
-import { initialObvp, processObvp, toSimulatorEntry, type SimulatorEntry } from './ob-vp';
+import { initialObStrong as initialObvp, processObStrong as processObvp, toSimulatorEntry, type SimulatorEntry } from './ob-strong';
 import { FIVE_MINUTES, MINUTE, PARAMETERS, initialState, type Candle, type EngineState, type Signal, type Analysis } from './model';
 
 /**
@@ -83,7 +83,7 @@ export function processMinute(state: EngineState, c: Candle): { signals: Signal[
 
 /**
  * prompt-52: the only Simulator entry source. Feeds closed Binance SPOT 5-minute bars (the user's TradingView chart) newer than the
- * indicator's last bar, up to `bucket`, into the unchanged OB + Weighted VP port. Only the bar opening at `bucket` may produce entries,
+ * indicator's last bar, up to `bucket`, into the OB STRONG port (prompt-63; was OB + Weighted VP). Only the bar opening at `bucket` may produce entries,
  * so bars caught up after a missed fetch are never traded late. `reached` is false while the spot bar is not yet published.
  */
 export function advanceObvp(state: EngineState, spot: Candle[], bucket: number): { entries: SimulatorEntry[]; reached: boolean } {

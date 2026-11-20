@@ -3,14 +3,14 @@ import { PGlite } from '@electric-sql/pglite';
 import { readFile, readdir } from 'node:fs/promises';
 import { beforeAll, afterAll, beforeEach, afterEach, describe, expect, it } from 'vitest';
 
-// prompt-51 rule against the real migrations in isolated PostgreSQL (never production).
+// prompt-51 rule (retired by prompt-63, migrations up to 0043 only) against the real migrations in isolated PostgreSQL (never production).
 const instance = '11111111-1111-4111-8111-111111111111';
 let db: PGlite; let rev: number; let minute: number;
 beforeAll(async () => {
   db = new PGlite();
   await db.exec('CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role;');
   const dir = new URL('../../drizzle/migrations/', import.meta.url);
-  for (const f of (await readdir(dir)).filter((f) => f.endsWith('.sql') && f !== '0001_migration.sql').sort())
+  for (const f of (await readdir(dir)).filter((f) => f.endsWith('.sql') && f !== '0001_migration.sql' && f < '0044').sort())
     await db.exec((await readFile(new URL(f, dir), 'utf8')).replace(/^ALTER PUBLICATION.*$/gm, ''));
 }, 60000);
 afterAll(async () => { await db.close(); });

@@ -82,7 +82,7 @@ export const heartbeatSchema = z.object({
 /** prompt-51: OB + Weighted VP 5-minute entry for the Simulator only (never a Pine position or signal event). */
 export const simulatorEntrySchema = z.object({
   trade_id: z.string().min(3).max(200), symbol: z.enum(SYMBOLS), direction: z.enum(['LONG','SHORT']),
-  indicator: z.literal('OB + Weighted VP 5m'), timeframe: z.literal('5'),
+  indicator: z.enum(['OB STRONG 5m', 'OB + Weighted VP 5m']), timeframe: z.literal('5'),
   entry_price: finite.positive(), stop_loss: finite.positive(), take_profit: finite.positive(),
   score: z.number().int().min(0).max(6), rr: finite.positive(), signal_time: z.string().datetime(),
 });
@@ -92,6 +92,8 @@ export const commitSchema = z.object({
   market: marketSchema,
   mode: z.enum(["live", "warmup", "recovery"]),
   events: z.array(signalSchema).max(12),
-  simulator_entries: z.array(simulatorEntrySchema).max(2).default([]),
+  simulator_entries: z.array(simulatorEntrySchema).max(4).default([]),
+  /** prompt-63: closed Binance SPOT 1-minute candle for the same minute; the only price used for OB STRONG targets and liquidation. */
+  spot_candle: z.object({ time: z.number().int(), open: finite.positive(), high: finite.positive(), low: finite.positive(), close: finite.positive() }).nullable().optional(),
 }).refine((p) => p.market.symbol === p.symbol && p.checkpoint['symbol'] === p.symbol && p.events.every((e) => e.symbol === p.symbol)
   && p.simulator_entries.every((e) => e.symbol === p.symbol), "Symbol mismatch");

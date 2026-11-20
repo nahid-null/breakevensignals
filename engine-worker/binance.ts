@@ -102,6 +102,15 @@ export async function spotHistory(symbol: string, start?: number, end?: number, 
   return rows.map((row) => restCandle(row, span)).filter((c) => c.time + span <= now).sort((a, b) => a.time - b.time);
 }
 
+/** prompt-63: the closed Binance SPOT 1-minute candle opening at `time` (OB STRONG targets/liquidation use spot prices only); null if not published. */
+export async function spotMinute(symbol: string, time: number, signal?: AbortSignal): Promise<Candle | null> {
+  const params = new URLSearchParams({ symbol, interval: '1m', limit: '1', startTime: String(time), endTime: String(time + MINUTE - 1) });
+  const rows = await binanceFetch(`/api/v3/klines?${params}`, signal, BINANCE_SPOT_REST, 2, 5_000);
+  if (!Array.isArray(rows)) throw new Error("Malformed Binance spot candle");
+  const c = rows.map((row) => restCandle(row, MINUTE)).find((x) => x.time === time);
+  return c && c.time + MINUTE <= Date.now() ? c : null;
+}
+
 export async function checkWebSocketAccess(streams: string, signal: AbortSignal): Promise<void> {
   const response = await fetch(`${BINANCE_WS.replace('wss:', 'https:')}${streams}`, {
     headers: { connection: 'Upgrade', upgrade: 'websocket', 'sec-websocket-version': '13',

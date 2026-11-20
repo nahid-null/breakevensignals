@@ -59,4 +59,4 @@ use the editor.
 - Fail closed for hosted balance controls until Invite-only access is verified; localhost checks never authorize remote callers.
 - Ship both pure engine trees in the worker Docker image and smoke-test that COPY set; audit unused initial-capital corrections separately from deposits to preserve ledger history.
 - Retained parity tools reuse `processCandle` and intact Pine fixtures; retired chart modules remain unrouted to preserve verification evidence.
-- Simulator trades only OB + Weighted VP 5m entries (`ob-vp.ts`, OBVP5_CROSS; `OBVP_SIM` sizing and `SYMBOLS` mirrored in SQL); Pine signals are recorded but never trade, so signals stay unaltered.
+- Simulator trades only OB STRONG 5m entries (`ob-strong.ts` on SPOT 5m bars, OBSTRONG5_SPOT; `OBS_SIM` sizing/coins mirrored in SQL) with targets/liquidation on the worker-supplied SPOT 1m candle and no futures fallback; OB + VP entries are logged INDICATOR_RETIRED and Pine signals never trade, so signals stay unaltered.

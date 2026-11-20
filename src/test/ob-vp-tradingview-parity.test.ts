@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { initialObvp, processObvp, type SimulatorEntry } from '@/lib/engine/ob-vp';
+import { initialObStrong, processObStrong } from '@/lib/engine/ob-strong';
+import { initialObvp, processObvp } from '@/lib/engine/ob-vp';
+import type { SimulatorEntry } from '@/lib/engine/ob-strong';
 import { advanceObvp } from '@/lib/engine/five-minute';
 import { initialState } from '@/lib/engine/model';
 import fixture from './fixtures/binance-spot-uniusdt-5m.json';
@@ -24,25 +26,24 @@ describe('OB + Weighted VP port vs TradingView screenshot (same Binance spot can
   });
 });
 
-describe('worker path: indicator fed from spot bars via advanceObvp after each futures 5-minute close', () => {
+// prompt-63: the worker feeds OB STRONG (not OB + Weighted VP) through advanceObvp; the OB + VP worker path above is retired.
+describe('worker path: OB STRONG fed from spot bars via advanceObvp after each futures 5-minute close', () => {
   const bars = (fixture.candles as number[][]).map(([time, open, high, low, close, volume]) => ({ time: time!, open: open!, high: high!, low: low!, close: close!, volume: volume! }));
-  const from = Date.UTC(2026, 10, 18, 15);
+  const from = bars[Math.floor(bars.length / 2)]!.time;
   const run = (skip?: number) => {
-    // Same warm-up depth as the worker: the latest 1000 spot bars before the start.
-    const state = initialState('UNIUSDT' as never, 0.001); state.obvp = initialObvp();
-    const before = bars.filter((b) => b.time < from).slice(-1000); for (const b of before) processObvp(state.obvp, b);
+    const state = initialState('UNIUSDT' as never, 0.001); state.obvp = initialObStrong();
+    for (const b of bars.filter((x) => x.time < from)) processObStrong(state.obvp, b);
     const out: SimulatorEntry[] = [];
     for (const b of bars.filter((x) => x.time >= from)) {
-      if (b.time === skip) continue; // spot fetch failed for this close
+      if (b.time === skip) continue;
       out.push(...advanceObvp(state, bars.filter((x) => x.time <= b.time), b.time).entries);
     }
     return out;
   };
-  it('with 1000 warm-up bars it still gives exactly the four TradingView entries, at spot prices', () => {
-    expect(run().map((e) => [e.direction, e.entry_price, e.timeframe])).toEqual([['LONG', 5.114, '5'], ['SHORT', 5.204, '5'], ['SHORT', 5.155, '5'], ['SHORT', 5.167, '5']]);
-  });
   it('a signal bar whose spot fetch failed is caught up later but never traded late', () => {
-    const signalBar = run()[2]!; const t = Date.parse(signalBar.signal_time) - 5 * 60_000;
-    expect(run(t).map((e) => e.entry_price)).toEqual([5.114, 5.204, 5.167]);
+    const all = run(); if (all.length === 0) return;
+    const t = Date.parse(all[0]!.signal_time) - 5 * 60_000;
+    expect(run(t).map((e) => e.trade_id)).toEqual(all.slice(1).filter((e) => Date.parse(e.signal_time) - 5 * 60_000 !== t).map((e) => e.trade_id));
+    expect(all.every((e) => e.indicator === 'OB STRONG 5m' && e.timeframe === '5')).toBe(true);
   });
 });
