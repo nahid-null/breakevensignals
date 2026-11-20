@@ -358,3 +358,11 @@
 - Checks: 0 look-ahead mismatches (180 samples), warm-up 7d: 0 diffs / 3d: 1, 0 retest-rule failures. BTC $37.50 order is below Binance's $50 minimum.
 - Files: prompt60-report.md, prompt60-trades.csv, prompt60-signals.csv, prompt60-evidence.zip (Simulator Performance Reports).
 - Open: user decides whether to switch the live Simulator to this indicator / 50% TP / fixed $0.50 margin.
+
+## prompt-61 (2026-11-20) — OB STRONG Entry Signals 7-day backtest (live unchanged)
+- TS2686 in use-mobile.tsx not reproduced (React imported as module); request was in prompt-61.txt (+ OB_STRONG_Entry_Signals.pine).
+- prompt-61 says "do not modify the live trading system"; nothing live changed. Indicator saved intact in research/prompt-61/; port ob61.py (score off = identical to ob60), backtest61.py, checks61.py, report61.py. Same hashed data as prompt-60.
+- Window 2026-11-13 08:00 → 11-20 08:00 UTC, spot 5m signals, $10, 6 x $0.50, 75x, +$0.25 net TP, no SL, same coin allowed. 75 signals; 47 trades: 43 TP, 0 losses, 4 still open (BNB, BTC x2, DOGE LONGs, −$8.50 unrealized); cash $20.65, value incl. open $12.15; max DD −$5.38 (low $6.75); worst one-trade float −$4.22; 28 signals skipped (slots full).
+- Futures-candle run was liquidated 2026-11-14; label's own 1:2 TP came first 24 times vs SL 50.
+- Checks: 0 look-ahead mismatches (76), 0 warm-up diffs, 0 rule failures.
+- Files: prompt61-report.md, prompt61-trades.csv, prompt61-signals.csv, prompt61-evidence.zip.

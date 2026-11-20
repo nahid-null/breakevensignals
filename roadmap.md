@@ -81,3 +81,5 @@ Paper Robot30-trade collection, SMC/sweep rollout, chart rollout and MTF-filter 
 
 - [x] prompt-60: 7-day backtest of OB Entry Signals + report (offline, live untouched)
 - [ ] prompt-60: switch live Simulator to OB Entry Signals (fixed $0.50 margin, +50 percent TP, same-coin trades) — waits on user approval
+- [x] prompt-61: 7-day backtest of OB STRONG Entry Signals + report (offline, live untouched)
+- [ ] prompt-61: switch live Simulator to OB STRONG Entry Signals — waits on user approval

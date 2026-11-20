@@ -1,0 +1,1 @@
+- prompt-61 OB STRONG Entry Signals backtest is offline research only: never wire `ob61.py`/`backtest61.py` into the worker, SQL, Telegram or website, because its trades must not enter live history and the user forbade live changes for this prompt.
