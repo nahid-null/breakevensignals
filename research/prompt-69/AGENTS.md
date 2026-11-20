@@ -1,0 +1,1 @@
+- prompt-69 OB STRONG 30m backtest is offline research only: never wire it into the worker, SQL, Telegram or website, because the user forbade Simulator changes.
