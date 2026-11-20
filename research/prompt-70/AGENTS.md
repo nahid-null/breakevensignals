@@ -1,0 +1,1 @@
+- prompt-70 OB STRONG 30m cross-margin backtest is offline research only: never wire `bt.py`/`rep.py` into the worker, SQL Simulator, Telegram or website, because the user forbade Simulator changes and its trades must not enter live history.

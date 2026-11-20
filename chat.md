@@ -390,3 +390,10 @@
 - Week 1 (13 Nov 12:00 → 20 Nov 12:00 UTC, 15 coins): only W, ZEN, LINK had 0 liquidations + 0 open. ETH 2 open, XRP 1 open.
 - Week 2 (6 Nov 12:00 → 13 Nov 12:00, W/ZEN/LINK): W 3 liq, ZEN 1 liq, LINK 6 liq → no coin passed both weeks; no recommendation.
 - Files: prompt66-report.md, prompt66-trades.csv, prompt66-evidence.zip (Simulator Performance Reports).
+
+## prompt-70 (2026-11-20) — OB STRONG 30m, shared $10 CROSS-margin account, 30 coins (offline only)
+- Window 2026-11-13 18:00 → 11-20 18:00 UTC, Binance USD-M Futures 30m signals (enter next minute after alert candle closes), 1m exits, $0.50 fixed margin, 75x, 7 slots, no SL, +50% net TP, Binance tier-1 maintenance margin, real funding, 0.05% fee + 0.02% slip.
+- All 30 pairs exist on futures. 7 coins can't open at 75x (W/DOGS/PROM/FLUX/BOME 50x, FF/1000CAT 20x).
+- Scenario A (exact 75x): 29 signals, 25 trades, 23 TP, 2 still open (A, AVAX longs ≈ −$3.1/−$3.4), 0 liquidated, 4 skipped (not tradable at 75x). Equity $10 → $9.22 (−7.8%), wallet $15.72, lowest equity $8.15, max DD $5.96, max 5 slots.
+- Scenario B (capped coins at max lev): 29 trades, 25 TP, 4 open, equity $6.15 (−38.5%), lowest $4.62.
+- Files: Simulator Performance Reports/prompt-70 (report.md, trades.csv, trades-scenarioB.csv, coins.csv). Code research/prompt-70. Live Simulator untouched.

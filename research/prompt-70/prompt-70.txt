@@ -1,0 +1,335 @@
+I want you to run a complete 7-day historical backtest using my provided OB STRONG indicator, with the exact trading configuration and risk-management rules specified below.
+
+1. Indicator and Entry Timeframe
+
+Indicator: OB STRONG (use my original provided indicator script).
+
+Entry timeframe: 30-minute (30M) chart ONLY.
+
+Analyze the previous 7 days of historical market data.
+
+Apply the OB STRONG indicator separately to every coin listed below.
+
+Generate entries exclusively from valid signals appearing on the 30-minute chart.
+
+Do not use any other timeframe for generating entry signals.
+
+Do not modify, replace, or optimize the indicator's original entry conditions.2. Account Configuration
+
+Use the following exact account settings throughout the backtest:
+
+Initial Main Account Balance: $10 USDT
+
+Total Trading Slots: 7
+
+Margin Allocation Per Slot: 5% of the initial main account balance
+
+Margin Per Slot: $0.50 USDT
+
+Leverage: 75x
+
+Margin Mode: CROSS MARGIN
+
+Stop Loss: NONE
+
+Each trade must initially use $0.50 margin, calculated as 5% of the $10 initial main balance.
+
+Maximum initial margin allocation across 7 occupied slots is $3.50.
+
+Do not calculate the 5% margin from the remaining available balance. Always use the initial $10 main balance as the reference for the per-slot margin calculation.3. CRITICAL: Cross Margin and Liquidation Calculation
+
+All trades MUST use CROSS MARGIN, not ISOLATED MARGIN.
+
+This is extremely important for the accuracy of the backtest.
+
+Implement the cross-margin system as follows:
+
+The initial main account balance is $10 USDT.
+
+Each occupied slot uses $0.50 USDT as its initial margin.
+
+All trades share the same main account balance as cross-margin collateral.
+
+The available account balance must be considered when calculating each position's liquidation price.
+
+Unrealized losses from open positions must affect the available account equity.
+
+Profits from completed trades must be reflected in the main account balance.
+
+Losses, trading fees, and funding fees must be deducted from the appropriate account balance.
+
+Calculate liquidation based on the combined cross-margin account equity, maintenance margin requirements, position sizes, and applicable exchange liquidation rules.Do NOT calculate liquidation as if every trade has an isolated $0.50 margin.
+
+The entire main account balance must be available as shared collateral to support open positions, subject to the exchange's actual cross-margin rules.
+
+The purpose of cross margin is to allow the shared account balance to support positions and potentially keep liquidation prices farther away than isolated margin.
+
+However, do not artificially move liquidation prices farther away. Calculate them accurately using Binance Futures cross-margin mechanics, including maintenance margin tiers, maintenance margin rates, liquidation fees, and other applicable requirements.
+
+If multiple positions are open simultaneously, calculate their combined impact on account equity and liquidation risk.
+
+If the account does not have enough available margin to open another trade, do not exceed the account's actual available margin.4. No Stop Loss
+
+Absolutely NO STOP LOSS.
+
+Do not apply the indicator's stop-loss price.
+
+Do not create an additional stop-loss mechanism.
+
+Do not automatically close losing trades.
+
+Do not introduce time-based closing rules.
+
+Positions must remain open until their actual take-profit or indicator-defined exit conditions are triggered, or until Binance cross-margin liquidation occurs.
+
+Do not confuse a stop-loss event with a liquidation event. Report them separately.5. Coins to Backtest
+
+Backtest ONLY these 30 USDT trading pairs:
+
+WUSDT
+
+ZENUSDT
+
+GALAUSDT
+
+SUSDT
+
+AUSDT
+
+FFUSDT
+
+ETHUSDT
+
+SOLUSDT
+
+XRPUSDT
+
+LINKUSDT
+
+NEARUSDT
+
+BCHUSDT
+
+LTCUSDT
+
+ADAUSDT
+
+AVAXUSDT
+
+DOGSUSDTPROMUSDT
+
+1000CATUSDT
+
+FLUXUSDT
+
+TRXUSDT
+
+BNBUSDT
+
+UNIUSDT
+
+BOMEUSDT
+
+WLDUSDT
+
+WIFUSDT
+
+CRVUSDT
+
+EGLDUSDT
+
+FILUSDT
+
+SANDUSDT
+
+HBARUSDT
+
+Do not add, remove, or substitute any coins.
+
+Verify that each trading pair exists on Binance USDⓈ-M Futures before backtesting. If any pair is unavailable, report it separately rather than silently replacing it.6. Trading Execution Rules
+
+Maximum simultaneous occupied slots: 7.
+
+Each new trade uses $0.50 initial margin.
+
+Leverage: 75x.
+
+All positions use cross margin.
+
+Use the actual historical 30-minute OB STRONG signals.
+
+Do not skip valid signals when a slot is available.
+
+If all 7 slots are occupied, record subsequent signals as skipped due to unavailable slots.
+
+Do not open more than 7 simultaneous trades.
+
+Use realistic Binance Futures trading fees and historical funding rates where applicable.
+
+Account for position direction, entry price, quantity, and actual execution assumptions.
+
+Do not use future candle information to generate earlier entries.
+
+Prevent look-ahead bias and duplicate entries from the same signal.7. Required Overall Backtest Report
+
+After completing the 7-day backtest, provide:
+
+Initial account balance.
+
+Final account balance.
+
+Total net profit or loss in USDT and percentage.
+
+Total signals generated.
+
+Total trades actually executed.
+
+Total completed trades.
+
+Total winning trades.
+
+Total losing trades.
+
+Total positions still open at the end of the backtest.
+
+Total liquidated trades.
+
+Total signals skipped because all 7 slots were occupied.
+
+Maximum simultaneous occupied slots.
+
+Highest account equity.
+
+Lowest account equity.
+
+Maximum unrealized loss across open positions.
+
+Maximum drawdown.
+
+Total trading fees.
+
+Total funding fees.
+
+Total realized profit/loss.
+
+Total unrealized profit/loss.8. Trade Duration Report
+
+Provide:
+
+Fastest completed trade and its duration.
+
+Slowest completed trade and its duration.
+
+Average completion time across all completed trades.
+
+Median completion time.
+
+Total completed trades within 30 minutes.
+
+Total completed trades within 1 hour.
+
+Total completed trades within 4 hours.
+
+Total completed trades within 12 hours.
+
+Total completed trades within 24 hours.
+
+Daily trade completion count for all 7 days.
+
+Do not include open or liquidated trades when calculating average completion time.9. Coin-by-Coin Performance Report
+
+Provide a separate breakdown for all 30 coins, including:
+
+Total signals.
+
+Executed trades.
+
+Skipped signals.
+
+Completed trades.
+
+Winning trades.
+
+Losing trades.
+
+Still-open trades.
+
+Liquidated trades.
+
+Net profit/loss.
+
+Average trade completion time.
+
+Fastest trade duration.
+
+Slowest trade duration.
+
+Also identify which coin performed best and which performed worst.10. Individual Trade History
+
+Provide a complete trade-by-trade history containing:
+
+Coin.
+
+Signal timestamp.
+
+Position direction (LONG/SHORT).
+
+Entry price.
+
+Position quantity.
+
+Initial margin.
+
+Leverage.
+
+Cross-margin account equity at entry.
+
+Actual liquidation price or dynamically calculated liquidation risk.
+
+Exit timestamp.
+
+Exit price.
+
+Trade duration.
+
+Gross profit/loss.
+
+Trading fees.
+
+Funding fees.
+
+Net profit/loss.
+
+Final status (TP HIT / INDICATOR EXIT / STILL OPEN / LIQUIDATED).
+
+For trades that remain open at the end of the test, show their latest market price, unrealized profit/loss, and liquidation risk.11. Data Accuracy and Verification
+
+Use actual historical Binance Futures market data.
+
+Use historical 30-minute candles for entry signals.
+
+Use sufficiently detailed historical price data to simulate exits and liquidation events accurately.
+
+Use the appropriate historical Binance maintenance-margin tiers.
+
+Do not fabricate signals, prices, trades, or results.
+
+If historical data is unavailable for any coin, clearly disclose it.
+
+Clearly explain any limitations in reproducing exact Binance cross-margin liquidation mechanics.
+
+Do not claim exact liquidation accuracy if the necessary historical account-level data is unavailable.
+
+12. STRICTLY BACKTEST ONLY — DO NOT TOUCH THE SIMULATOR
+
+This is an experimental historical backtest only.
+
+DO NOT activate, modify, update, replace, or switch anything in my existing Live Simulator or paper-trading system.
+
+Do not apply these settings to any live or paper-trading environment.
+
+Keep all existing Simulator configurations completely unchanged.
+
+I want to review the complete 7-day backtest report first. Only after reviewing the results will I decide whether to use this strategy in the Simulator.
+
+Final instruction: Run the complete backtest using exactly these settings, verify the calculations, and provide the full report. Do not make any Simulator changes under any circumstances.
