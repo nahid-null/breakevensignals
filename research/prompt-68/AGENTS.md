@@ -1,0 +1,1 @@
+- prompt-68 Smart Signal Filter (`filter68.py`, `report68.py`, `ob68.py`) is offline research only: never wire it into the worker, SQL Simulator, Telegram or live trading until the user explicitly approves; results live in `filter_backtest_*` tables and `public/reports/prompt-68/`.

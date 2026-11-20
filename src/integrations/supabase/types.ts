@@ -233,6 +233,101 @@ export type Database = {
         }
         Relationships: []
       }
+      filter_backtest_runs: {
+        Row: {
+          created_at: string
+          final_balance: number
+          id: string
+          rules_sha256: string
+          start_balance: number
+          summary: Json
+          window_end: string
+          window_start: string
+        }
+        Insert: {
+          created_at?: string
+          final_balance: number
+          id: string
+          rules_sha256: string
+          start_balance: number
+          summary: Json
+          window_end: string
+          window_start: string
+        }
+        Update: {
+          created_at?: string
+          final_balance?: number
+          id?: string
+          rules_sha256?: string
+          start_balance?: number
+          summary?: Json
+          window_end?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
+      filter_backtest_signals: {
+        Row: {
+          after_signal: Json
+          decision: string
+          detail: Json
+          direction: string
+          indicator_entry: number
+          path: string | null
+          reasons: string[]
+          run_id: string
+          score: number
+          signal_no: number
+          signal_time: string
+          stars: number
+          strong_continuation: boolean
+          symbol: string
+          trade: Json | null
+        }
+        Insert: {
+          after_signal: Json
+          decision: string
+          detail: Json
+          direction: string
+          indicator_entry: number
+          path?: string | null
+          reasons?: string[]
+          run_id: string
+          score: number
+          signal_no: number
+          signal_time: string
+          stars: number
+          strong_continuation: boolean
+          symbol: string
+          trade?: Json | null
+        }
+        Update: {
+          after_signal?: Json
+          decision?: string
+          detail?: Json
+          direction?: string
+          indicator_entry?: number
+          path?: string | null
+          reasons?: string[]
+          run_id?: string
+          score?: number
+          signal_no?: number
+          signal_time?: string
+          stars?: number
+          strong_continuation?: boolean
+          symbol?: string
+          trade?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "filter_backtest_signals_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "filter_backtest_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       market_state: {
         Row: {
           error: string | null

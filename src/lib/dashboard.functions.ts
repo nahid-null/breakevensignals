@@ -76,3 +76,12 @@ export const readScannerStatus = get.handler(async () => {
   const version = latest === null ? 'UNKNOWN' : latest.rule_version === 'OBSTRONG5_SPOT' ? 'NEW' : 'OLD';
   return { health, latest, strong, version } as const;
 });
+
+/** prompt-68 offline Smart Filter backtest (research only): latest run summary and every stored signal. */
+export const readFilterBacktest = get.handler(async () => {
+  const c = await db();
+  const run = must(await c.from('filter_backtest_runs').select('id,window_start,window_end,start_balance,final_balance,rules_sha256,summary,created_at').order('created_at', { ascending: false }).limit(1).maybeSingle());
+  if (!run) return { run: null, signals: [] };
+  const signals = must(await c.from('filter_backtest_signals').select('signal_no,symbol,direction,signal_time,stars,indicator_entry,decision,path,score,strong_continuation,reasons,trade,after_signal').eq('run_id', run.id).order('signal_no'));
+  return { run, signals: signals ?? [] };
+});

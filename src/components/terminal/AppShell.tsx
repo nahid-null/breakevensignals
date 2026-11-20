@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import { Activity, BookOpen, History, Send, Settings, HeartPulse, List, Wallet, LineChart, ChevronDown, GitCompare } from "lucide-react";
+import { Activity, BookOpen, History, Send, Settings, HeartPulse, List, Wallet, LineChart, ChevronDown, GitCompare, FlaskConical } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useRealtimeSync, useStatuses, fmtTime } from "@/lib/data";
 import { StatusBadge } from "./StatusBadge";
@@ -10,6 +10,7 @@ const NAV = [
   { to: "/simulator", label: "Simulator", icon: Wallet },
 ] as const;
 const MORE = [
+  { to: "/backtest", label: "Filter Backtest", icon: FlaskConical },
   { to: "/parity", label: "Parity Report", icon: GitCompare },
   { to: "/markets", label: "Coin Monitor", icon: LineChart },
   { to: "/signals", label: "Signal History", icon: History },

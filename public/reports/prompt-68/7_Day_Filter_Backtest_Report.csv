@@ -1,0 +1,49 @@
+# 7-Day Filter Backtest Report,2026-11-13 13:00 UTC,to,2026-11-20 13:00 UTC
+original,60
+accepted,2
+rejected,58
+traded,2
+success,1
+unsuccessful,1
+unresolved,0
+ambiguous,0
+success_rate,50.0
+start_balance,10.25
+final_balance,10.1429
+total_profit,-0.1071
+highest_activity_hour,21:00
+lowest_activity_hour,05:00
+best_hour,01:00
+worst_hour,21:00
+long_trades,1,success,0,rate,0.0,profit,-0.3132
+short_trades,1,success,1,rate,100.0,profit,0.2061
+
+HOURLY (UTC),original,accepted,rejected,success,unsuccessful,success_rate_%,profit_usdt
+00:00,2,0,2,0,0,,0
+01:00,2,1,1,1,0,100.0,0.2061
+02:00,1,0,1,0,0,,0
+03:00,3,0,3,0,0,,0
+04:00,3,0,3,0,0,,0
+05:00,0,0,0,0,0,,0
+06:00,4,0,4,0,0,,0
+07:00,5,0,5,0,0,,0
+08:00,3,0,3,0,0,,0
+09:00,2,0,2,0,0,,0
+10:00,1,0,1,0,0,,0
+11:00,4,0,4,0,0,,0
+12:00,3,0,3,0,0,,0
+13:00,2,0,2,0,0,,0
+14:00,4,0,4,0,0,,0
+15:00,4,0,4,0,0,,0
+16:00,3,0,3,0,0,,0
+17:00,0,0,0,0,0,,0
+18:00,1,0,1,0,0,,0
+19:00,0,0,0,0,0,,0
+20:00,2,0,2,0,0,,0
+21:00,7,1,6,0,1,0.0,-0.3132
+22:00,0,0,0,0,0,,0
+23:00,4,0,4,0,0,,0
+
+ACCEPTED TRADES,signal_id,coin,side,path,score,entry_time,entry_price,target_price,original_sl,margin,balance_before,exit_time,exit_price,outcome,exit_reason,minutes_open,funding,pnl,balance_after
+,30,ADAUSDT,LONG,CONTINUATION,82,2026-11-16 21:50 UTC,0.1537,0.154776,0.1528,0.5125,10.25,2026-11-16 23:00 UTC,0.1528,UNSUCCESSFUL,STOP_LOSS,70,0.0,-0.313211,9.936789
+,56,LTCUSDT,SHORT,CONTINUATION,81,2026-11-20 01:45 UTC,42.12,41.82516,42.51,0.496839,9.936789,2026-11-20 01:53 UTC,41.82516,SUCCESS,TARGET_070,8,0.0,0.206063,10.142853

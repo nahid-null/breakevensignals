@@ -60,3 +60,4 @@ use the editor.
 - Ship both pure engine trees in the worker Docker image and smoke-test that COPY set; audit unused initial-capital corrections separately from deposits to preserve ledger history.
 - Retained parity tools reuse `processCandle` and intact Pine fixtures; retired chart modules remain unrouted to preserve verification evidence.
 - Simulator trades only OB STRONG 5m entries (`ob-strong.ts` on SPOT 5m bars, OBSTRONG5_SPOT; `OBS_SIM` sizing/coins mirrored in SQL) with targets/liquidation on the worker-supplied SPOT 1m candle and no futures fallback; OB + VP entries are logged INDICATOR_RETIRED and Pine signals never trade, so signals stay unaltered.
+- Keep prompt-68 Smart Filter backtest offline (research/prompt-68); its results are stored read-only in `filter_backtest_runs`/`filter_backtest_signals` (server-only access) and shown on `/backtest`, never fed to the live Simulator, so research trades cannot enter live history.
