@@ -1,3 +1,4 @@
+import type * as React from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { fmtTime, useSettings, useStatuses, useTelegramLogs, useMarkets, useStats } from "@/lib/data";
 import { formatUptime } from '@/lib/engine/health';
