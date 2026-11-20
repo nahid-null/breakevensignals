@@ -366,3 +366,9 @@
 - Futures-candle run was liquidated 2026-11-14; label's own 1:2 TP came first 24 times vs SL 50.
 - Checks: 0 look-ahead mismatches (76), 0 warm-up diffs, 0 rule failures.
 - Files: prompt61-report.md, prompt61-trades.csv, prompt61-signals.csv, prompt61-evidence.zip.
+
+## Prompt-62 follow-up (20 Nov 2026 09:47 UTC)
+- User answer (inside the pasted error text): "Close all 4 now".
+- Closed manually at saved price: DOGE LONG 0.05701 (−1.2673), LINK LONG 8.827 (−1.7303), NEAR LONG 3.004 (−2.9146), XRP LONG 0.9554 (−1.1918). Total −7.104. Balance 11.7473 → 4.6433. 0 open trades.
+- TS2686 text again contained the answer, not a real compile error; build passes.
+- OB STRONG live switch still to be implemented.
