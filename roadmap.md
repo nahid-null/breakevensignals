@@ -79,4 +79,5 @@ Paper Robot30-trade collection, SMC/sweep rollout, chart rollout and MTF-filter 
 - [ ] prompt-53: publish the site and redeploy the Railway scanner so it scans the 12 new coins — waits on user
 - [x] prompt-57: independent entry-strategy research (offline, live untouched) — no strategy passed; report delivered
 
-- [ ] prompt-60: switch live Simulator to OB Entry Signals ($0.50 fixed margin, +50
+- [x] prompt-60: 7-day backtest of OB Entry Signals + report (offline, live untouched)
+- [ ] prompt-60: switch live Simulator to OB Entry Signals (fixed $0.50 margin, +50 percent TP, same-coin trades) — waits on user approval
