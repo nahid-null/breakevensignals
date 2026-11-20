@@ -78,3 +78,5 @@ Paper Robot30-trade collection, SMC/sweep rollout, chart rollout and MTF-filter 
 - [x] prompt-53: only 12 coins (config + SQL allowlist), 75x new trades (leverage limit raised), INJ trade closed
 - [ ] prompt-53: publish the site and redeploy the Railway scanner so it scans the 12 new coins — waits on user
 - [x] prompt-57: independent entry-strategy research (offline, live untouched) — no strategy passed; report delivered
+
+- [ ] prompt-60: switch live Simulator to OB Entry Signals ($0.50 fixed margin, +50

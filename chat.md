@@ -348,3 +348,13 @@
 - Signals 5,686 (BUY 2,848 / SELL 2,838). Cross margin: 14 trades, 8 TP (+$100), 6 longs liquidated together on 2026-11-13 03:53 UTC (BTC mark fell ~4.75%) → account $0 after ~9 h. Isolated comparison: 37 trades, 15 TP, 22 liquidated, balance $45.95 by 11-13 03:18. Each signal alone: 60.1% TP-first vs ~80% needed.
 - Funding times from Binance can be a few ms past the minute; now rounded so every payment is charged (totals unchanged).
 - Files: prompt59-report.md, prompt59-trades.csv, prompt59-signals.csv, prompt59-evidence.zip (Simulator Performance Reports).
+
+## prompt-60 (2026-11-20) — OB Entry Signals 7-day backtest (live unchanged)
+- TS2686 in use-mobile.tsx not reproduced (React imported as module); request was in prompt-60.txt (+ OB_Entry_Signals.pine).
+- prompt-60 itself says "do not modify the live trading system"; so nothing live changed. Indicator saved intact in research/prompt-60/OB_Entry_Signals.pine; signal logic ported in research/prompt-60/ob60.py; backtest60.py, checks60.py, report60.py, fetch60.py.
+- Rules tested: spot 5m signals (futures settlement), 12 coins, $10, 6 slots x $0.50 fixed margin, 75x, no SL/time close, +50% net TP ($0.25), same coin multiple trades, cross margin with Binance liquidation.
+- Window 2026-11-13 08:00 → 11-20 08:00 UTC. 951 signals (≈11/coin/day). 31 trades: 25 TP (+$6.25), then 6 LONGs (DOGE, BTC x2, ETH x2, XRP) liquidated together 11-14 20:33 UTC → balance $0; 812 later signals untradeable. Futures-candle and real-Binance-order-size runs also liquidated on 11-14.
+- Why the chart looks perfect: labels are kept only for still-unbroken, 3-nearest order blocks at the last candle; only 83 of 951 labels remain visible. Alone, 85.5% of signals reach TP in the week, but 39% first lose the full margin on paper (10% of visible vs 42% of hidden labels).
+- Checks: 0 look-ahead mismatches (180 samples), warm-up 7d: 0 diffs / 3d: 1, 0 retest-rule failures. BTC $37.50 order is below Binance's $50 minimum.
+- Files: prompt60-report.md, prompt60-trades.csv, prompt60-signals.csv, prompt60-evidence.zip (Simulator Performance Reports).
+- Open: user decides whether to switch the live Simulator to this indicator / 50% TP / fixed $0.50 margin.
