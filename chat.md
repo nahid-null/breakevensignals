@@ -383,3 +383,10 @@
 - Added Scanner status panel on Simulator (version inferred from newest entry rule, heartbeat, latest OB STRONG signal).
 - Offline 7-day backtest (research/prompt-64/backtest64.ts, no manual closes): 54 trades, 51 TP, 0 liq, 3 open; $10 -> $35.62 cash, $27.60 incl. open.
 - Manual closes earlier were only the user-chosen "Close all 4 now".
+
+## prompt-66 (20 Nov 2026) — no-stop-loss 2-week coin screen (offline only, live untouched)
+- TS2686 placeholder again; real request in prompt-66.txt. Scripts in /tmp/r66 (fetch/bt/report), reuse research/prompt-61/ob61.py.
+- Rules = prompt-65 minus stop loss: OB STRONG spot 5m, each coin own $10, 7 slots x 5%, 75x, +50% net TP, per-trade liquidation (~0.83%), spot 1m exits, real funding.
+- Week 1 (13 Nov 12:00 → 20 Nov 12:00 UTC, 15 coins): only W, ZEN, LINK had 0 liquidations + 0 open. ETH 2 open, XRP 1 open.
+- Week 2 (6 Nov 12:00 → 13 Nov 12:00, W/ZEN/LINK): W 3 liq, ZEN 1 liq, LINK 6 liq → no coin passed both weeks; no recommendation.
+- Files: prompt66-report.md, prompt66-trades.csv, prompt66-evidence.zip (Simulator Performance Reports).
