@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { readSimAccount, readSimTrades } from './dashboard.functions';
+import { readCstfSimulator, readSimAccount, readSimTrades } from './dashboard.functions';
 import type { Database } from '@/integrations/supabase/types';
 
 export type SimAccount = Database['public']['Tables']['sim_account']['Row'];
@@ -9,6 +9,8 @@ export type SimTrade = Database['public']['Tables']['sim_trades']['Row'];
 export const SIM_RULES = { marginShare: 0.05, leverage: 75, defaultBalance: 10, slots: 7, targetRoiPct: 50, feePercent: 0.05 } as const;
 
 export const useSimAccount = () => useQuery({ queryKey: ['sim_account'], refetchInterval: 15000, queryFn: () => readSimAccount() as Promise<SimAccount | null> });
+/** prompt-74: the active CSTF 30m Simulator account, trades and signal decisions. */
+export const useCstfSimulator = () => useQuery({ queryKey: ['cstf_simulator'], refetchInterval: 15000, queryFn: () => readCstfSimulator() });
 export const useSimTrades = () => useQuery({ queryKey: ['sim_trades'], refetchInterval: 15000, queryFn: () => readSimTrades() as Promise<SimTrade[]> });
 
 /** Matches settlement accounting: both modeled tick costs, entry and estimated exit fees. */

@@ -3,7 +3,8 @@ import { Activity, ArrowRight, Wallet } from "lucide-react";
 import { fmtTime, useEvents, useSettings, useStatuses, useTelegramLogs } from "@/lib/data";
 import { StatusBadge } from "@/components/terminal/StatusBadge";
 import { sentResultSummary, sentSignalSummary } from "@/lib/signal-summary";
-import { fmtSignedUsd, fmtUsd, simSessionTrades, simSummary, todayPnl, useSimAccount, useSimTrades } from "@/lib/simulator";
+import { fmtSignedUsd, fmtUsd, useCstfSimulator, useSimTrades } from "@/lib/simulator";
+import { CSTF_RULES } from "@/lib/engine/cstf-account";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
@@ -35,25 +36,25 @@ function Dashboard() {
   const logs = useTelegramLogs();
   const events = useEvents();
   const settings = useSettings();
-  const account = useSimAccount();
   const trades = useSimTrades();
+  const cstf = useCstfSimulator();
   const tz = settings.data?.display_timezone ?? "UTC";
   const sig = sentSignalSummary(logs.data ?? [], events.data ?? []);
-  const session = simSessionTrades(trades.data ?? [], account.data?.session_started_at);
-  const sim = simSummary(session);
   const signalsReady = logs.isSuccess && events.isSuccess;
-  const results = sentResultSummary(logs.data ?? [], trades.data ?? []);
-  const resultsReady = logs.isSuccess && trades.isSuccess;
-  const simReady = trades.isSuccess && account.isSuccess && account.data !== null;
-  const today = todayPnl(session, new Date(), tz);
-  const openList = trades.data?.filter((t) => t.status === 'OPEN') ?? [];
-  const open = openList[0];
+  // prompt-74: results from the old account and the active CSTF account both count.
+  const results = sentResultSummary(logs.data ?? [], [...(trades.data ?? []), ...(cstf.data?.trades ?? []).map((t) => ({ trade_id: t.signal_id, exit_reason: t.exit_reason }))]);
+  const resultsReady = logs.isSuccess && trades.isSuccess && cstf.isSuccess;
+  const acc = cstf.data?.account; const simReady = cstf.isSuccess && !!acc;
+  const cstfClosed = (cstf.data?.trades ?? []).filter((t) => t.status === 'CLOSED');
+  const realized = cstfClosed.reduce((a, t) => a + Number(t.net ?? 0), 0);
+  const tps = cstfClosed.filter((t) => t.exit_reason === 'TAKE_PROFIT').length;
+  const openList = (cstf.data?.trades ?? []).filter((t) => t.status === 'OPEN');
   const statuses: [string, string][] = [["System", s.system], ["Cloud", s.cloud], ["Scanner", s.scanner], ["Binance", s.binance], ["WebSocket", s.websocket], ["Telegram", s.telegram]];
 
   return (
     <div className="space-y-8">
       <div>
-        <div className="mb-2 flex items-center gap-2 font-mono text-[10px] text-primary"><Activity className="size-3" /> BINANCE USD-M FUTURES · PINE 5-MINUTE SIGNALS</div>
+        <div className="mb-2 flex items-center gap-2 font-mono text-[10px] text-primary"><Activity className="size-3" /> BINANCE USD-M FUTURES · CSTF 30-MINUTE SIMULATOR</div>
         <h1 className="text-2xl font-semibold">Dashboard</h1>
       </div>
 
@@ -78,7 +79,7 @@ function Dashboard() {
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <Tile label="Results sent" value={resultsReady ? results.sent : '—'} hint={signalsReady ? `Earlier breakeven alerts: ${sig.sent}` : undefined} />
           <Tile label="Take profit hit" value={resultsReady ? results.takeProfit : '—'} tone="text-long" />
-          <Tile label="Stop loss hit" value={resultsReady ? results.stopLoss : '—'} tone="text-short" />
+          <Tile label="Stop loss / liquidated" value={resultsReady ? results.stopLoss : '—'} tone="text-short" />
           <Tile label="Success rate" value={!resultsReady || results.successRate === null ? '—' : `${results.successRate.toFixed(1)}%`} tone="text-long" hint="Take profit hits ÷ results sent" />
         </div>
       </section>
@@ -89,11 +90,11 @@ function Dashboard() {
           <Link to="/simulator" className="flex items-center gap-1 text-xs text-primary hover:underline">Open simulator <ArrowRight className="size-3" /></Link>
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-          <Tile label="Balance" value={fmtUsd(account.data?.balance)} />
-          <Tile label="Today's P&L" value={simReady ? fmtSignedUsd(today) : '—'} tone={today > 0 ? 'text-long' : today < 0 ? 'text-short' : undefined} />
-          <Tile label="Session P&L" value={simReady ? fmtSignedUsd(sim.totalPnl) : '—'} tone={sim.totalPnl > 0 ? 'text-long' : sim.totalPnl < 0 ? 'text-short' : undefined} />
-          <Tile label="Win rate" value={!simReady || sim.winRate === null ? '—' : `${sim.winRate.toFixed(1)}%`} hint={simReady ? `${sim.closed} closed session trades` : undefined} />
-          <Tile label={openList.length > 1 ? `Open trades (${openList.length})` : "Open trade"} value={!simReady ? '—' : open ? openList.map((t) => `${t.symbol.replace('USDT', '')} ${t.direction}`).join(' · ') : 'None'} tone={open ? (open.direction === 'LONG' ? 'text-long' : 'text-short') : 'text-muted-foreground'} hint={open ? `${open.leverage}x · ${open.rule_version === 'LEGACY' ? 'previous rules' : open.rule_version === 'OBSTRONG5_SPOT' ? 'OB STRONG 5m · spot · cross margin' : open.rule_version === 'OBVP5_CROSS' ? 'OB-VP 5m · cross margin' : open.rule_version === 'PINE1_CROSS' ? '1m Pine · cross margin' : open.rule_version === 'PINE5_TREND' ? '5m Pine + trend' : 'Pine'}` : undefined} />
+          <Tile label="Wallet" value={simReady ? fmtUsd(acc?.wallet) : '—'} hint={`Started with ${fmtUsd(CSTF_RULES.startingBalance)}`} />
+          <Tile label="Equity" value={simReady ? fmtUsd(acc?.equity) : '—'} />
+          <Tile label="Realized P&L" value={simReady ? fmtSignedUsd(realized) : '—'} tone={realized > 0 ? 'text-long' : realized < 0 ? 'text-short' : undefined} />
+          <Tile label="Take profits" value={simReady ? tps : '—'} hint={simReady ? `${cstfClosed.length - tps} liquidated` : undefined} />
+          <Tile label={`Open trades (${openList.length}/${CSTF_RULES.slots})`} value={!simReady ? '—' : openList.length ? openList.map((t) => `${t.symbol.replace('USDT', '')} ${t.side}`).join(' · ') : 'None'} tone={openList.length ? undefined : 'text-muted-foreground'} hint="CSTF v4 Strong Trend 30m · 75x cross" />
         </div>
       </section>
     </div>

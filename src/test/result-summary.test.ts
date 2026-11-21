@@ -11,3 +11,13 @@ describe('Telegram results-only summary', () => {
     expect(r).toMatchObject({ sent: 3, takeProfit: 1, stopLoss: 2 }); expect(r.successRate).toBeCloseTo(33.333, 2);
   });
 });
+
+describe('prompt-74 CSTF results', () => {
+  it('counts a sent CSTF take profit and a liquidation', () => {
+    const r = sentResultSummary([
+      { trade_id: 'a', event_id: 'a-cstf-result', delivery_status: 'SENT', is_test: false },
+      { trade_id: 'b', event_id: 'b-cstf-result', delivery_status: 'SENT', is_test: false },
+    ], [{ trade_id: 'a', exit_reason: 'TAKE_PROFIT' }, { trade_id: 'b', exit_reason: 'LIQUIDATED' }]);
+    expect(r).toMatchObject({ sent: 2, takeProfit: 1, stopLoss: 1 });
+  });
+});

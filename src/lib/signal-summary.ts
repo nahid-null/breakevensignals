@@ -19,11 +19,11 @@ export function sentSignalSummary(logs: LogLike[], events: EventLike[]): SentSig
   return { sent: trades.size, open: trades.size - closed, takeProfit, stopLoss, breakeven, closed, successRate: closed ? (takeProfit / closed) * 100 : null };
 }
 
-/** prompt-39: Telegram carries only Simulator results, each "Take profit hit" or "Stop loss hit". */
+/** prompt-39: Telegram carries only Simulator results. prompt-74: CSTF results ('-cstf-result') count too; their loss is a liquidation. */
 export interface SentResultSummary { sent: number; takeProfit: number; stopLoss: number; successRate: number | null }
 export function sentResultSummary(logs: LogLike[], trades: { trade_id: string; exit_reason: string | null }[]): SentResultSummary {
   const reason = new Map(trades.map((t) => [t.trade_id, t.exit_reason]));
-  const sent = logs.filter((l) => !l.is_test && l.delivery_status === 'SENT' && l.trade_id && l.event_id.endsWith('-simulator-result'));
+  const sent = logs.filter((l) => !l.is_test && l.delivery_status === 'SENT' && l.trade_id && (l.event_id.endsWith('-simulator-result') || l.event_id.endsWith('-cstf-result')));
   const takeProfit = sent.filter((l) => reason.get(l.trade_id!) === 'TAKE_PROFIT').length;
   return { sent: sent.length, takeProfit, stopLoss: sent.length - takeProfit, successRate: sent.length ? takeProfit / sent.length * 100 : null };
 }

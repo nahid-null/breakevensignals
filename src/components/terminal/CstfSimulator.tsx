@@ -1,10 +1,8 @@
-import { useQuery } from '@tanstack/react-query';
 import { Wallet } from 'lucide-react';
-import { readCstfSimulator } from '@/lib/dashboard.functions';
 import { CSTF_SYMBOLS } from '@/lib/engine/cstf';
 import { CSTF_RULES } from '@/lib/engine/cstf-account';
 import { fmtPrice, fmtTime } from '@/lib/data';
-import { fmtSignedUsd, fmtUsd } from '@/lib/simulator';
+import { fmtSignedUsd, fmtUsd, useCstfSimulator } from '@/lib/simulator';
 import { StatusBadge } from '@/components/terminal/StatusBadge';
 import { cn } from '@/lib/utils';
 
@@ -26,7 +24,7 @@ function Tile({ label, value, tone: t, hint }: { label: string; value: string; t
 
 /** prompt-74: the active Simulator — exact CSTF v4 Strong Trend 30m system from the prompt-71 backtest. Read-only. */
 export function CstfSimulator({ tz }: { tz: string }) {
-  const q = useQuery({ queryKey: ['cstf_simulator'], refetchInterval: 15000, queryFn: () => readCstfSimulator() });
+  const q = useCstfSimulator();
   const a = q.data?.account; const trades = q.data?.trades ?? []; const signals = q.data?.signals ?? [];
   const open = trades.filter((t) => t.status === 'OPEN'); const closed = trades.filter((t) => t.status === 'CLOSED');
   const tps = closed.filter((t) => t.exit_reason === 'TAKE_PROFIT').length; const liqs = closed.length - tps;
