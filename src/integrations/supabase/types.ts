@@ -137,6 +137,180 @@ export type Database = {
         }
         Relationships: []
       }
+      cstf_account: {
+        Row: {
+          checked_at: string | null
+          equity: number
+          error: string | null
+          id: number
+          last_minute: number | null
+          maintenance: number
+          open_count: number
+          revision: number
+          started_at: string | null
+          state: Json | null
+          status: string
+          updated_at: string
+          wallet: number
+        }
+        Insert: {
+          checked_at?: string | null
+          equity?: number
+          error?: string | null
+          id: number
+          last_minute?: number | null
+          maintenance?: number
+          open_count?: number
+          revision?: number
+          started_at?: string | null
+          state?: Json | null
+          status?: string
+          updated_at?: string
+          wallet?: number
+        }
+        Update: {
+          checked_at?: string | null
+          equity?: number
+          error?: string | null
+          id?: number
+          last_minute?: number | null
+          maintenance?: number
+          open_count?: number
+          revision?: number
+          started_at?: string | null
+          state?: Json | null
+          status?: string
+          updated_at?: string
+          wallet?: number
+        }
+        Relationships: []
+      }
+      cstf_signals: {
+        Row: {
+          created_at: string
+          decision: string
+          mode: string
+          pattern: string
+          reason: string | null
+          side: string
+          signal_id: string
+          signal_time: string
+          symbol: string
+        }
+        Insert: {
+          created_at?: string
+          decision: string
+          mode: string
+          pattern: string
+          reason?: string | null
+          side: string
+          signal_id: string
+          signal_time: string
+          symbol: string
+        }
+        Update: {
+          created_at?: string
+          decision?: string
+          mode?: string
+          pattern?: string
+          reason?: string | null
+          side?: string
+          signal_id?: string
+          signal_time?: string
+          symbol?: string
+        }
+        Relationships: []
+      }
+      cstf_trades: {
+        Row: {
+          closed_mode: string | null
+          created_at: string
+          entry_fee: number
+          entry_price: number
+          entry_time: string
+          exit_fee: number | null
+          exit_price: number | null
+          exit_reason: string | null
+          exit_time: string | null
+          funding: number
+          gross: number | null
+          leverage: number
+          liquidation_price: number
+          margin: number
+          mark_price: number | null
+          net: number | null
+          pattern: string
+          quantity: number
+          side: string
+          signal_id: string
+          signal_time: string
+          status: string
+          symbol: string
+          target: number
+          unrealized: number | null
+          updated_at: string
+          wallet_after: number | null
+        }
+        Insert: {
+          closed_mode?: string | null
+          created_at?: string
+          entry_fee: number
+          entry_price: number
+          entry_time: string
+          exit_fee?: number | null
+          exit_price?: number | null
+          exit_reason?: string | null
+          exit_time?: string | null
+          funding?: number
+          gross?: number | null
+          leverage?: number
+          liquidation_price: number
+          margin: number
+          mark_price?: number | null
+          net?: number | null
+          pattern: string
+          quantity: number
+          side: string
+          signal_id: string
+          signal_time: string
+          status?: string
+          symbol: string
+          target: number
+          unrealized?: number | null
+          updated_at?: string
+          wallet_after?: number | null
+        }
+        Update: {
+          closed_mode?: string | null
+          created_at?: string
+          entry_fee?: number
+          entry_price?: number
+          entry_time?: string
+          exit_fee?: number | null
+          exit_price?: number | null
+          exit_reason?: string | null
+          exit_time?: string | null
+          funding?: number
+          gross?: number | null
+          leverage?: number
+          liquidation_price?: number
+          margin?: number
+          mark_price?: number | null
+          net?: number | null
+          pattern?: string
+          quantity?: number
+          side?: string
+          signal_id?: string
+          signal_time?: string
+          status?: string
+          symbol?: string
+          target?: number
+          unrealized?: number | null
+          updated_at?: string
+          wallet_after?: number | null
+        }
+        Relationships: []
+      }
       engine_checkpoints: {
         Row: {
           last_candle_time: number | null
@@ -1568,6 +1742,8 @@ export type Database = {
         }
       }
       commit_engine_candle: { Args: { p: Json }; Returns: Json }
+      cstf_commit: { Args: { p: Json }; Returns: Json }
+      cstf_report_status: { Args: { p: Json }; Returns: boolean }
       engine_heartbeat: { Args: { p: Json }; Returns: boolean }
       process_signal_event: {
         Args: { p: Json; tg_message: string }

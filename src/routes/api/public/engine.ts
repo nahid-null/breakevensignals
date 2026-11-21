@@ -14,7 +14,7 @@ export const Route = createFileRoute("/api/public/engine")({
     let input: unknown;
     try { const text = await request.text(); if (text.length > 150_000) return new Response('Too large', { status: 413 }); input = JSON.parse(text); }
     catch { return Response.json({ error: "Invalid JSON" }, { status: 400 }); }
-    const base = z.object({ action: z.enum(["heartbeat", "state", "commit", "market", "deliveries", 'stop', 'market-state', 'robot-state', 'robot-commit']), data: z.unknown() }).safeParse(input);
+    const base = z.object({ action: z.enum(["heartbeat", "state", "commit", "market", "deliveries", 'stop', 'market-state', 'robot-state', 'robot-commit', 'cstf-state', 'cstf-commit', 'cstf-status']), data: z.unknown() }).safeParse(input);
     if (!base.success) return Response.json({ error: "Invalid request" }, { status: 422 });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     try {
@@ -34,12 +34,32 @@ export const Route = createFileRoute("/api/public/engine")({
         if (error) throw error;
         return Response.json({ markets: data });
       }
+      // prompt-74: CSTF 30m Simulator — one shared cross account, committed atomically under the worker lease.
+      if (base.data.action === 'cstf-state') {
+        const { data, error } = await supabaseAdmin.from('cstf_account').select('revision, state').eq('id', 1).single();
+        if (error) throw error;
+        return Response.json({ revision: Number(data.revision), state: data.state });
+      }
+      if (base.data.action === 'cstf-commit') {
+        const { cstfCommitSchema } = await import('@/lib/engine/cstf-live');
+        const data = cstfCommitSchema.parse(base.data.data);
+        const { data: result, error } = await supabaseAdmin.rpc('cstf_commit', { p: data as unknown as Json });
+        if (error) throw error;
+        return Response.json(result);
+      }
+      if (base.data.action === 'cstf-status') {
+        const data = z.object({ instance_id: z.string().uuid(), status: z.enum(['WAITING', 'ERROR']), error: z.string().max(400).nullable() }).parse(base.data.data);
+        const { data: ok, error } = await supabaseAdmin.rpc('cstf_report_status', { p: data as unknown as Json });
+        if (error) throw error;
+        return Response.json({ ok });
+      }
       if (base.data.action === "commit") {
         const data = commitSchema.parse(base.data.data);
         // Telegram now carries only Simulator trade results; signal events never queue a message.
         const events = data.events.map((e) => ({ ...e,
           source: e.adopted ? 'historical' : eventSource(data.mode), telegram_message: '' }));
-        const { data: result, error } = await supabaseAdmin.rpc("commit_engine_candle", { p: { ...data, events } as Json });
+        // prompt-74: OB STRONG / OB + VP no longer open Simulator trades (legacy open trades still settle via spot_candle).
+        const { data: result, error } = await supabaseAdmin.rpc("commit_engine_candle", { p: { ...data, events, simulator_entries: [] } as Json });
         if (error) throw error;
         return Response.json(result);
       }

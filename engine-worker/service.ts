@@ -52,8 +52,10 @@ export class SignalService {
   /** Read-only views for the paper robot, which shares this worker's lease and restriction pause. */
   get leaseOwned() { return this.ownedLease && this.running; }
   get marketAccessPaused() { return this.marketPaused; }
-  private async app<T>(action: string, data: unknown): Promise<T> {
-    if (this.marketPaused && ['commit', 'market', 'deliveries'].includes(action)) throw new Error('Market processing is paused');
+  /** prompt-74: the CSTF Simulator shares this worker's lease, restriction pause and authenticated app channel. */
+  reportMarketFailure(e: unknown) { this.fail(e); }
+  async app<T>(action: string, data: unknown): Promise<T> {
+    if (this.marketPaused && ['commit', 'market', 'deliveries', 'cstf-commit'].includes(action)) throw new Error('Market processing is paused');
     const response = await fetch(`${this.appUrl}/api/public/engine`, { method: 'POST',
       headers: { 'content-type': 'application/json', authorization: `Bearer ${this.secret}` },
       body: JSON.stringify({ action, data }), signal: AbortSignal.timeout(25_000) });
@@ -406,7 +408,8 @@ export class SignalService {
     }
     const tentative = structuredClone(saved.state);
     const result = processMinute(tentative, c);
-    const entries = result.fiveClosed !== null && tentative.obvp ? await this.spotEntries(symbol, tentative, result.fiveClosed) : [];
+    // prompt-74: OB STRONG no longer opens Simulator trades; the CSTF 30m service is the only entry source.
+    const entries: SimulatorEntry[] = [];
     const spot = await this.spotCandle(symbol, c.time);
     if (!this.running || this.marketPaused) return;
     const events = [...(this.adoption.get(symbol) ?? []), ...result.signals];

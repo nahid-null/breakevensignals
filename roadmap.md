@@ -1,11 +1,16 @@
 # Independent Crypto Signal Terminal
 
-## Current prompt-72 — exact CSTF 30m Simulator replacement (authorized)
+## Current prompt-74 — activate exact CSTF 30m Simulator (authorized)
+- [x] Attached indicator byte-identical to the verified prompt-71 file; live worker service, atomic database commit, Telegram results, website page; OB STRONG entries stopped; old ETH trade finishes separately.
+- [x] Tests: 6 database + 6 live-wiring + 23 rule tests; real-Binance dry run (24h catch-up + live minutes) with no database writes.
+- [ ] Confirm the hosted scanner picked up the new code and first live commits appear (needs the Railway redeploy after this push; not observable this turn).
+
+## Previous prompt-72 — exact CSTF 30m Simulator replacement (authorized)
 - [x] Port original defaults and verify 332/332 signals against Python and intact Pine interpreter on the tested week; no TradingView certification claimed.
 - [x] Reuse exact fixed-margin, fees/slippage/funding, cross-maintenance and minute ordering: 205 trades, 203 TP, 2 open, all 10080 wallet/equity minutes identical; 23 rule tests and 22 regression tests pass.
-- [ ] Integrate durable shared-account batch commits, deduplication, recovery and result Telegram outbox; preserve previous trades (Cloud database paused; resume refused because the workspace is out of Cloud credits).
-- [ ] Update Simulator presentation only after matching account rules are available (blocked by integration).
-- [ ] Activate $10 session only after durable integration tests and existing-open-trade check (Cloud database paused; resume refused because the workspace is out of Cloud credits).
+- [x] Integrate durable shared-account batch commits, deduplication, recovery and result Telegram outbox (done in prompt-74).
+- [x] Update Simulator presentation (done in prompt-74).
+- [x] Activate $10 session (prompt-74; starts when the hosted scanner runs the new code).
 - [ ] Diagnose Railway crash and verify deployed scanner/real result-to-Telegram (Railway logs/access unavailable).
 - [x] Deliver staged-implementation verification report and update chat.md; no activation/deployment or runtime change claimed.
 
