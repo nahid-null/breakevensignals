@@ -1,0 +1,211 @@
+I want you to run a BACKTEST ONLY using the indicator script I have just attached.
+
+IMPORTANT: DO NOT MAKE ANY CHANGES TO MY WEBSITE, LIVE SIMULATOR, TRADING SYSTEM, SETTINGS, OR ANY OTHER PART OF THE PROJECT. This task is strictly for historical backtesting and research. Do not deploy, modify, or activate anything. I only want a detailed research report.
+
+1. Indicator and Entry Rules
+
+Use ONLY the indicator script I have just attached.
+
+Apply this indicator to the 30-minute (30M) chart.
+
+Take entries strictly according to the indicator's signals.
+
+Do not use any previous indicators, strategies, filters, or trading rules.
+
+Do not modify the indicator's original signal logic.
+
+Use the actual historical Binance Futures market data for the backtest.
+
+2. Trading Configuration
+
+Initial Main Balance: $10
+
+Leverage: 75x
+
+Margin Mode: Cross Margin
+
+Maximum Open Trading Slots: 7
+
+Margin Per Slot: 5% of the initial $10 Main Balance ($0.50 per trade)
+
+Stop Loss: NONE
+
+Take Profit: 20% of the margin used per tradeImportant Take Profit Calculation:
+Close each trade as soon as its profit reaches exactly 20% of its allocated margin, including trading fees in the calculation.
+
+For example, with $0.50 margin per trade, the target is $0.10 net profit after accounting for the applicable trading fees. Do not wait for an additional 20% profit after deducting fees. The 20% target must be reached including fees.
+
+3. Cross-Margin and Liquidation Rules
+
+Use the entire $10 Main Balance as the cross-margin account balance.
+
+All open positions must share the available account equity as cross-margin collateral.
+
+Calculate liquidation prices using Binance Futures cross-margin rules, including maintenance margin, position size, leverage, and applicable fees.
+
+Do not assume that cross margin makes liquidation impossible.
+
+Record every liquidation accurately.
+
+Do not use isolated-margin liquidation calculations.4. Coins to Backtest
+
+Only backtest the following 22 USDT-M Futures pairs:
+
+ZENUSDT
+GALAUSDT
+SUSDT
+ETHUSDT
+SOLUSDT
+XRPUSDT
+LINKUSDT
+NEARUSDT
+BCHUSDT
+LTCUSDT
+ADAUSDT
+AVAXUSDT
+TRXUSDT
+BNBUSDT
+UNIUSDT
+WLDUSDT
+WIFUSDT
+CRVUSDT
+EGLDUSDT
+FILUSDT
+SANDUSDT
+HBARUSDT
+
+Do not include any other coins.5. Backtest Execution Rules
+
+Use historical 30-minute candles and the attached indicator's exact signal conditions.
+
+Respect the indicator's actual signal timing. Do not use future candles or look-ahead data.
+
+Enter trades at the historically executable price after the signal becomes available.
+
+Maximum 7 simultaneously open trades.
+
+If all 7 slots are occupied, skip new signals until a slot becomes available.
+
+Use $0.50 margin per trade, based on 5% of the initial $10 balance.
+
+Apply 75x leverage and cross-margin calculations.
+
+No stop loss and no artificial time-based exit.
+
+Close a trade only when its 20% net-margin profit target is reached or when liquidation occurs.
+
+Account for Binance Futures trading fees accurately.
+
+Do not fabricate missing candles, signals, entries, exits, or prices.6. Required Backtest Report
+
+Provide a complete and detailed report containing:
+
+A. Overall Statistics
+
+Total number of indicator signals generated.
+
+Total number of trades actually opened.
+
+Total number of completed trades.
+
+Total number of successful trades.
+
+Success rate / win rate (%).
+
+Number of trades still open at the end of the test.
+
+Total number of liquidated trades.
+
+Total net profit or loss, including fees.
+
+Final Main Balance.B. Trade Duration Statistics
+
+Fastest completed trade (minutes).
+
+Slowest completed trade (minutes).
+
+Average trade closing time (minutes).
+
+Median trade closing time (minutes).
+
+Average closing time for successful trades.
+
+Average closing time for liquidated trades, if applicable.
+
+C. Daily Statistics
+
+Total trades opened each day.
+
+Total completed trades each day.
+
+Daily successful trades.
+
+Daily liquidations.
+
+Daily net profit or loss.D. Complete Individual Trade History
+
+Provide a detailed table for EVERY trade, including:
+
+Trade number
+
+Coin
+
+LONG or SHORT
+
+Signal date and time
+
+Entry date and time
+
+Entry price
+
+Margin used
+
+Leverage
+
+Position size
+
+Take-profit price
+
+Exit date and time
+
+Exit price
+
+Holding duration in minutes
+
+Gross profit/loss
+
+Trading fees
+
+Net profit/loss
+
+Final status (TP HIT / LIQUIDATED / STILL OPEN / SKIPPED)E. Additional Analysis
+
+Identify the coin with the fastest completed trade.
+
+Identify the coin with the slowest completed trade.
+
+Identify the coin with the best win rate.
+
+Identify the coin with the highest total net profit.
+
+Identify the coin with the most liquidations.
+
+Explain whether the strategy was profitable under these exact rules.7. Data Accuracy and Verification
+
+Use genuine historical Binance USDT-M Futures data for all 22 coins and the full requested backtest period.
+
+Before reporting results:
+
+Verify historical data availability for every coin.
+
+Verify that the attached indicator can be reproduced accurately.
+
+Confirm that all signals and trade executions use 30-minute data.
+
+Verify fees, funding where applicable, cross-margin equity, maintenance margin, and liquidation calculations.
+
+Clearly disclose any unavailable data or assumptions.
+
+If any required data or indicator logic is unavailable, DO NOT invent results. Explain exactly what is missing.
+
+FINAL REQUIREMENT: I want a complete, transparent, data-backed research report only. Do not change or update my website or live trading system under any circumstances.

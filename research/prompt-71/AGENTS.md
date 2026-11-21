@@ -1,0 +1,1 @@
+- prompt-71 CSTF v4 Strong Trend 30m cross-margin backtest (`cstf71.py`, `bt71.py`, `checks71.py`, `rep71.py`, `pinecheck71.ts`) is offline research only: never wire it into the worker, SQL Simulator, Telegram or website, because the user forbade any project or live changes.

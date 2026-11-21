@@ -397,3 +397,12 @@
 - Scenario A (exact 75x): 29 signals, 25 trades, 23 TP, 2 still open (A, AVAX longs ≈ −$3.1/−$3.4), 0 liquidated, 4 skipped (not tradable at 75x). Equity $10 → $9.22 (−7.8%), wallet $15.72, lowest equity $8.15, max DD $5.96, max 5 slots.
 - Scenario B (capped coins at max lev): 29 trades, 25 TP, 4 open, equity $6.15 (−38.5%), lowest $4.62.
 - Files: Simulator Performance Reports/prompt-70 (report.md, trades.csv, trades-scenarioB.csv, coins.csv). Code research/prompt-70. Live Simulator untouched.
+
+## prompt-71 (2026-11-21) — Candle Signals Trend Filter v4 (Strong Trend), 30m, 22 coins, shared $10 cross margin (offline only)
+- TS2686 in use-mobile.tsx again just the carrier text; real request in prompt-71.txt (+ Candle_Signals_Trend_Filter_v4_Strong_Trend.pine, BCH screenshot showing OB STRONG, not used).
+- Window 2026-11-14 13:00 → 11-21 13:00 UTC (no period given; 7 days like 69/70). Binance USD-M futures 30m signals (30d warm-up), 1m last for TP, 1m mark for cross liquidation, real funding, public brackets; all 22 coins complete and allow 75x.
+- Rules: $10 cross, 7 slots x $0.50 fixed, 75x, no SL/time exit, +$0.10 net TP (20% of margin incl. fees+funding), 0.05% fee + 0.02% slip.
+- Port verified: intact Pine in PineTS = Python 332/332 window signals; 0 look-ahead diffs (542); warm-up 10d/5d 0 diffs; wallet reconciled.
+- Result: 332 signals (316 SHORT), 205 opened, 127 skipped (slots full), 203 TP, 0 liquidated, 2 open (ETH, EGLD shorts −$3.42). Wallet $30.26, equity $26.94 (+169%), lowest equity $9.38, max drop $9.48. Lot-size run: 206 trades, 204 TP, equity $27.06.
+- Caution: mostly falling week; one week only.
+- Files: Simulator Performance Reports/prompt-71 (report.md, trades.csv, daily.csv, coins.csv, signals.csv). Code research/prompt-71. Live app/Simulator/database/Telegram untouched.

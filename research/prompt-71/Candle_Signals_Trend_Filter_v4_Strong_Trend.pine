@@ -1,0 +1,203 @@
+//@version=5
+indicator("Candle Signals - Trend Filter (3m)", shorttitle="CSTF", overlay=true, max_labels_count=500)
+
+// =====================================================================
+//  BULLISH (uptrend e shudhu LONG)   : Hammer, Bullish Engulfing, Morning Star,
+//                                      Piercing Line, Three White Soldiers
+//  BEARISH (downtrend e shudhu SHORT): Shooting Star, Bearish Engulfing, Evening Star,
+//                                      Dark Cloud Cover, Three Black Crows
+//  Trend er opposite pattern = SKIP.  Sideways = signal nai.
+// =====================================================================
+
+// ------------------------------ INPUTS -------------------------------
+grpT = "1) Trend"
+emaFastLen = input.int(20, "Fast EMA", minval=2, group=grpT)
+emaSlowLen = input.int(50, "Slow EMA", minval=5, group=grpT)
+sideFilter = input.float(0.15, "Sideways filter (EMA gap in ATR x)", minval=0.0, step=0.05, group=grpT, tooltip="Fast/Slow EMA gap ei value (ATR er gun) er cheye choto hole market sideways, signal ashbe na.")
+showBg     = input.bool(true, "Trend background colour", group=grpT)
+
+grpC = "2) Candle size"
+longMult  = input.float(0.8, "Long candle: body >= avg body x", minval=0.3, step=0.1, group=grpC)
+smallMult = input.float(0.6, "Small candle: body <= avg body x", minval=0.1, step=0.1, group=grpC)
+minRange  = input.float(0.5, "Min signal candle range (ATR x)", minval=0.0, step=0.1, group=grpC, tooltip="Khub choto (noise) candle e signal ashbe na.")
+
+grpP = "3) Pattern rules"
+strictGap   = input.bool(false, "Strict gap rules", group=grpP, tooltip="ON: Piercing Line e open < previous LOW, Dark Cloud e open > previous HIGH. OFF: open previous close er opar/niche hole cholbe (tomar chobi gulo emon).")
+strictWicks = input.bool(false, "Strict wicks for Three Soldiers / Crows", group=grpP, tooltip="ON: Three White Soldiers e upper wick, Three Black Crows e lower wick onek choto hote hobe.")
+
+grpF = "4) Extra filters (optional)"
+usePB      = input.bool(false, "Pullback required (Hammer/Engulfing/Star/Piercing/Cloud)", group=grpF, tooltip="Uptrend e pullback (dip) shesh hole tobei bullish reversal-type pattern count hobe. Downtrend e bounce er por bearish pattern. Three Soldiers/Crows ei filter e pore na.")
+pbLen      = input.int(9, "Pullback EMA length", minval=2, group=grpF)
+useVol     = input.bool(false, "Volume above average", group=grpF)
+volMult    = input.float(1.0, "Volume >= SMA(20) x", minval=0.1, step=0.1, group=grpF)
+needConfirm = input.bool(false, "Wait 1 candle confirmation", group=grpF, tooltip="ON: pattern er porer candle pattern candle er close ke cross korle tobei signal (entry confirmation candle er close e).")
+
+grpR = "5) Entry / SL / TP"
+showSLTP = input.bool(true, "Show SL & TP", group=grpR)
+slAtr    = input.float(1.5, "SL distance (ATR x)", minval=0.1, step=0.1, group=grpR)
+rr       = input.float(2.0, "Risk : Reward", minval=0.5, step=0.5, group=grpR)
+
+grpE = "6) EMA Trend Direction Filter"
+useEmaFilter = input.bool(true, "Enable strict EMA direction filter", group=grpE, tooltip="ON: LONG only when Fast>Slow and BOTH EMAs rise with clear slope and enough separation. SHORT only when Fast<Slow and BOTH EMAs fall. Everything else = no-signal zone.")
+emaSlopeLen  = input.int(5, "Slope lookback (bars)", minval=1, group=grpE, tooltip="EMA slope = (EMA now - EMA N bars ago) / N.")
+fastSlopeMin = input.float(0.05, "Min Fast EMA slope (ATR x per bar)", minval=0.0, step=0.01, group=grpE, tooltip="Fast EMA must move at least this much per bar (in ATR units) to count as a clear slope. Higher = stricter.")
+slowSlopeMin = input.float(0.02, "Min Slow EMA slope (ATR x per bar)", minval=0.0, step=0.01, group=grpE, tooltip="Slow EMA must move at least this much per bar (in ATR units) to count as a clear slope. Higher = stricter.")
+minEmaSep    = input.float(0.30, "Min EMA separation (ATR x)", minval=0.0, step=0.05, group=grpE, tooltip="abs(Fast EMA - Slow EMA) must be at least this many ATRs. Higher = bigger neutral zone.")
+noCrossBars  = input.int(5, "Block signals for N bars after an EMA cross", minval=0, group=grpE, tooltip="0 = off. Blocks signals while the trend is still transitioning after a crossover.")
+
+grpS = "7) Strong Trend Confirmation Filter"
+useStrong    = input.bool(true, "Enable STRONG trend confirmation", group=grpS, tooltip="ON: signals only in clearly established, strong, parallel, well-separated EMA trends. This is applied ON TOP of filter 6. Prefer fewer, higher-quality signals.")
+strLen       = input.int(10, "Strong slope lookback (bars)", minval=3, group=grpS, tooltip="Window used to measure slope strength, consistency, parallelism and gap trend.")
+strFastSlope = input.float(0.10, "Min Fast EMA slope (ATR x per bar)", minval=0.0, step=0.01, group=grpS, tooltip="Normalized slope: (EMA now - EMA N bars ago) / N / ATR. 0.10 = Fast EMA travels about 1 ATR over 10 bars.")
+strSlowSlope = input.float(0.05, "Min Slow EMA slope (ATR x per bar)", minval=0.0, step=0.01, group=grpS)
+strSep       = input.float(0.60, "Min EMA separation (ATR x)", minval=0.0, step=0.05, group=grpS, tooltip="abs(Fast - Slow) must be at least this many ATRs.")
+strConsist   = input.int(90, "Direction consistency (% of bars)", minval=50, maxval=100, group=grpS, tooltip="Over the lookback, at least this % of bars must have BOTH EMAs moving in the trend direction. 100 = every bar.")
+strShrink    = input.float(0.90, "Gap must not shrink below (ratio)", minval=0.1, maxval=1.5, step=0.05, group=grpS, tooltip="Current gap must be >= this ratio x the gap half a lookback ago. Blocks compression / approaching crossover. 1.0 = gap must be same or widening.")
+strParMin    = input.float(0.40, "Parallel: min Slow/Fast slope ratio", minval=0.0, step=0.05, group=grpS, tooltip="Slow EMA slope must be at least this fraction of Fast EMA slope (nearly parallel lines).")
+strParMax    = input.float(2.50, "Parallel: max Slow/Fast slope ratio", minval=1.0, step=0.1, group=grpS, tooltip="Slow EMA slope must be at most this multiple of Fast EMA slope.")
+strAge       = input.int(20, "Min bars since last EMA cross", minval=0, group=grpS, tooltip="Trend must be established, not just starting to form. 0 = off.")
+useAngle     = input.bool(true, "Also require Fast EMA slope angle", group=grpS, tooltip="Angle = atan(normalized slope) in degrees. Scale-independent.")
+strAngle     = input.float(5.0, "Min Fast EMA angle (degrees)", minval=0.0, maxval=89.0, step=0.5, group=grpS)
+
+// --------------------------- CANDLE METRICS --------------------------
+atr     = ta.atr(14)
+body    = math.abs(close - open)
+rng     = high - low
+upW     = high - math.max(open, close)
+loW     = math.min(open, close) - low
+avgBody = ta.sma(body, 14)
+isBull  = close > open
+isBear  = close < open
+longB   = body >= avgBody * longMult
+smallB  = body <= avgBody * smallMult
+tol     = atr * 0.1
+sizeOK  = rng >= atr * minRange
+midPrev = (open[1] + close[1]) / 2
+mid2    = (open[2] + close[2]) / 2
+
+// ------------------------------- TREND -------------------------------
+emaF = ta.ema(close, emaFastLen)
+emaS = ta.ema(close, emaSlowLen)
+emaP = ta.ema(close, pbLen)
+gapOK = math.abs(emaF - emaS) > atr * sideFilter
+trend = emaF > emaS and close > emaS and gapOK ? 1 : emaF < emaS and close < emaS and gapOK ? -1 : 0
+
+// ------------------- EMA TREND DIRECTION FILTER (added) -------------------
+// Re-uses emaF / emaS / atr above. Uses only current and past bars (no lookahead).
+fastSlope  = (emaF - emaF[emaSlopeLen]) / emaSlopeLen
+slowSlope  = (emaS - emaS[emaSlopeLen]) / emaSlopeLen
+emaSepOK   = math.abs(emaF - emaS) >= atr * minEmaSep
+barsCross  = ta.barssince(ta.cross(emaF, emaS))
+noRecentX  = noCrossBars == 0 or na(barsCross) or barsCross > noCrossBars
+emaBullOK  = emaF > emaS and emaF > emaF[1] and emaS > emaS[1] and fastSlope >= atr * fastSlopeMin and slowSlope >= atr * slowSlopeMin and emaSepOK and noRecentX
+emaBearOK  = emaF < emaS and emaF < emaF[1] and emaS < emaS[1] and fastSlope <= -atr * fastSlopeMin and slowSlope <= -atr * slowSlopeMin and emaSepOK and noRecentX
+longEmaOK  = not useEmaFilter or emaBullOK
+shortEmaOK = not useEmaFilter or emaBearOK
+
+// ------------- STRONG TREND CONFIRMATION FILTER (added, v4) -------------
+// Re-uses emaF / emaS / atr / barsCross. Current and past bars only (no lookahead).
+sFastSlope = (emaF - emaF[strLen]) / strLen / atr
+sSlowSlope = (emaS - emaS[strLen]) / strLen / atr
+sGap       = math.abs(emaF - emaS)
+sHalf      = math.max(1, int(strLen / 2))
+upBar      = emaF > emaF[1] and emaS > emaS[1] ? 1 : 0
+dnBar      = emaF < emaF[1] and emaS < emaS[1] ? 1 : 0
+upConsist  = math.sum(upBar, strLen) >= strLen * strConsist / 100.0
+dnConsist  = math.sum(dnBar, strLen) >= strLen * strConsist / 100.0
+sGapOK     = sGap >= atr * strSep
+sNoShrink  = sGap >= sGap[sHalf] * strShrink
+sParallel  = math.abs(sSlowSlope) >= math.abs(sFastSlope) * strParMin and math.abs(sSlowSlope) <= math.abs(sFastSlope) * strParMax
+sAgeOK     = strAge == 0 or na(barsCross) or barsCross >= strAge
+sAngleOK   = not useAngle or math.atan(math.abs(sFastSlope)) * 180.0 / math.pi >= strAngle
+strongBull = emaF > emaS and sFastSlope >= strFastSlope and sSlowSlope >= strSlowSlope and upConsist and sGapOK and sNoShrink and sParallel and sAgeOK and sAngleOK
+strongBear = emaF < emaS and sFastSlope <= -strFastSlope and sSlowSlope <= -strSlowSlope and dnConsist and sGapOK and sNoShrink and sParallel and sAgeOK and sAngleOK
+longStrongOK  = not useStrong or strongBull
+shortStrongOK = not useStrong or strongBear
+
+pbDown = ta.lowest(close - emaP, 5) < 0
+pbUp   = ta.highest(close - emaP, 5) > 0
+volOK  = not useVol or volume > ta.sma(volume, 20) * volMult
+
+plot(emaF, "Fast EMA", color=color.new(color.aqua, 0), linewidth=1)
+plot(emaS, "Slow EMA", color=color.new(color.orange, 0), linewidth=2)
+bgcolor(showBg ? (trend == 1 ? color.new(color.green, 93) : trend == -1 ? color.new(color.red, 93) : na) : na)
+
+// ============================ BULLISH PATTERNS ============================
+// 1) Hammer: choto body upore, lomba lower shadow (>= 2x body), upper shadow nai/khub choto
+bHammer = sizeOK and body > 0 and body <= rng * 0.35 and loW >= 2 * body and upW <= rng * 0.2
+
+// 2) Bullish Engulfing: choto bearish, tarpor boro bullish je body ke puro engulf kore
+bEngulf = sizeOK and isBear[1] and isBull and open <= close[1] and close >= open[1] and body > body[1]
+
+// 3) Morning Star: boro bearish -> choto body (star, nicher dike) -> bullish je 1st candle er midpoint er upore close kore
+bMorning = isBear[2] and longB[2] and smallB[1] and math.max(open[1], close[1]) <= open[2] - body[2] * 0.4 and isBull and body >= avgBody * 0.7 and close > mid2
+
+// 4) Piercing Line: boro bearish -> bullish nicher dike open, 50% er upore close, kintu bearish er open er niche
+bPiercing = isBear[1] and longB[1] and isBull and (strictGap ? open < low[1] : open < close[1]) and close > midPrev and close < open[1] and sizeOK
+
+// 5) Three White Soldiers: 3 ta bullish, close uporer dike, open ager body er bhitore, wick choto
+bSoldiers = isBull and isBull[1] and isBull[2] and body >= avgBody * 0.6 and body[1] >= avgBody * 0.6 and body[2] >= avgBody * 0.6 and close > close[1] and close[1] > close[2] and open > open[1] and open[1] > open[2] and open <= close[1] + tol and open[1] <= close[2] + tol and (not strictWicks or (upW <= body * 0.5 and upW[1] <= body[1] * 0.5 and upW[2] <= body[2] * 0.5))
+
+// ============================ BEARISH PATTERNS ============================
+// 6) Shooting Star: choto body niche, lomba upper shadow (>= 2x body), lower shadow nai/khub choto
+sShooting = sizeOK and body > 0 and body <= rng * 0.35 and upW >= 2 * body and loW <= rng * 0.2
+
+// 7) Bearish Engulfing: choto bullish, tarpor boro bearish je body ke puro engulf kore
+sEngulf = sizeOK and isBull[1] and isBear and open >= close[1] and close <= open[1] and body > body[1]
+
+// 8) Evening Star: boro bullish -> choto body (star, uporer dike) -> bearish je 1st candle er midpoint er niche close kore
+sEvening = isBull[2] and longB[2] and smallB[1] and math.min(open[1], close[1]) >= open[2] + body[2] * 0.4 and isBear and body >= avgBody * 0.7 and close < mid2
+
+// 9) Dark Cloud Cover: boro bullish -> bearish uporer dike open, midpoint er niche close, kintu bullish er open er upore
+sDark = isBull[1] and longB[1] and isBear and (strictGap ? open > high[1] : open >= close[1] - tol) and close < midPrev and close > open[1] and sizeOK
+
+// 10) Three Black Crows: 3 ta bearish, close niche, open ager body er bhitore, boro body
+sCrows = isBear and isBear[1] and isBear[2] and body >= avgBody * 0.6 and body[1] >= avgBody * 0.6 and body[2] >= avgBody * 0.6 and close < close[1] and close[1] < close[2] and open < open[1] and open[1] < open[2] and open >= close[1] - tol and open[1] >= close[2] - tol and (not strictWicks or (loW <= body * 0.5 and loW[1] <= body[1] * 0.5 and loW[2] <= body[2] * 0.5))
+
+// ------------------------- PATTERN NAME BUILDERS -------------------------
+f_trim(s) => s == "" ? "" : str.substring(s, 0, str.length(s) - 2)
+
+bullRev = (bHammer ? "Hammer, " : "") + (bEngulf ? "Bullish Engulfing, " : "") + (bMorning ? "Morning Star, " : "") + (bPiercing ? "Piercing Line, " : "")
+bearRev = (sShooting ? "Shooting Star, " : "") + (sEngulf ? "Bearish Engulfing, " : "") + (sEvening ? "Evening Star, " : "") + (sDark ? "Dark Cloud Cover, " : "")
+
+bullTxt = f_trim((not usePB or pbDown ? bullRev : "") + (bSoldiers ? "Three White Soldiers, " : ""))
+bearTxt = f_trim((not usePB or pbUp ? bearRev : "") + (sCrows ? "Three Black Crows, " : ""))
+
+// ============================== SIGNALS ==============================
+// Uptrend = shudhu bullish pattern (bearish skip). Downtrend = shudhu bearish pattern (bullish skip).
+rawLong  = trend == 1 and bullTxt != "" and volOK and longEmaOK and longStrongOK
+rawShort = trend == -1 and bearTxt != "" and volOK and shortEmaOK and shortStrongOK
+
+confLong  = rawLong[1] and trend == 1 and close > close[1] and longEmaOK and longStrongOK
+confShort = rawShort[1] and trend == -1 and close < close[1] and shortEmaOK and shortStrongOK
+
+longSig  = barstate.isconfirmed and (needConfirm ? confLong : rawLong)
+shortSig = barstate.isconfirmed and (needConfirm ? confShort : rawShort)
+
+longName  = needConfirm ? bullTxt[1] : bullTxt
+shortName = needConfirm ? bearTxt[1] : bearTxt
+
+fmt(x) => str.tostring(x, format.mintick)
+
+if longSig
+    sl = close - atr * slAtr
+    tp = close + (close - sl) * rr
+    txt = "LONG ▲\n" + longName + (needConfirm ? " (confirmed)" : "") + "\nEntry: " + fmt(close) + (showSLTP ? "\nSL: " + fmt(sl) + "\nTP: " + fmt(tp) : "")
+    label.new(bar_index, na, txt, yloc=yloc.belowbar, style=label.style_label_up, color=color.new(color.green, 10), textcolor=color.white, size=size.small)
+
+if shortSig
+    sl = close + atr * slAtr
+    tp = close - (sl - close) * rr
+    txt = "SHORT ▼\n" + shortName + (needConfirm ? " (confirmed)" : "") + "\nEntry: " + fmt(close) + (showSLTP ? "\nSL: " + fmt(sl) + "\nTP: " + fmt(tp) : "")
+    label.new(bar_index, na, txt, yloc=yloc.abovebar, style=label.style_label_down, color=color.new(color.red, 10), textcolor=color.white, size=size.small)
+
+// ============================ TREND TABLE ============================
+var table info = table.new(position.top_right, 1, 1, border_width=1)
+if barstate.islast
+    tTxt = trend == 1 ? "UPTREND (Long only)" : trend == -1 ? "DOWNTREND (Short only)" : "SIDEWAYS (No trade)"
+    tCol = trend == 1 ? color.green : trend == -1 ? color.red : color.gray
+    table.cell(info, 0, 0, tTxt, text_color=color.white, bgcolor=tCol, text_size=size.normal)
+
+// =============================== ALERTS ===============================
+alertcondition(longSig, "LONG Signal", "CSTF: LONG signal on {{ticker}} @ {{close}}")
+alertcondition(shortSig, "SHORT Signal", "CSTF: SHORT signal on {{ticker}} @ {{close}}")
