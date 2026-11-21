@@ -38,7 +38,8 @@ let state=initialCstfAccount();let equity=10;const closed:CstfClose[]=[];let ski
 for(let time=meta.start;time<meta.end;time+=MINUTE){
  const frame:MinuteFrame={time,last:{} as Record<CstfSymbol,Candle>,mark:{} as Record<CstfSymbol,Candle>,funding:{},signals:byMinute.get(time)??[],mode:'live'};
  for(const s of CSTF_SYMBOLS){const d=data.get(s);const last=d?.last.get(time);const mark=d?.mark.get(time);if(!last||!mark)throw new Error(`Missing ${s} at ${time}`);frame.last[s]=last;frame.mark[s]=mark;frame.funding[s]=d?.funding.get(time)??[];}
- const result=processCstfAccount(state,frame,brackets,'fixed-initial');// prompt-71 parity: the backtest used fixed $0.50state=result.state;equity=result.equity;closed.push(...result.closed);skipped+=result.skipped.length;maxSlots=Math.max(maxSlots,state.positions.length+result.closed.length);
+ // prompt-71 parity: the backtest used fixed $0.50, so this offline check keeps that sizing.
+ const result=processCstfAccount(state,frame,brackets,'fixed-initial');state=result.state;equity=result.equity;closed.push(...result.closed);skipped+=result.skipped.length;maxSlots=Math.max(maxSlots,state.positions.length+result.closed.length);
  const curve=expected.curve[(time-meta.start)/MINUTE];
  if(!curve||curve[0]!==time+MINUTE||curve[1]===undefined||curve[3]===undefined||Math.abs(curve[1]-equity)>1e-8||curve[2]!==state.positions.length||Math.abs(curve[3]-state.wallet)>1e-8)throw new Error(`Minute equity/wallet mismatch at ${time}`);
 }
