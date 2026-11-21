@@ -20,9 +20,9 @@ export const Route = createFileRoute("/simulator")({
   head: () => ({
     meta: [
       { title: "Simulator Trading — Crypto Signal Terminal" },
-      { name: "description", content: "Paper-trading Simulator following the Candle Signals Trend Filter v4 Strong Trend 30-minute signals on 22 Binance Futures coins: $10 shared cross margin, 7 × $0.50 slots, 75x, $0.10 net take profit." },
+      { name: "description", content: "Paper-trading Simulator following the Candle Signals Trend Filter v4 Strong Trend 30-minute signals on 22 Binance Futures coins: $10 starting cross margin, 7 slots sized at 5% of the current balance, 75x, take profit 20% of margin net." },
       { property: "og:title", content: "Simulator Trading — Crypto Signal Terminal" },
-      { property: "og:description", content: "CSTF v4 Strong Trend 30m signals, 22 coins, 7 slots of $0.50 at 75x cross, $0.10 net target after fees, no stop loss." },
+      { property: "og:description", content: "CSTF v4 Strong Trend 30m signals, 22 coins, 7 slots at 5% of the current balance, 75x cross, 20% net target after fees, no stop loss." },
       { property: 'og:type', content: 'website' },
       { name: 'twitter:card', content: 'summary_large_image' },
     ],

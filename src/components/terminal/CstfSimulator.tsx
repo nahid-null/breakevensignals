@@ -1,6 +1,6 @@
 import { Wallet } from 'lucide-react';
 import { CSTF_SYMBOLS } from '@/lib/engine/cstf';
-import { CSTF_RULES } from '@/lib/engine/cstf-account';
+import { CSTF_RULES, cstfMarginFor } from '@/lib/engine/cstf-account';
 import { fmtPrice, fmtTime } from '@/lib/data';
 import { fmtSignedUsd, fmtUsd, useCstfSimulator } from '@/lib/simulator';
 import { StatusBadge } from '@/components/terminal/StatusBadge';
@@ -32,6 +32,10 @@ export function CstfSimulator({ tz }: { tz: string }) {
   const stale = a?.checked_at ? Date.now() - Date.parse(a.checked_at) > 5 * 60_000 : true;
   const st = STATUS[a?.status ?? ''] ?? { label: a?.status ?? '—', tone: 'text-muted-foreground' };
   const usedMargin = open.reduce((s, t) => s + Number(t.margin), 0);
+  // Main Balance = $10 + closed results: wallet with open trades' already-paid entry fees and funding added back.
+  const mainBalance = a ? Number(a.wallet) + open.reduce((s, t) => s + Number(t.entry_fee) + Number(t.funding), 0) : null;
+  const nextMargin = mainBalance === null ? null : cstfMarginFor(mainBalance);
+  const available = a ? Number(a.equity) - usedMargin : null;
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -47,8 +51,10 @@ export function CstfSimulator({ tz }: { tz: string }) {
         </div>
       </div>
 
-      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        <Tile label="Wallet" value={fmtUsd(a?.wallet)} hint={`Started with ${fmtUsd(CSTF_RULES.startingBalance)}`} />
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        <Tile label="Main balance" value={fmtUsd(mainBalance)} hint={`Started with ${fmtUsd(CSTF_RULES.startingBalance)}; changes when trades close`} />
+        <Tile label="Next trade margin" value={nextMargin === null ? '—' : `$${nextMargin.toFixed(4)}`} hint={`5% of main balance · TP ${nextMargin === null ? '—' : `$${(nextMargin * CSTF_RULES.targetRate).toFixed(4)}`} net`} />
+        <Tile label="Available margin" value={fmtUsd(available)} hint="Equity minus margin in use" />
         <Tile label="Equity" value={fmtUsd(a?.equity)} hint="Wallet + open trades (mark price)" />
         <Tile label="Realized P&L" value={fmtSignedUsd(realized)} tone={tone(realized)} />
         <Tile label="Open slots" value={`${open.length} / ${CSTF_RULES.slots}`} hint={`${fmtUsd(usedMargin)} margin in use`} />
@@ -62,9 +68,9 @@ export function CstfSimulator({ tz }: { tz: string }) {
           <dt className="text-muted-foreground">Signals</dt><dd>Original indicator LONG/SHORT, confirmed 30m close only</dd>
           <dt className="text-muted-foreground">Entry</dt><dd>Next 1-minute open after the 30m close</dd>
           <dt className="text-muted-foreground">Leverage</dt><dd className="font-mono">{CSTF_RULES.leverage}x cross</dd>
-          <dt className="text-muted-foreground">Margin per trade</dt><dd className="font-mono">{fmtUsd(CSTF_RULES.margin)} (5% of initial $10, fixed)</dd>
+          <dt className="text-muted-foreground">Margin per trade</dt><dd>{CSTF_RULES.marginRate * 100}% of the current main balance at entry; open trades keep their margin</dd>
           <dt className="text-muted-foreground">Slots</dt><dd className="font-mono">{CSTF_RULES.slots} max; extra signals skipped</dd>
-          <dt className="text-muted-foreground">Take profit</dt><dd>{fmtUsd(CSTF_RULES.netTarget)} net (20% of margin after fees & funding)</dd>
+          <dt className="text-muted-foreground">Take profit</dt><dd>{CSTF_RULES.targetRate * 100}% of that trade's margin, net after fees & funding</dd>
           <dt className="text-muted-foreground">Stop loss / time exit</dt><dd>None</dd>
           <dt className="text-muted-foreground">Liquidation</dt><dd>Whole wallet shared; Binance maintenance tiers on mark price</dd>
           <dt className="text-muted-foreground">Costs</dt><dd>{CSTF_RULES.feeRate * 100}% fee + {CSTF_RULES.slippageRate * 100}% slippage per side, real funding</dd>
@@ -75,10 +81,10 @@ export function CstfSimulator({ tz }: { tz: string }) {
           <h2 className="text-xs uppercase tracking-widest text-muted-foreground">Open positions · {open.length} of {CSTF_RULES.slots}</h2>
           {q.isLoading ? <p className="text-sm text-muted-foreground">Loading…</p> : q.isError ? <p className="text-sm text-short">Could not load the Simulator.</p> : !open.length ? <p className="text-sm text-muted-foreground">Waiting for a confirmed 30-minute signal.</p> : (
             <div className="overflow-x-auto"><table className="w-full min-w-[640px] font-mono text-xs">
-              <thead className="text-[10px] uppercase tracking-widest text-muted-foreground"><tr className="border-b border-border">{['Coin', 'Side', 'Entry', 'Take profit', 'Liquidation', 'Mark', 'Unrealized', 'Opened'].map((h) => <th key={h} className="px-2 py-1 text-left">{h}</th>)}</tr></thead>
+              <thead className="text-[10px] uppercase tracking-widest text-muted-foreground"><tr className="border-b border-border">{['Coin', 'Side', 'Margin', 'Entry', 'Take profit', 'Liquidation', 'Mark', 'Unrealized', 'Opened'].map((h) => <th key={h} className="px-2 py-1 text-left">{h}</th>)}</tr></thead>
               <tbody>{open.map((t) => <tr key={t.signal_id} className="border-b border-border/50">
                 <td className="px-2 py-1.5">{t.symbol}</td><td className="px-2 py-1.5"><StatusBadge value={t.side} /></td>
-                <td className="px-2 py-1.5">{fmtPrice(t.entry_price)}</td><td className="px-2 py-1.5 text-long">{fmtPrice(t.target)}</td>
+                <td className="px-2 py-1.5">${Number(t.margin).toFixed(4)}</td><td className="px-2 py-1.5">{fmtPrice(t.entry_price)}</td><td className="px-2 py-1.5 text-long">{fmtPrice(t.target)}</td>
                 <td className="px-2 py-1.5">{Number(t.liquidation_price) > 0 ? Number(t.liquidation_price).toPrecision(6) : '—'}</td>
                 <td className="px-2 py-1.5">{t.mark_price === null ? '—' : fmtPrice(t.mark_price)}</td>
                 <td className={cn('px-2 py-1.5', tone(t.unrealized))}>{fmtSignedUsd(t.unrealized === null ? null : Number(t.unrealized))}</td>
@@ -91,12 +97,12 @@ export function CstfSimulator({ tz }: { tz: string }) {
       <section className="overflow-hidden border-y border-border">
         <h2 className="border-b border-border px-3 py-2 text-xs uppercase tracking-widest text-muted-foreground">Trade history</h2>
         <div className="overflow-x-auto"><table className="w-full min-w-[960px] text-sm">
-          <thead className="text-[10px] uppercase tracking-widest text-muted-foreground"><tr className="border-b border-border">{['Opened', 'Coin', 'Side', 'Pattern', 'Entry', 'Exit', 'Result', 'Fees', 'Funding', 'Net P&L', 'Wallet after', 'Closed'].map((h) => <th key={h} className="px-3 py-2 text-left">{h}</th>)}</tr></thead>
+          <thead className="text-[10px] uppercase tracking-widest text-muted-foreground"><tr className="border-b border-border">{['Opened', 'Coin', 'Side', 'Pattern', 'Margin', 'Entry', 'Exit', 'Result', 'Fees', 'Funding', 'Net P&L', 'Wallet after', 'Closed'].map((h) => <th key={h} className="px-3 py-2 text-left">{h}</th>)}</tr></thead>
           <tbody>
-            {!closed.length && <tr><td colSpan={12} className="px-3 py-8 text-center text-muted-foreground">No finished trades yet.</td></tr>}
+            {!closed.length && <tr><td colSpan={13} className="px-3 py-8 text-center text-muted-foreground">No finished trades yet.</td></tr>}
             {closed.map((t) => <tr key={t.signal_id} className="border-b border-border/50 font-mono text-xs">
               <td className="px-3 py-2">{fmtTime(t.entry_time, tz)}</td><td className="px-3 py-2">{t.symbol}</td><td className="px-3 py-2"><StatusBadge value={t.side} /></td>
-              <td className="px-3 py-2 text-muted-foreground">{t.pattern}</td><td className="px-3 py-2">{fmtPrice(t.entry_price)}</td>
+              <td className="px-3 py-2 text-muted-foreground">{t.pattern}</td><td className="px-3 py-2">${Number(t.margin).toFixed(4)}</td><td className="px-3 py-2">{fmtPrice(t.entry_price)}</td>
               <td className="px-3 py-2">{t.exit_price === null ? '—' : Number(t.exit_price).toPrecision(6)}</td>
               <td className="px-3 py-2"><StatusBadge value={t.exit_reason === 'TAKE_PROFIT' ? 'TAKE PROFIT HIT' : 'LIQUIDATED'} /></td>
               <td className="px-3 py-2 text-muted-foreground">{fmtUsd(Number(t.entry_fee) + Number(t.exit_fee ?? 0))}</td>

@@ -98,3 +98,10 @@ Paper Robot30-trade collection, SMC/sweep rollout, chart rollout and MTF-filter 
 - [x] prompt-61: 7-day backtest of OB STRONG Entry Signals + report (offline, live untouched)
 - [ ] prompt-61: switch live Simulator to OB STRONG Entry Signals — waits on user approval
 - [x] prompt-63: OB STRONG live switch (Railway redeploy by user pending)
+
+## prompt-75 — health check + dynamic 5% margin
+- [x] Margin per new trade = 5% of current Main Balance ($10 + closed results); TP = 20% of that trade's margin net; open trades keep margin; tests for user's table
+- [x] Live scanner check: CSTF account RUNNING, contiguous minute commits, 15:30 close processed, no signal on 15:00 bar (independently confirmed)
+- [x] Independent signal cross-check on fresh Binance data: TS live code = Python backtest port, 2306/2306 signals
+- [x] Simulator + Dashboard show Main balance, next trade margin, available margin
+- [ ] Railway redeploy of the margin fix happens after push — first live trade with dynamic margin not yet observed (waits on a genuine signal)

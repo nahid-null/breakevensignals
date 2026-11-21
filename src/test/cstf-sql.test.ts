@@ -64,6 +64,19 @@ describe('prompt-74 CSTF Simulator database commit', () => {
     const logs = (await db.query<{ message: string }>("select message from telegram_logs where event_id like '%-cstf-result'")).rows;
     expect(logs).toHaveLength(1); expect(logs[0]?.message).toContain('Take profit hit');
   });
+  it('prompt-75: after a take profit the main balance grows and the next trade uses 5% of it; the Telegram result shows the new balance', async () => {
+    const first = await commit([frame(T0, undefined, [sig('LONG')])]);
+    const tp = await commit([frame(T0 + 60_000, { high: first.state.positions[0]!.target, low: 99.99 })], first.state, 1);
+    expect(Number((await account()).wallet)).toBeCloseTo(10.10, 9);
+    const bar = T0; const frames: MinuteFrame[] = [];
+    for (let t = T0 + 120_000; t <= bar + 1_800_000; t += 60_000) frames.push(frame(t, undefined, t === bar + 1_800_000 ? [sig('SHORT', bar)] : []));
+    await commit(frames, tp.state, 2);
+    const next = (await trades()).find((t) => t.signal_id === sig('SHORT', bar).id);
+    expect(next?.status).toBe('OPEN'); expect(Number(next?.margin)).toBeCloseTo(10.10 * .05, 9);
+    const old = (await trades()).find((t) => t.signal_id === sig('LONG').id); expect(Number(old?.margin)).toBeCloseTo(.50, 10);
+    const log = (await db.query<{ message: string }>("select message from telegram_logs where event_id like '%-cstf-result'")).rows[0];
+    expect(log?.message).toContain('Wallet: $10.1000'); expect(log?.message).toContain('Net P&L: +$0.1000');
+  });
   it('rejects a stale revision without changing the account', async () => {
     await commit([frame(T0, undefined, [sig('LONG')])]);
     const again = await commit([frame(T0 + 60_000)], initialCstfAccount(), 0);

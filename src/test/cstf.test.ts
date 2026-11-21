@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import fixture from './fixtures/cstf-eth-30m.json';
 import { CSTF_INTERVAL, CSTF_SYMBOLS, initialCstf, processCstf, type CstfSignal, type CstfSymbol } from '../lib/engine/cstf';
-import { CSTF_RULES, cstfLiquidationPrice, cstfMaintenance, cstfTarget, initialCstfAccount, processCstfAccount, type Brackets, type CstfPosition, type MinuteFrame } from '../lib/engine/cstf-account';
+import { CSTF_RULES, cstfMarginFor, cstfLiquidationPrice, cstfMaintenance, cstfTarget, initialCstfAccount, processCstfAccount, type Brackets, type CstfPosition, type MinuteFrame } from '../lib/engine/cstf-account';
 import { MINUTE, type Candle } from '../lib/engine/model';
 const time=30*MINUTE;
 function candle(time:number,open=100,high=100.01,low=99.99,close=100):Candle { return {time,open,high,low,close,volume:1}; }
@@ -35,14 +35,34 @@ describe('prompt-72 original CSTF default signal rules',()=>{
  });
 });
 describe('prompt-72 exact prompt-71 shared-cross paper accounting',()=>{
- it('starts at $10 and enters at next-minute OPEN with 75x and fixed $0.50',()=>{
+ it('starts at $10 and enters at next-minute OPEN with 75x and $0.50 (5% of $10)',()=>{
   const f=frame(time,[signal()]);f.last.ETHUSDT=candle(time,101,101.1,100.9,101);
   const original=initialCstfAccount();const r=processCstfAccount(original,f,brackets);const p=first(r.state.positions);
   expect(original.wallet).toBe(10);expect(original.positions).toHaveLength(0);expect(p.entry).toBeCloseTo(101*1.0002,12);
   expect(p.margin).toBeCloseTo(.50,12);expect(p.quantity*p.entry/p.margin).toBeCloseTo(75,12);expect(p.entryTime).toBe(time);expect(p.entryFee).toBeCloseTo(.01875,12);expect(r.state.wallet).toBeCloseTo(9.98125,12);
  });
- it('never compounds margin when the wallet grows',()=>{
-  const state=initialCstfAccount();state.wallet=30;const r=processCstfAccount(state,frame(time,[signal()]),brackets);expect(first(r.state.positions).margin).toBeCloseTo(.50,12);
+ // prompt-75: margin per new trade is 5% of the CURRENT main balance (user's own table)
+ for(const [wallet,margin] of [[10,.50],[11,.55],[12,.60],[15,.75],[20,1.00],[25,1.25],[30,1.50],[50,2.50],[8,.40]] as const)it(`opens with $${margin.toFixed(2)} margin when the balance is $${wallet.toFixed(2)}`,()=>{
+  const state=initialCstfAccount();state.wallet=wallet;const p=first(processCstfAccount(state,frame(time,[signal()]),brackets).state.positions);
+  expect(p.margin).toBeCloseTo(margin,12);expect(p.quantity*p.entry/p.margin).toBeCloseTo(75,12);
+ });
+ it('after a win the next trade uses the larger balance, and the open trade keeps its original margin',()=>{
+  const a=processCstfAccount(initialCstfAccount(),frame(time,[signal('ETHUSDT')]),brackets);const ethMargin=first(a.state.positions).margin;expect(ethMargin).toBeCloseTo(.50,12);
+  const s=structuredClone(a.state);s.wallet=12-first(a.state.positions).entryFee;const t=time+CSTF_INTERVAL;s.lastMinute=t-MINUTE;
+  const b=processCstfAccount(s,frame(t,[signal('SOLUSDT','LONG',t)]),brackets);
+  const eth=b.state.positions.find(p=>p.signal.symbol==='ETHUSDT');const sol=b.state.positions.find(p=>p.signal.symbol==='SOLUSDT');
+  expect(eth?.margin).toBeCloseTo(.50,12);expect(sol?.margin).toBeCloseTo(.60,12);
+ });
+ it('take profit is 20% of that trade\'s own margin, net: $0.60 margin closes at exactly +$0.12',()=>{
+  const s=initialCstfAccount();s.wallet=12;const start=processCstfAccount(s,frame(time,[signal()]),brackets);const p=first(start.state.positions);
+  const next=frame(time+MINUTE);next.last.ETHUSDT=candle(next.time,100,p.target,99.99,100);const r=processCstfAccount(start.state,next,brackets);
+  expect(r.closed[0]?.net).toBeCloseTo(.12,12);expect(r.state.wallet).toBeCloseTo(12.12,12);
+ });
+ it('a liquidation that empties the balance means no further trade can open',()=>{
+  expect(cstfMarginFor(0)).toBe(0);const s=initialCstfAccount();s.wallet=0;expect(processCstfAccount(s,frame(time,[signal()]),brackets).skipped[0]?.reason).toBe('INSUFFICIENT_AVAILABLE_MARGIN');
+ });
+ it('fixed-initial sizing reproduces the prompt-71 backtest only for parity checks',()=>{
+  const s=initialCstfAccount();s.wallet=30;expect(first(processCstfAccount(s,frame(time,[signal()]),brackets,'fixed-initial').state.positions).margin).toBeCloseTo(.50,12);
  });
  for(const side of ['LONG','SHORT'] as const)it(`${side} closes at exactly $0.10 NET, not $0.10 plus another fee-adjusted target`,()=>{
   const start=processCstfAccount(initialCstfAccount(),frame(time,[signal('ETHUSDT',side)]),brackets);const p=first(start.state.positions);const next=frame(time+MINUTE);
@@ -58,7 +78,7 @@ describe('prompt-72 exact prompt-71 shared-cross paper accounting',()=>{
  });
  it('allows seven simultaneous same-coin slots and skips the eighth without replacement',()=>{
   let state=initialCstfAccount();for(let i=0;i<8;i++){const t=time+i*CSTF_INTERVAL;state.lastMinute=t-MINUTE;const r=processCstfAccount(state,frame(t,[signal('ETHUSDT','LONG',t)]),brackets);state=r.state;if(i===7)expect(r.skipped[0]?.reason).toBe('ALL_SLOTS_IN_USE');}
-  expect(state.positions).toHaveLength(7);expect(state.positions.map(p=>p.margin)).toEqual(Array(7).fill(.50));
+  expect(state.positions).toHaveLength(7);for(const p of state.positions)expect(p.margin).toBeCloseTo(.50,12);
  });
  it('uses whole wallet plus other slots unrealized P&L, not isolated $0.50 collateral',()=>{
   const r=processCstfAccount(initialCstfAccount(),frame(time,[signal()]),brackets);const p=first(r.state.positions);const marks=Object.fromEntries(CSTF_SYMBOLS.map(s=>[s,100])) as Record<CstfSymbol,number>;
@@ -91,7 +111,7 @@ describe('prompt-72 exact prompt-71 shared-cross paper accounting',()=>{
   const r=processCstfAccount(initialCstfAccount(),frame(time,[signal()]),brackets);const p=first(r.state.positions);const next=frame(time+MINUTE);next.mode='recovery';next.last.ETHUSDT=candle(next.time,100,p.target,99.99,100);expect(processCstfAccount(r.state,next,brackets).closed[0]?.notify).toBe(false);
  });
  it('skips insufficient available cross margin including the entry fee',()=>{
-  const state=initialCstfAccount();state.wallet=.51;const r=processCstfAccount(state,frame(time,[signal()]),brackets);expect(r.skipped[0]?.reason).toBe('INSUFFICIENT_AVAILABLE_MARGIN');expect(r.state.wallet).toBe(.51);
+  const state=initialCstfAccount();state.wallet=.51;const r=processCstfAccount(state,frame(time,[signal()]),brackets,'fixed-initial');expect(r.skipped[0]?.reason).toBe('INSUFFICIENT_AVAILABLE_MARGIN');expect(r.state.wallet).toBe(.51);
  });
  it('keeps positions indefinitely without adding a stop or time exit',()=>{
   let state=processCstfAccount(initialCstfAccount(),frame(time,[signal()]),brackets).state;
@@ -109,6 +129,6 @@ describe('prompt-72 exact prompt-71 shared-cross paper accounting',()=>{
  });
  it('includes $0.10 exactly once in the TP formula',()=>{
   const p=first(processCstfAccount(initialCstfAccount(),frame(time,[signal()]),brackets).state.positions);
-  expect(cstfTarget(p)).toBeCloseTo((.10+.01875+p.quantity*p.entry)/(p.quantity*.9995)/.9998,12);expect(CSTF_RULES.netTarget).toBe(.10);
+  expect(cstfTarget(p)).toBeCloseTo((.10+.01875+p.quantity*p.entry)/(p.quantity*.9995)/.9998,12);expect(CSTF_RULES.targetRate*p.margin).toBeCloseTo(.10,12);
  });
 });

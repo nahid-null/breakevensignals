@@ -1,8 +1,17 @@
 import { CSTF_SYMBOLS, type CstfSignal, type CstfSymbol } from './cstf';
 import { MINUTE, validateCandle, type Candle } from './model';
 
-/** prompt-71 MAIN calculations. Pure paper accounting only; production wiring is deliberately gated. */
-export const CSTF_RULES = { version: 'CSTF30_CROSS_V1', startingBalance: 10, margin: .50, leverage: 75, slots: 7, netTarget: .10, feeRate: .0005, slippageRate: .0002 } as const;
+/** prompt-71 MAIN calculations with the prompt-75 sizing correction. Pure paper accounting only.
+ * Margin per NEW trade = marginRate × CURRENT wallet at entry ($10 → $0.50, $12 → $0.60); open trades keep their margin.
+ * Take profit = targetRate × that trade's own margin, net of fees and funding ($0.50 → $0.10). */
+export const CSTF_RULES = { version: 'CSTF30_CROSS_V1', startingBalance: 10, marginRate: .05, leverage: 75, slots: 7, targetRate: .20, feeRate: .0005, slippageRate: .0002 } as const;
+/** 'current-wallet' is the live rule (prompt-75). 'fixed-initial' reproduces the prompt-71 backtest ($0.50 forever) for parity checks only. */
+export type CstfSizing = 'current-wallet' | 'fixed-initial';
+export const cstfMarginFor = (wallet: number, sizing: CstfSizing = 'current-wallet') => CSTF_RULES.marginRate * (sizing === 'fixed-initial' ? CSTF_RULES.startingBalance : wallet);
+/** Main Balance = starting $10 + every CLOSED trade's net result. The wallet already paid open trades' entry fees and funding;
+ * add them back so the balance only moves when trades close (as the user specified). */
+export const cstfMainBalance = (s: Pick<AccountState, 'wallet' | 'positions'>) => s.wallet + s.positions.reduce((v, p) => v + p.entryFee + p.funding, 0);
+export const cstfNetTarget = (p: Pick<CstfPosition, 'margin'>) => CSTF_RULES.targetRate * p.margin;
 export interface MaintenanceBracket { floor: number; cap: number; rate: number; cumulative: number; maxLeverage: number }
 export type Brackets = Record<CstfSymbol, MaintenanceBracket[]>;
 export interface CstfPosition { signal: CstfSignal; entryTime: number; entry: number; quantity: number; margin: number; entryFee: number; funding: number; target: number; liquidationPrice: number }
@@ -23,8 +32,8 @@ export function cstfMaintenance(p: CstfPosition, price: number, brackets: Bracke
   return n * b.rate - b.cumulative;
 }
 /** The trigger is on last price; execution incurs exit slippage. Includes already paid entry fees and funding. */
-export function cstfTarget(p: Pick<CstfPosition, 'quantity' | 'entry' | 'entryFee' | 'funding' | 'signal'>) {
-  const { feeRate: fee, slippageRate: slip, netTarget } = CSTF_RULES; const need = netTarget + p.entryFee + p.funding;
+export function cstfTarget(p: Pick<CstfPosition, 'quantity' | 'entry' | 'entryFee' | 'funding' | 'signal' | 'margin'>) {
+  const { feeRate: fee, slippageRate: slip } = CSTF_RULES; const need = cstfNetTarget(p) + p.entryFee + p.funding;
   return p.signal.side === 'LONG' ? (need + p.quantity*p.entry)/(p.quantity*(1-fee))/(1-slip) : (p.quantity*p.entry-need)/(p.quantity*(1+fee))/(1+slip);
 }
 /** Same one-position cross-price projection as the backtest, other slots held at their mark prices. */
@@ -56,7 +65,7 @@ function validateFrame(frame: MinuteFrame, brackets: Brackets) {
  * Order matches bt71.py: funding -> alphabetically ordered entries -> worst mark liquidation -> last-price TP.
  * Caller must persist returned state, entries, results and outbox together with a revision/lease check.
  */
-export function processCstfAccount(input: AccountState, frame: MinuteFrame, brackets: Brackets): AccountResult {
+export function processCstfAccount(input: AccountState, frame: MinuteFrame, brackets: Brackets, sizing: CstfSizing = 'current-wallet'): AccountResult {
   validateFrame(frame,brackets);
   const state = structuredClone(input); const closed: CstfClose[]=[]; const opened: CstfPosition[]=[]; const skipped: AccountResult['skipped']=[];
   const marks = Object.fromEntries(CSTF_SYMBOLS.map(s=>[s,frame.mark[s].open])) as Record<CstfSymbol,number>;
@@ -68,7 +77,7 @@ export function processCstfAccount(input: AccountState, frame: MinuteFrame, brac
   }
   for (const signal of [...frame.signals].sort((a,b)=>a.symbol.localeCompare(b.symbol))) {
     let reason: string | null = frame.mode==='recovery' ? 'NOT_LIVE' : state.positions.length>=CSTF_RULES.slots ? 'ALL_SLOTS_IN_USE' : null;
-    const d=signal.side==='LONG'?1:-1; const entry=frame.last[signal.symbol].open*(1+CSTF_RULES.slippageRate*d); const quantity=CSTF_RULES.margin*CSTF_RULES.leverage/entry;
+    const d=signal.side==='LONG'?1:-1; const entry=frame.last[signal.symbol].open*(1+CSTF_RULES.slippageRate*d); const sized=cstfMarginFor(cstfMainBalance(state),sizing); if (!(sized>0)) { skipped.push({signal,reason:reason??'INSUFFICIENT_AVAILABLE_MARGIN'}); continue; } const quantity=sized*CSTF_RULES.leverage/entry;
     const entryFee=CSTF_RULES.feeRate*quantity*entry; const margin=quantity*entry/CSTF_RULES.leverage;
     if (maintenanceBracket(brackets[signal.symbol],quantity*entry).maxLeverage<CSTF_RULES.leverage) reason??='LEVERAGE_UNAVAILABLE';
     if (totals(marks).equity-state.positions.reduce((v,p)=>v+p.margin,0)<margin+entryFee) reason??='INSUFFICIENT_AVAILABLE_MARGIN';

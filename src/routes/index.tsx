@@ -4,7 +4,7 @@ import { fmtTime, useEvents, useSettings, useStatuses, useTelegramLogs } from "@
 import { StatusBadge } from "@/components/terminal/StatusBadge";
 import { sentResultSummary, sentSignalSummary } from "@/lib/signal-summary";
 import { fmtSignedUsd, fmtUsd, useCstfSimulator, useSimTrades } from "@/lib/simulator";
-import { CSTF_RULES } from "@/lib/engine/cstf-account";
+import { CSTF_RULES, cstfMarginFor } from "@/lib/engine/cstf-account";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
@@ -49,6 +49,7 @@ function Dashboard() {
   const realized = cstfClosed.reduce((a, t) => a + Number(t.net ?? 0), 0);
   const tps = cstfClosed.filter((t) => t.exit_reason === 'TAKE_PROFIT').length;
   const openList = (cstf.data?.trades ?? []).filter((t) => t.status === 'OPEN');
+  const mainBalance = acc ? Number(acc.wallet) + openList.reduce((v, t) => v + Number(t.entry_fee) + Number(t.funding), 0) : null;
   const statuses: [string, string][] = [["System", s.system], ["Cloud", s.cloud], ["Scanner", s.scanner], ["Binance", s.binance], ["WebSocket", s.websocket], ["Telegram", s.telegram]];
 
   return (
@@ -90,7 +91,7 @@ function Dashboard() {
           <Link to="/simulator" className="flex items-center gap-1 text-xs text-primary hover:underline">Open simulator <ArrowRight className="size-3" /></Link>
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-          <Tile label="Wallet" value={simReady ? fmtUsd(acc?.wallet) : '—'} hint={`Started with ${fmtUsd(CSTF_RULES.startingBalance)}`} />
+          <Tile label="Main balance" value={simReady && mainBalance !== null ? fmtUsd(mainBalance) : '—'} hint={simReady && mainBalance !== null ? `Next trade margin $${cstfMarginFor(mainBalance).toFixed(2)} (5%)` : `Started with ${fmtUsd(CSTF_RULES.startingBalance)}`} />
           <Tile label="Equity" value={simReady ? fmtUsd(acc?.equity) : '—'} />
           <Tile label="Realized P&L" value={simReady ? fmtSignedUsd(realized) : '—'} tone={realized > 0 ? 'text-long' : realized < 0 ? 'text-short' : undefined} />
           <Tile label="Take profits" value={simReady ? tps : '—'} hint={simReady ? `${cstfClosed.length - tps} liquidated` : undefined} />
