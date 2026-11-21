@@ -6,7 +6,7 @@ export const CSTF_RULES = { version: 'CSTF30_CROSS_V1', startingBalance: 10, mar
 export interface MaintenanceBracket { floor: number; cap: number; rate: number; cumulative: number; maxLeverage: number }
 export type Brackets = Record<CstfSymbol, MaintenanceBracket[]>;
 export interface CstfPosition { signal: CstfSignal; entryTime: number; entry: number; quantity: number; margin: number; entryFee: number; funding: number; target: number; liquidationPrice: number }
-export interface CstfClose { position: CstfPosition; reason: 'TAKE_PROFIT' | 'LIQUIDATED'; time: number; price: number; gross: number; exitFee: number; net: number; notify: boolean }
+export interface CstfClose { position: CstfPosition; reason: 'TAKE_PROFIT' | 'LIQUIDATED'; time: number; price: number; gross: number; exitFee: number; net: number; walletAfter: number; notify: boolean }
 export interface AccountState { version: typeof CSTF_RULES.version; wallet: number; positions: CstfPosition[]; lastMinute: number | null; fees: number; funding: number; liquidationClearance: number }
 export interface MinuteFrame { time: number; last: Record<CstfSymbol, Candle>; mark: Record<CstfSymbol, Candle>; funding: Partial<Record<CstfSymbol, number[]>>; signals: CstfSignal[]; mode: 'live' | 'recovery' }
 export interface AccountResult { state: AccountState; closed: CstfClose[]; opened: CstfPosition[]; skipped: { signal: CstfSignal; reason: string }[]; equity: number; maintenance: number; duplicate: boolean }
@@ -84,7 +84,7 @@ export function processCstfAccount(input: AccountState, frame: MinuteFrame, brac
     let grossTotal=0;
     for (const p of state.positions) {
       const price=worstPrice(p); const gross=cstfUnrealized(p,price); grossTotal+=gross;
-      closed.push({position:structuredClone(p),reason:'LIQUIDATED',time:frame.time+MINUTE,price,gross,exitFee:0,net:gross-p.entryFee-p.funding,notify:frame.mode==='live'});
+      closed.push({position:structuredClone(p),reason:'LIQUIDATED',time:frame.time+MINUTE,price,gross,exitFee:0,net:gross-p.entryFee-p.funding,walletAfter:0,notify:frame.mode==='live'});
     }
     // Backtest liquidation clears all shared collateral; keep explicit clearance audit rather than hide residual loss.
     state.liquidationClearance+=-state.wallet-grossTotal; state.wallet=0; state.positions=[];
@@ -94,7 +94,7 @@ export function processCstfAccount(input: AccountState, frame: MinuteFrame, brac
     if ((d===1 && last.high>=p.target)||(d===-1 && last.low<=p.target)) {
       const price=p.target*(1-d*CSTF_RULES.slippageRate); const gross=cstfUnrealized(p,price); const exitFee=CSTF_RULES.feeRate*p.quantity*price;
       state.wallet+=gross-exitFee; state.fees+=exitFee; state.positions=state.positions.filter(x=>x!==p);
-      closed.push({position:structuredClone(p),reason:'TAKE_PROFIT',time:frame.time+MINUTE,price,gross,exitFee,net:gross-p.entryFee-exitFee-p.funding,notify:frame.mode==='live'});
+      closed.push({position:structuredClone(p),reason:'TAKE_PROFIT',time:frame.time+MINUTE,price,gross,exitFee,net:gross-p.entryFee-exitFee-p.funding,walletAfter:state.wallet,notify:frame.mode==='live'});
     }
   }
   const closeMarks=Object.fromEntries(CSTF_SYMBOLS.map(s=>[s,frame.mark[s].close])) as Record<CstfSymbol,number>;
