@@ -49,6 +49,34 @@ const account = async () => (await db.query<{ wallet: string; open_count: number
 const trades = async () => (await db.query<{ signal_id: string; status: string; exit_reason: string | null; net: string | null; margin: string; leverage: number }>('select * from cstf_trades')).rows;
 
 describe('prompt-74 CSTF Simulator database commit', () => {
+  for (const side of ['LONG', 'SHORT'] as const) {
+    for (const oldFilter of ['trend', 'score', 'confirmation', 'entry switches'] as const) {
+      it(`prompt-76: ${side} is saved immediately despite adverse legacy ${oldFilter}`, async () => {
+        if (oldFilter === 'trend') {
+          const opposing = side === 'LONG' ? 'SHORT' : 'LONG';
+          await db.query("insert into market_state(symbol,trend,status,long_score,short_score,mtf_trend) values('ETHUSDT',$1,'READY',0,0,$2::jsonb)", [opposing, JSON.stringify({ trend: opposing, ready: false })]);
+        } else if (oldFilter === 'score') {
+          await db.exec("update robot_settings set min_score=100,high_score=100; insert into market_state(symbol,trend,status,long_score,short_score) values('ETHUSDT','WAITING','READY',0,0)");
+        } else if (oldFilter === 'confirmation') {
+          await db.query("insert into sim_breakeven_confirmations(trade_id,symbol,direction,reference_price,breakeven_stop,breakeven_candle_time,status,reason) values($1,'ETHUSDT',$2,100,100,$3,'SKIPPED','Trend not ready')", [sig(side).id, side, T0]);
+          await db.exec('update sim_account set enabled=false');
+        } else {
+          await db.exec('update app_settings set long_entry_enabled=false,short_entry_enabled=false,long_notifications_enabled=false,short_notifications_enabled=false');
+        }
+        const { result, state } = await commit([frame(T0, undefined, [sig(side)])]);
+        expect(result).toEqual({ conflict: false, revision: 1 });
+        expect(state.positions[0]?.entryTime).toBe(T0);
+        const saved = (await trades()).find(t => t.signal_id === sig(side).id);
+        expect(saved?.status).toBe('OPEN');
+        expect(Number(saved?.margin)).toBeCloseTo(.50, 10);
+        const decisions = (await db.query<{ decision: string; reason: string | null; signal_to_entry_seconds: number }>("select s.decision,s.reason,extract(epoch from (t.entry_time-s.signal_time))::integer as signal_to_entry_seconds from cstf_signals s join cstf_trades t using(signal_id)")).rows;
+        expect(decisions).toHaveLength(1);
+        expect(decisions[0]?.decision).toBe('OPENED');
+        expect(decisions[0]?.reason).toBeNull();
+        expect(decisions[0]?.signal_to_entry_seconds).toBe(1800);
+      });
+    }
+  }
   it('starts at $10 and opens a 75x trade with $0.50 margin from a confirmed signal', async () => {
     expect(Number((await account()).wallet)).toBe(10);
     const { result } = await commit([frame(T0, undefined, [sig('LONG')])]);

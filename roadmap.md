@@ -1,5 +1,10 @@
 # Independent Crypto Signal Terminal
 
+## prompt-76 — verify CSTF entry independence
+- [ ] Audit indicator → worker → account → engine API → database admission against old trend/score/confirmation settings.
+- [ ] Add regression checks for immediate LONG/SHORT admission despite old settings; inspect genuine hosted decisions without creating trades.
+- [ ] Report findings and unchanged safety limits; no deployment or restart needed unless an active old filter is found.
+
 ## Current prompt-74 — activate exact CSTF 30m Simulator (authorized)
 - [x] Attached indicator byte-identical to the verified prompt-71 file; live worker service, atomic database commit, Telegram results, website page; OB STRONG entries stopped; old ETH trade finishes separately.
 - [x] Tests: 6 database + 6 live-wiring + 23 rule tests; real-Binance dry run (24h catch-up + live minutes) with no database writes.

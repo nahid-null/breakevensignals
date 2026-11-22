@@ -12,6 +12,27 @@ const brackets=Object.fromEntries(CSTF_SYMBOLS.map(s=>[s,[{floor:0,cap:100000,ra
 const first=(positions:CstfPosition[])=>{const p=positions[0];if(!p)throw new Error('Expected open position');return p;};
 
 describe('prompt-72 original CSTF default signal rules',()=>{
+ for (const side of ['LONG', 'SHORT'] as const) it(`prompt-76: every genuine fixture ${side} signal enters in its first eligible minute without another confirmation`, () => {
+  const indicator = initialCstf(); const signals: CstfSignal[] = [];
+  for (const row of fixture.bars) {
+   const [t, o, h, l, c, v] = row;
+   if (t === undefined || o === undefined || h === undefined || l === undefined || c === undefined || v === undefined) throw new Error('Incomplete fixture');
+   signals.push(...processCstf(indicator, 'ETHUSDT', { time: t, open: o, high: h, low: l, close: c, volume: v }, t + CSTF_INTERVAL));
+  }
+  const selected = signals.filter(s => s.side === side);
+  expect(selected).toHaveLength(7);
+  for (const s of selected) {
+   const execution = frame(s.confirmTime, [s]);
+   execution.last.ETHUSDT = candle(s.confirmTime, s.close, s.close * 1.00001, s.close * .99999, s.close);
+   execution.mark.ETHUSDT = { ...execution.last.ETHUSDT };
+   const result = processCstfAccount(initialCstfAccount(), execution, brackets);
+   expect(result.skipped).toEqual([]);
+   expect(result.opened).toHaveLength(1);
+   expect(result.opened[0]?.signal).toEqual(s);
+   expect(result.opened[0]?.entryTime).toBe(s.signalTime + CSTF_INTERVAL);
+   expect(result.opened[0]?.margin).toBeCloseTo(.50, 12);
+  }
+ });
  it('matches every original backtest signal on 400 real ETHUSDT 30m candles',()=>{
   const state=initialCstf();const actual:CstfSignal[]=[];
   for(const x of fixture.bars){const [t,o,h,l,c,v]=x;if(t===undefined||o===undefined||h===undefined||l===undefined||c===undefined||v===undefined)throw new Error('Incomplete fixture'); actual.push(...processCstf(state,'ETHUSDT',{time:t,open:o,high:h,low:l,close:c,volume:v},t+CSTF_INTERVAL));}
