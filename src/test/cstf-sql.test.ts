@@ -50,17 +50,21 @@ const trades = async () => (await db.query<{ signal_id: string; status: string; 
 
 describe('prompt-74 CSTF Simulator database commit', () => {
   for (const side of ['LONG', 'SHORT'] as const) {
-    for (const oldFilter of ['trend', 'score', 'confirmation', 'entry switches'] as const) {
+    for (const oldFilter of ['trend', 'score', 'confirmation', 'entry switches', 'all filters together'] as const) {
       it(`prompt-76: ${side} is saved immediately despite adverse legacy ${oldFilter}`, async () => {
-        if (oldFilter === 'trend') {
+        if (oldFilter === 'trend' || oldFilter === 'all filters together') {
           const opposing = side === 'LONG' ? 'SHORT' : 'LONG';
           await db.query("insert into market_state(symbol,trend,status,long_score,short_score,mtf_trend) values('ETHUSDT',$1,'READY',0,0,$2::jsonb)", [opposing, JSON.stringify({ trend: opposing, ready: false })]);
-        } else if (oldFilter === 'score') {
-          await db.exec("update robot_settings set min_score=100,high_score=100; insert into market_state(symbol,trend,status,long_score,short_score) values('ETHUSDT','WAITING','READY',0,0)");
-        } else if (oldFilter === 'confirmation') {
+        }
+        if (oldFilter === 'score' || oldFilter === 'all filters together') {
+          await db.exec('update robot_settings set enabled=false,emergency_stop=true,min_score=100,high_score=100');
+          if (oldFilter === 'score') await db.exec("insert into market_state(symbol,trend,status,long_score,short_score) values('ETHUSDT','WAITING','READY',0,0)");
+        }
+        if (oldFilter === 'confirmation' || oldFilter === 'all filters together') {
           await db.query("insert into sim_breakeven_confirmations(trade_id,symbol,direction,reference_price,breakeven_stop,breakeven_candle_time,status,reason) values($1,'ETHUSDT',$2,100,100,$3,'SKIPPED','Trend not ready')", [sig(side).id, side, T0]);
           await db.exec('update sim_account set enabled=false');
-        } else {
+        }
+        if (oldFilter === 'entry switches' || oldFilter === 'all filters together') {
           await db.exec('update app_settings set long_entry_enabled=false,short_entry_enabled=false,long_notifications_enabled=false,short_notifications_enabled=false');
         }
         const { result, state } = await commit([frame(T0, undefined, [sig(side)])]);

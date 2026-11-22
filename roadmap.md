@@ -1,14 +1,20 @@
 # Independent Crypto Signal Terminal
 
+## prompt-77 — recheck entry-filter isolation and reported hook error
+- [x] Inspect the hook: React is explicitly imported; the reported UMD text does not occur in the file.
+- [x] Re-audit CSTF indicator → worker → account → engine API → SQL; genuine hosted records show 9 OPENED signals (2 LONG, 7 SHORT), no rejected decisions, despite disabled legacy entry switches.
+- [x] Extend isolated database tests to enable every adverse legacy filter together for both directions; all 60 CSTF tests pass. Simulator page at 626×585 shows 6 genuine open trades, both directions, 3 TP results and no page errors.
+- [x] Save the audit findings in .lovable/reviews/prompt-77-entry-audit.md; indicator logic, hosted settings, history and deployment unchanged. Latest automatic check: build OK.
+
 ## prompt-76 — verify CSTF entry independence
-- [ ] Audit indicator → worker → account → engine API → database admission against old trend/score/confirmation settings.
-- [ ] Add regression checks for immediate LONG/SHORT admission despite old settings; inspect genuine hosted decisions without creating trades.
-- [ ] Report findings and unchanged safety limits; no deployment or restart needed unless an active old filter is found.
+- [x] Audit indicator → worker → account → engine API → database admission against old trend/score/confirmation settings.
+- [x] Add regression checks for immediate LONG/SHORT admission despite old settings; inspect genuine hosted decisions without creating trades.
+- [x] Report findings and unchanged safety limits; no deployment or restart needed unless an active old filter is found.
 
 ## Current prompt-74 — activate exact CSTF 30m Simulator (authorized)
 - [x] Attached indicator byte-identical to the verified prompt-71 file; live worker service, atomic database commit, Telegram results, website page; OB STRONG entries stopped; old ETH trade finishes separately.
 - [x] Tests: 6 database + 6 live-wiring + 23 rule tests; real-Binance dry run (24h catch-up + live minutes) with no database writes.
-- [ ] Confirm the hosted scanner picked up the new code and first live commits appear (needs the Railway redeploy after this push; not observable this turn).
+- [x] Confirm hosted CSTF commits and genuine LONG/SHORT trades: RUNNING revision 998 and 9 entries observed in the prompt-77 read-only audit.
 
 ## Previous prompt-72 — exact CSTF 30m Simulator replacement (authorized)
 - [x] Port original defaults and verify 332/332 signals against Python and intact Pine interpreter on the tested week; no TradingView certification claimed.
