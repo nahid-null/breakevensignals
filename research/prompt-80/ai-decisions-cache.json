@@ -1,0 +1,1842 @@
+{
+  "1795048200": {
+    "entryT": 1795048200,
+    "action": "SKIP",
+    "confidence": 84,
+    "reason": "The last candle rejected 107.045 but closed below the prior bearish candle's open, leaving conflicting one-minute momentum.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21777-c01e-79d5-bc1f-94dbb32d804a"
+  },
+  "1795050000": {
+    "entryT": 1795050000,
+    "action": "SKIP",
+    "confidence": 78,
+    "reason": "The last bullish candle rebounds from 106.623 after two bearish candles, leaving conflicting momentum for the next minute.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21777-c027-7126-a7ca-a4c33fcf5ee3"
+  },
+  "1795051800": {
+    "entryT": 1795051800,
+    "action": "SHORT",
+    "confidence": 61,
+    "reason": "Five of the last six M1 candles fell; the latest erased the rebound and made a fresh low despite its lower wick.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21777-c020-7924-bded-6981687528a2"
+  },
+  "1795053600": {
+    "entryT": 1795053600,
+    "action": "SHORT",
+    "confidence": 61,
+    "reason": "The last M1 candle erased four prior closes and finished near its low after two candles failed to extend above 106.533.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21777-c01e-715e-8d13-a500a2b5bf21"
+  },
+  "1795055400": {
+    "entryT": 1795055400,
+    "action": "SKIP",
+    "confidence": 77,
+    "reason": "The latest bearish candle follows a sharp lower-wick rebound and mixed bodies, leaving conflicting one-minute direction.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21777-c020-7054-bd1d-163c7eb2d73e"
+  },
+  "1795057200": {
+    "entryT": 1795057200,
+    "action": "SKIP",
+    "confidence": 83,
+    "reason": "The rebound from 106.364 met an upper wick at 106.426, while the latest M3 closed flat, leaving mixed momentum.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21777-c870-76d6-acad-b44a18acb689"
+  },
+  "1795059000": {
+    "entryT": 1795059000,
+    "action": "LONG",
+    "confidence": 60,
+    "reason": "The last two M1 candles rose, with the latest closing near its high above 106.405 after a shallow pullback.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21777-c927-7d3c-bb73-bcfb7e28e9b2"
+  },
+  "1795060800": {
+    "entryT": 1795060800,
+    "action": "SKIP",
+    "confidence": 79,
+    "reason": "The rise to 106.544 was rejected, but the latest small body and lower wick leave the next-minute direction unclear.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21777-c9eb-7221-88ea-b304fd785256"
+  },
+  "1795062600": {
+    "entryT": 1795062600,
+    "action": "SKIP",
+    "confidence": 76,
+    "reason": "Six bearish M1 candles drove lower lows, but the latest bullish rebound from 106.536 leaves next-minute direction unclear.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21777-c9ed-7366-830d-a2c4293bc467"
+  },
+  "1795064400": {
+    "entryT": 1795064400,
+    "action": "SKIP",
+    "confidence": 74,
+    "reason": "The last bullish M1 candle reaches prior highs at 106.564–106.575 after overlapping candles, leaving no clear next-minute edge.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21777-ccaf-7387-bfc0-4ca3a28699a6"
+  },
+  "1795066200": {
+    "entryT": 1795066200,
+    "action": "SKIP",
+    "confidence": 78,
+    "reason": "The rally stalled below 106.677; alternating candles and repeated lower wicks near 106.642–106.649 leave direction unclear.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21777-d11b-7217-9e40-19b2726a0777"
+  },
+  "1795068000": {
+    "entryT": 1795068000,
+    "action": "SKIP",
+    "confidence": 92,
+    "reason": "Recent M1 candles have tiny overlapping bodies and repeated upper wicks near 106.715, showing no clear directional follow-through.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21777-d265-7e14-9c58-df4e1b051bac"
+  },
+  "1795069800": {
+    "entryT": 1795069800,
+    "action": "SKIP",
+    "confidence": 76,
+    "reason": "Two strong bullish M1 candles reach prior highs at 106.768–106.769, but no candle has closed above them.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21777-d2b9-7ac8-bc9a-e191b361b281"
+  },
+  "1795071600": {
+    "entryT": 1795071600,
+    "action": "LONG",
+    "confidence": 60,
+    "reason": "Three bullish M1 candles show higher highs and higher lows, with the latest closing near its high above prior peaks.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21777-d63e-7667-bc1e-4097e679278e"
+  },
+  "1795073400": {
+    "entryT": 1795073400,
+    "action": "SKIP",
+    "confidence": 76,
+    "reason": "The latest bearish candle rejects 107.042 but closes near repeated 107.014 lows, leaving the next-minute direction unclear.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21777-d675-772b-98fa-2a121871330d"
+  },
+  "1795075200": {
+    "entryT": 1795075200,
+    "action": "SKIP",
+    "confidence": 79,
+    "reason": "The last three M1 candles reject higher prices but overlap near 107.092 after a bullish push, leaving direction unclear.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21777-d9fe-7d28-845a-10772749de19"
+  },
+  "1795077000": {
+    "entryT": 1795077000,
+    "action": "SKIP",
+    "confidence": 86,
+    "reason": "The last three M1 candles overlap with alternating bodies and two-sided wicks, showing no clear directional follow-through.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21777-db1a-755c-a869-403c12ff5897"
+  },
+  "1795078800": {
+    "entryT": 1795078800,
+    "action": "SKIP",
+    "confidence": 86,
+    "reason": "After the bullish surge, recent M1 candles overlap with small bodies and upper wicks, showing no clear directional follow-through.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21777-db83-7db5-85dc-00f3f7a5b163"
+  },
+  "1795080600": {
+    "entryT": 1795080600,
+    "action": "SKIP",
+    "confidence": 80,
+    "reason": "Three bearish M1 candles gave way to small bodies and overlapping wicks near 107.172, leaving immediate direction unclear.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21777-df04-7b31-b22d-ee1f9cdf314d"
+  },
+  "1795082400": {
+    "entryT": 1795082400,
+    "action": "SKIP",
+    "confidence": 88,
+    "reason": "The last three M1 candles alternate direction within overlapping ranges, with repeated highs near 107.210 and lows near 107.186.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21777-df98-712d-a5e1-95f90851a568"
+  },
+  "1795084200": {
+    "entryT": 1795084200,
+    "action": "SKIP",
+    "confidence": 83,
+    "reason": "The last three M1 candles overlap with alternating bodies and upper wicks, showing no clear directional follow-through.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21777-e333-7eb5-8098-e266e11f3a7a"
+  },
+  "1795086000": {
+    "entryT": 1795086000,
+    "action": "SKIP",
+    "confidence": 83,
+    "reason": "The last M1 candle has equal open and close with wicks both ways, following a selloff and rebound with no clear follow-through.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21777-e3ac-796b-8b6f-af8175955ec3"
+  },
+  "1795087800": {
+    "entryT": 1795087800,
+    "action": "SKIP",
+    "confidence": 78,
+    "reason": "The latest bearish candle rejects 107.317, but follows three rising closes with higher lows, leaving mixed momentum.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21777-e403-7a70-8e00-8102bd0377f3"
+  },
+  "1795089600": {
+    "entryT": 1795089600,
+    "action": "SHORT",
+    "confidence": 60,
+    "reason": "The last three M1 candles close lower with descending highs and lows, while the latest bearish body extends the decline.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21777-e7d1-76a3-83c2-23140d7951e1"
+  },
+  "1795091400": {
+    "entryT": 1795091400,
+    "action": "LONG",
+    "confidence": 62,
+    "reason": "Three bullish M1 candles show rising highs and lows, with the latest closing at its high above prior M3 highs.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21777-e905-75b9-817c-ed6f6c2847ed"
+  },
+  "1795093200": {
+    "entryT": 1795093200,
+    "action": "SKIP",
+    "confidence": 78,
+    "reason": "Three rising M1 closes show a rebound, but shrinking bodies and upper wicks near 107.339 leave the next minute unclear.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21778-b359-7662-a0de-64c0dd10c55c"
+  },
+  "1795095000": {
+    "entryT": 1795095000,
+    "action": "SKIP",
+    "confidence": 88,
+    "reason": "The latest M1 candle rejected 107.273 but closed nearly flat after two bearish candles, leaving mixed short-term direction.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21778-b410-7639-8bfa-c4495b0f7e48"
+  },
+  "1795096800": {
+    "entryT": 1795096800,
+    "action": "SKIP",
+    "confidence": 76,
+    "reason": "The last candle fell after two upper-wick rejections, but overlapping candles and repeated lower-wick rebounds show no clear edge.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21778-b63b-7cda-8243-8da2f6236235"
+  },
+  "1795098600": {
+    "entryT": 1795098600,
+    "action": "SHORT",
+    "confidence": 60,
+    "reason": "The rebound failed near 107.317, followed by three bearish M1 candles; the latest broke 107.255 and closed near its low.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21778-b683-7d55-afe3-c39107de0e80"
+  },
+  "1795100400": {
+    "entryT": 1795100400,
+    "action": "SKIP",
+    "confidence": 79,
+    "reason": "The last three M1 candles rebound from 107.127, but small bodies and upper wicks leave the preceding decline unresolved.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21778-b95e-776b-ac8d-4483266bb3cd"
+  },
+  "1795102200": {
+    "entryT": 1795102200,
+    "action": "SHORT",
+    "confidence": 64,
+    "reason": "Three consecutive bearish M1 candles culminate in a strong close at a fresh low, breaking below the prior 106.801 low.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21778-bd5e-79e0-83b1-ab395432ae7e"
+  },
+  "1795104000": {
+    "entryT": 1795104000,
+    "action": "SKIP",
+    "confidence": 76,
+    "reason": "The 15:57 surge stalled below 106.765; the next two candles overlap with opposing bodies, leaving no clear continuation.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21778-bdae-7a14-b0b8-98cb4491ceda"
+  },
+  "1795105800": {
+    "entryT": 1795105800,
+    "action": "SKIP",
+    "confidence": 83,
+    "reason": "The last three M1 candles overlap with opposing wicks after the sharp drop, showing no clear directional follow-through.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21778-be7b-7844-bd3c-5a23c1627d5b"
+  },
+  "1795107600": {
+    "entryT": 1795107600,
+    "action": "SHORT",
+    "confidence": 60,
+    "reason": "Four bearish M1 candles show descending highs and lows after the rebound stalled, with the latest close near its low.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21778-bfc2-70b4-ae90-cf39a3cf99d6"
+  },
+  "1795109400": {
+    "entryT": 1795109400,
+    "action": "SKIP",
+    "confidence": 76,
+    "reason": "Two bullish candles recover the pullback, but price remains below the 106.710 wick high after overlapping candles.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21778-c15f-7d8f-9e9a-af670322cee4"
+  },
+  "1795111200": {
+    "entryT": 1795111200,
+    "action": "SHORT",
+    "confidence": 62,
+    "reason": "Recent M1 candles show lower lows; the latest bearish body broke below 106.623 and closed near its low at 106.611.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21778-c724-7f37-a4d9-a7ac2ab35e29"
+  },
+  "1795113000": {
+    "entryT": 1795113000,
+    "action": "SKIP",
+    "confidence": 72,
+    "reason": "Recent candles climb, but the latest upper wick and smaller bodies show hesitation after the strong 18:24–18:26 advance.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21778-c79d-7206-83c9-20766a17eb61"
+  },
+  "1795114800": {
+    "entryT": 1795114800,
+    "action": "SKIP",
+    "confidence": 91,
+    "reason": "The last three M1 candles have tiny bodies and overlapping wicks, with closes clustered at 106.561–106.562.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21778-c86f-7b66-adc8-f48fa79cf2a3"
+  },
+  "1795116600": {
+    "entryT": 1795116600,
+    "action": "SHORT",
+    "confidence": 60,
+    "reason": "Two bearish M1 candles follow the 106.584 peak, with lower lows and the latest closing near its low after an upper-wick rejection.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21778-cb2a-704a-bfc8-77547aa920c5"
+  },
+  "1795118400": {
+    "entryT": 1795118400,
+    "action": "SKIP",
+    "confidence": 76,
+    "reason": "Three falling M1 closes show selling, but repeated lower wicks near 106.413–106.431 leave downside continuation unclear.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21778-cd8e-7d35-9aa5-b9850d654b1f"
+  },
+  "1795120200": {
+    "entryT": 1795120200,
+    "action": "SHORT",
+    "confidence": 60,
+    "reason": "The rebound stalled at 106.418; subsequent candles made lower highs, and the latest bearish candle closed near its low.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21778-d021-790b-bc9b-519c02b3150c"
+  },
+  "1795122000": {
+    "entryT": 1795122000,
+    "action": "SKIP",
+    "confidence": 76,
+    "reason": "Recent M1 candles drift lower, but repeated lower wicks near 106.360 and the last tiny body leave no clear directional edge.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21778-d0e0-7088-a60d-a2f7512e4070"
+  },
+  "1795123800": {
+    "entryT": 1795123800,
+    "action": "SKIP",
+    "confidence": 79,
+    "reason": "Recent M1 candles overlap with small bodies and repeated wicks near 106.290, leaving no clear one-minute directional edge.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21778-d141-72bd-9de9-1db061aa14fe"
+  },
+  "1795125600": {
+    "entryT": 1795125600,
+    "action": "SKIP",
+    "confidence": 83,
+    "reason": "Three bearish M1 candles show selling, but the latest long lower wick rejects 106.273 and leaves direction unclear.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21778-d46c-7130-8d10-4a226a5c6fdc"
+  },
+  "1795127400": {
+    "entryT": 1795127400,
+    "action": "SKIP",
+    "confidence": 78,
+    "reason": "The last two M1 candles fell, but 106.270 sits among repeatedly rejected lows at 106.264–106.271, leaving direction unclear.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21778-d9d8-7934-9bb1-8820670a287f"
+  },
+  "1795129200": {
+    "entryT": 1795129200,
+    "action": "SKIP",
+    "confidence": 76,
+    "reason": "Recent M1 closes drift lower, but repeated long lower wicks and overlapping bodies leave the next candle unclear.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21779-a309-72ec-a23d-7bd10f2a45fb"
+  },
+  "1795131000": {
+    "entryT": 1795131000,
+    "action": "SKIP",
+    "confidence": 80,
+    "reason": "The 23:28 bullish candle was followed by a bearish candle with wicks on both sides, leaving conflicting momentum.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21779-a5b0-7143-a4fa-dceac1c81318"
+  },
+  "1795134600": {
+    "entryT": 1795134600,
+    "action": "SHORT",
+    "confidence": 68,
+    "reason": "M1 candles keep making lower highs and lows; the latest bearish body closes near its low, extending the M3 decline.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21779-a673-7a8e-886f-2f81b70523cc"
+  },
+  "1795136400": {
+    "entryT": 1795136400,
+    "action": "LONG",
+    "confidence": 60,
+    "reason": "Four bullish M1 candles rebound from 105.938, with the latest closing above prior highs at 106.115.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21779-a691-79bf-8fd3-c03824d9805e"
+  },
+  "1795138200": {
+    "entryT": 1795138200,
+    "action": "SKIP",
+    "confidence": 84,
+    "reason": "Recent M1 candles show upper-wick rejection but repeated lower-wick rebounds near 106.02, leaving no clear direction.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21779-a700-79da-ae74-029bf4ec93fa"
+  },
+  "1795140000": {
+    "entryT": 1795140000,
+    "action": "SKIP",
+    "confidence": 79,
+    "reason": "The last bullish candle closes near repeated highs, but alternating bodies and overlapping wicks show no clear directional edge.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21779-ae9a-7779-bda5-fe0d14712bee"
+  },
+  "1795141800": {
+    "entryT": 1795141800,
+    "action": "SHORT",
+    "confidence": 60,
+    "reason": "Two bearish M1 candles follow the 106.055 peak, with lower highs, lower lows and a larger second bearish body.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21779-aeaa-7174-b356-f306403c03b9"
+  },
+  "1795143600": {
+    "entryT": 1795143600,
+    "action": "SKIP",
+    "confidence": 83,
+    "reason": "The last three M1 candles alternate direction within 106.000–106.043, showing no clear follow-through after the rally.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21779-af9a-7346-bc04-05d13fbf64a1"
+  },
+  "1795145400": {
+    "entryT": 1795145400,
+    "action": "SKIP",
+    "confidence": 76,
+    "reason": "Three bearish M1 candles show downside momentum, but the latest low revisits repeated lows near 105.829–105.836.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21779-b089-725b-a507-dd30dc5dd431"
+  },
+  "1795147200": {
+    "entryT": 1795147200,
+    "action": "SKIP",
+    "confidence": 85,
+    "reason": "The last three M1 candles overlap with small bodies and upper wicks after the rally, showing no clear directional follow-through.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21779-b27a-7a62-88bd-38712c9d5c3f"
+  },
+  "1795149000": {
+    "entryT": 1795149000,
+    "action": "SKIP",
+    "confidence": 83,
+    "reason": "The latest bullish candle reverses two bearish candles but closes within overlapping recent ranges, leaving direction unclear.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21779-b7b8-7d53-96ad-a3db6547d8f9"
+  },
+  "1795150800": {
+    "entryT": 1795150800,
+    "action": "SKIP",
+    "confidence": 76,
+    "reason": "Recent M1 candles show lower highs and lows, but overlapping bodies and repeated lower wicks weaken the bearish edge.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21779-b997-7975-b75d-88c4a1c9b26c"
+  },
+  "1795152600": {
+    "entryT": 1795152600,
+    "action": "SKIP",
+    "confidence": 76,
+    "reason": "Recent M1 candles retreat from 106.067, but the latest lower wick and preceding bullish surge leave mixed direction.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21779-ba61-7136-b9ef-ab24e1fec4aa"
+  },
+  "1795154400": {
+    "entryT": 1795154400,
+    "action": "SKIP",
+    "confidence": 78,
+    "reason": "The last bullish candle rebounds within overlapping candles after repeated upper-wick rejections, leaving no clear direction.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21779-bac5-7d80-80cf-60cc295cefe9"
+  },
+  "1795156200": {
+    "entryT": 1795156200,
+    "action": "SHORT",
+    "confidence": 60,
+    "reason": "The last M1 candle erased the prior rebound and closed at its low after repeated highs near 106.263.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21779-bc09-7d20-991b-b6f1c4f3d1bf"
+  },
+  "1795158000": {
+    "entryT": 1795158000,
+    "action": "SKIP",
+    "confidence": 85,
+    "reason": "After the 06:56 bearish candle, overlapping small bodies and the 06:59 two-sided wicks show no clear directional follow-through.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21779-c1ae-7a95-a65a-9027e98dfd86"
+  },
+  "1795159800": {
+    "entryT": 1795159800,
+    "action": "SHORT",
+    "confidence": 62,
+    "reason": "M1 rebounds keep failing at lower highs; the latest bearish candle breaks prior lows and closes near its low.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21779-c3aa-7d93-8afe-8263fc64bfe7"
+  },
+  "1795161600": {
+    "entryT": 1795161600,
+    "action": "SKIP",
+    "confidence": 78,
+    "reason": "The last bearish candle reverses the prior bounce, but repeated lower wicks near 106.263–106.270 leave direction unclear.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21779-c4d5-78fb-b0f2-2dc4fcac2dbf"
+  },
+  "1795163400": {
+    "entryT": 1795163400,
+    "action": "SKIP",
+    "confidence": 86,
+    "reason": "Recent M1 bodies alternate and overlap; the latest bullish candle remains below repeated highs at 106.112.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21779-c9cb-7f1a-a087-181aebea3a3f"
+  },
+  "1795165200": {
+    "entryT": 1795165200,
+    "action": "SKIP",
+    "confidence": 74,
+    "reason": "Two bearish M1 closes show selling, but 106.020 sits above repeated lower-wick rebounds near 105.994–106.010.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21779-c9e8-7c1f-8168-2d3076fc7ce7"
+  },
+  "1795167000": {
+    "entryT": 1795167000,
+    "action": "SKIP",
+    "confidence": 79,
+    "reason": "The last bullish candle reversed several bearish bodies, but its upper wick and the preceding decline leave direction unclear.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177a-8c37-7509-9dc4-1cf02502e192"
+  },
+  "1795168800": {
+    "entryT": 1795168800,
+    "action": "SHORT",
+    "confidence": 63,
+    "reason": "The last two M1 candles reject the bounce and close lower; the latest breaks to 105.635 and closes near its low.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177a-8dfd-7b71-a15e-5e0c16e061dc"
+  },
+  "1795170600": {
+    "entryT": 1795170600,
+    "action": "SKIP",
+    "confidence": 76,
+    "reason": "The 10:28 bullish push was followed by a small bearish candle at 10:29, leaving immediate continuation unclear.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177a-8f30-7244-b8e1-06af2e97b4b4"
+  },
+  "1795172400": {
+    "entryT": 1795172400,
+    "action": "SKIP",
+    "confidence": 78,
+    "reason": "Two bullish M1 candles rebound from 105.781, but the latest upper wick and preceding decline leave direction unclear.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177a-8f71-764e-a357-1accc4ace187"
+  },
+  "1795174200": {
+    "entryT": 1795174200,
+    "action": "SKIP",
+    "confidence": 76,
+    "reason": "The last three M1 candles overlap with small bodies and two-sided wicks, showing no clear follow-through after the rebound.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177a-9008-70e0-a411-d7b5b0eb93cb"
+  },
+  "1795176000": {
+    "entryT": 1795176000,
+    "action": "SHORT",
+    "confidence": 59,
+    "reason": "The last three M1 candles show lower highs, and the final bearish candle breaks prior lows and closes at its low.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177a-96db-7b24-892f-5a4910db29b6"
+  },
+  "1795177800": {
+    "entryT": 1795177800,
+    "action": "SKIP",
+    "confidence": 84,
+    "reason": "The last four M1 candles have small bodies and overlapping wicks after the rise, showing no clear one-minute direction.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177a-9a81-7579-a954-b5ec66272eb6"
+  },
+  "1795179600": {
+    "entryT": 1795179600,
+    "action": "SKIP",
+    "confidence": 78,
+    "reason": "The 12:59 bullish rebound overlaps two bearish candles after the 12:56 upper wick, leaving mixed one-minute direction.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177a-9ba8-74cb-982b-6217c6f2b3ef"
+  },
+  "1795181400": {
+    "entryT": 1795181400,
+    "action": "SKIP",
+    "confidence": 79,
+    "reason": "The rebound from 105.662 stalled with tiny bodies and upper wicks near 105.725, leaving mixed one-minute direction.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177a-9bf5-758e-84b1-5b444c622f6f"
+  },
+  "1795183200": {
+    "entryT": 1795183200,
+    "action": "SKIP",
+    "confidence": 76,
+    "reason": "The last bullish candle erased several small bodies but closed below recent highs at 105.862–105.866 after choppy candles.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177a-9c65-7a2e-9179-269df7f11a8a"
+  },
+  "1795185000": {
+    "entryT": 1795185000,
+    "action": "SKIP",
+    "confidence": 83,
+    "reason": "Recent M1 candles overlap with wicks on both sides; the rebound to 105.874 remains below repeated highs near 105.880.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177a-a3f0-78d9-b360-5df0cdfd84e0"
+  },
+  "1795186800": {
+    "entryT": 1795186800,
+    "action": "LONG",
+    "confidence": 59,
+    "reason": "Nine consecutive bullish M1 candles and the latest three higher highs and lows favor continuation despite upper wicks.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177a-a437-7384-8b11-80548b2a888a"
+  },
+  "1795188600": {
+    "entryT": 1795188600,
+    "action": "SKIP",
+    "confidence": 76,
+    "reason": "Two bullish M1 candles follow a sharp bearish candle, but overlapping ranges and repeated reversals leave no clear edge.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177a-a4e4-7205-b4f7-cd2f69d42785"
+  },
+  "1795190400": {
+    "entryT": 1795190400,
+    "action": "SKIP",
+    "confidence": 79,
+    "reason": "Recent bearish candles retested 105.456, but the last candle bounced with an upper wick, leaving mixed one-minute direction.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177a-a542-74c3-b879-65265ea04bef"
+  },
+  "1795192200": {
+    "entryT": 1795192200,
+    "action": "SKIP",
+    "confidence": 87,
+    "reason": "The last four M1 candles overlap with alternating bodies, repeatedly rejecting 105.403 lows and 105.441 highs.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177a-acb1-70ad-9578-00ba6405d807"
+  },
+  "1795194000": {
+    "entryT": 1795194000,
+    "action": "SKIP",
+    "confidence": 73,
+    "reason": "Two strong bullish M1 candles rebound into prior highs at 105.396–105.408, leaving continuation versus rejection unclear.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177a-aced-733f-acbc-ce6f562c9a54"
+  },
+  "1795195800": {
+    "entryT": 1795195800,
+    "action": "SKIP",
+    "confidence": 79,
+    "reason": "The strong 17:29 rebound opposes the recent lower lows, while its upper wick leaves the next candle's direction unclear.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177a-adb8-73e5-b6c8-40c1fc686914"
+  },
+  "1795197600": {
+    "entryT": 1795197600,
+    "action": "LONG",
+    "confidence": 60,
+    "reason": "The last bullish candle erased the prior bearish body and closed above 17:57's high, extending the rebound from 17:53.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177a-ae42-7e30-b8ec-b38a57821b86"
+  },
+  "1795199400": {
+    "entryT": 1795199400,
+    "action": "SKIP",
+    "confidence": 76,
+    "reason": "Recent bearish candles made lower lows, but the last candle bounced with wicks on both sides, clouding the next-minute direction.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177a-b083-7af5-b482-dc9f89676dff"
+  },
+  "1795201200": {
+    "entryT": 1795201200,
+    "action": "SHORT",
+    "confidence": 62,
+    "reason": "Three consecutive bearish M1 candles show lower highs and lows after rejection at 105.406, with the latest closing near its low.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177a-b56c-75de-bca3-af91c6b4fa6b"
+  },
+  "1795203000": {
+    "entryT": 1795203000,
+    "action": "SHORT",
+    "confidence": 64,
+    "reason": "The latest M1 candle erased the small bounce and closed near its low, extending the sequence of lower highs and lows.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177b-79f3-75e3-8c1b-7e24b78c0165"
+  },
+  "1795204800": {
+    "entryT": 1795204800,
+    "action": "SHORT",
+    "confidence": 60,
+    "reason": "The latest M1 candle broke below 104.918 and closed near its low after the rebound stalled below 104.994.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177b-7a01-7401-abb4-ed223a2ea75d"
+  },
+  "1795206600": {
+    "entryT": 1795206600,
+    "action": "SKIP",
+    "confidence": 79,
+    "reason": "The latest bearish candle reverses a brief rebound, but overlapping candles and repeated lower wicks near 104.83–104.85 cloud direction.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177b-7b68-7165-b311-d107ea33fb84"
+  },
+  "1795208400": {
+    "entryT": 1795208400,
+    "action": "SKIP",
+    "confidence": 76,
+    "reason": "The strong 20:59 rebound reaches prior candles' 104.822–104.836 highs after 20:58's long upper wick, leaving direction unclear.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177b-7b8d-7476-85a0-8ddbabf0958f"
+  },
+  "1795210200": {
+    "entryT": 1795210200,
+    "action": "SHORT",
+    "confidence": 60,
+    "reason": "The last M1 candle erased the rebound, made a lower low, and closed near its low after repeated rejection at 104.952.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177b-7f05-7928-bbe2-753788bd1079"
+  },
+  "1795395600": {
+    "entryT": 1795395600,
+    "action": "SKIP",
+    "confidence": 76,
+    "reason": "The last M1 candle rebounded but left a sizable upper wick after two hesitant candles, weakening the preceding bullish push.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177b-8294-7a85-bac1-22628f33afb1"
+  },
+  "1795397400": {
+    "entryT": 1795397400,
+    "action": "SKIP",
+    "confidence": 84,
+    "reason": "The rebound stalled with two near-doji M1 candles capped at 105.660, leaving no clear next-minute direction.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177b-85c5-7c63-a825-90c6292f495f"
+  },
+  "1795399200": {
+    "entryT": 1795399200,
+    "action": "SHORT",
+    "confidence": 61,
+    "reason": "The latest M1 candle broke prior lows with a large bearish body and closed near its low after the rebound stalled.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177b-87b5-716f-a2fa-6cb04b908af1"
+  },
+  "1795401000": {
+    "entryT": 1795401000,
+    "action": "SHORT",
+    "confidence": 60,
+    "reason": "The last three M1 candles show lower highs and lows, with the latest closing below prior lows after a weak bounce.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177b-8aa7-76ca-99f9-e8e1723e460c"
+  },
+  "1795402800": {
+    "entryT": 1795402800,
+    "action": "SKIP",
+    "confidence": 92,
+    "reason": "Recent M1 candles have small, overlapping bodies and wicks on both sides near 105.45, showing no clear directional momentum.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177b-8b88-79a4-85a3-49a695af389a"
+  },
+  "1795404600": {
+    "entryT": 1795404600,
+    "action": "SKIP",
+    "confidence": 82,
+    "reason": "Recent M1 candles alternate direction with overlapping ranges; the latest bearish body remains above repeated lows near 105.55.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177b-8e34-75bc-ac8e-2cbb546dec39"
+  },
+  "1795406400": {
+    "entryT": 1795406400,
+    "action": "SKIP",
+    "confidence": 77,
+    "reason": "The last three M1 candles repeatedly held 105.475–105.476 but alternated direction, leaving no clear continuation.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177b-9011-75ad-942f-17abb863cc0a"
+  },
+  "1795408200": {
+    "entryT": 1795408200,
+    "action": "SKIP",
+    "confidence": 88,
+    "reason": "The last four M1 candles alternate direction with overlapping bodies and two-sided wicks, showing no clear directional edge.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177b-91de-72c4-a5fc-430334186225"
+  },
+  "1795410000": {
+    "entryT": 1795410000,
+    "action": "SHORT",
+    "confidence": 61,
+    "reason": "Last three M1 candles have falling highs, lows and closes, with bearish bodies reversing the preceding rise.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177b-9302-7f14-995f-232ff560251f"
+  },
+  "1795411800": {
+    "entryT": 1795411800,
+    "action": "SKIP",
+    "confidence": 76,
+    "reason": "05:29 rejected 105.575 and closed at its low, but held near prior 105.540 closes after the preceding bullish push.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177b-943d-709f-ba32-0b60b71e9e48"
+  },
+  "1795413600": {
+    "entryT": 1795413600,
+    "action": "SKIP",
+    "confidence": 89,
+    "reason": "Overlapping M1 candles show repeated upper-wick rejection near 105.604; the latest doji leaves no clear directional edge.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177b-97b2-7751-8010-dda191ad4530"
+  },
+  "1795415400": {
+    "entryT": 1795415400,
+    "action": "SKIP",
+    "confidence": 78,
+    "reason": "Two bullish candles lift price into repeated highs near 105.628–105.637, but overlapping bodies leave direction unclear.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177b-9a4a-7cb0-959c-b6d597b38774"
+  },
+  "1795417200": {
+    "entryT": 1795417200,
+    "action": "SKIP",
+    "confidence": 83,
+    "reason": "Recent M1 candles overlap near 105.638, and the latest small bearish body shows no clear directional follow-through.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177b-9b39-7b97-9e65-7f1a89427a40"
+  },
+  "1795419000": {
+    "entryT": 1795419000,
+    "action": "SKIP",
+    "confidence": 86,
+    "reason": "The last three M1 candles alternate direction within 105.689–105.724, with repeated upper wicks and no clear breakout.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177b-9c21-7781-9e8f-0ae71466eee1"
+  },
+  "1795420800": {
+    "entryT": 1795420800,
+    "action": "SKIP",
+    "confidence": 78,
+    "reason": "Five bearish M1 candles are followed by a rebound from 105.676, leaving conflicting direction for the next minute.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177b-a112-745b-9ad4-64ad7268f111"
+  },
+  "1795422600": {
+    "entryT": 1795422600,
+    "action": "SKIP",
+    "confidence": 64,
+    "reason": "The last two M1 candles closed lower, but repeated lower wicks near 105.712–105.716 weaken bearish follow-through.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177c-60f0-77a2-ac4d-f4b52cdc7eca"
+  },
+  "1795424400": {
+    "entryT": 1795424400,
+    "action": "SKIP",
+    "confidence": 90,
+    "reason": "The last four M1 candles have tiny bodies and overlapping wicks, showing no clear directional follow-through.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177c-63a9-79c1-afaf-422c92ffbffe"
+  },
+  "1795426200": {
+    "entryT": 1795426200,
+    "action": "SKIP",
+    "confidence": 79,
+    "reason": "Five rising M1 candles meet a bearish close near its low at 09:29, leaving continuation versus reversal unclear.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177c-63ac-781b-8c88-824fa0e53752"
+  },
+  "1795428000": {
+    "entryT": 1795428000,
+    "action": "SHORT",
+    "confidence": 64,
+    "reason": "Three consecutive bearish M1 candles make lower highs and lows, closing near their lows after the rebound failed.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177c-6570-7b8c-af04-11d9aa3c8ea7"
+  },
+  "1795429800": {
+    "entryT": 1795429800,
+    "action": "SKIP",
+    "confidence": 86,
+    "reason": "Recent M1 candles overlap with repeated lower-wick rebounds and upper-wick rejection near 105.737, showing no clear direction.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177c-68d5-7d2d-84fe-decb5f965ffe"
+  },
+  "1795431600": {
+    "entryT": 1795431600,
+    "action": "SKIP",
+    "confidence": 83,
+    "reason": "The sharp bearish 10:57 candle is followed by two small-bodied, overlapping candles, showing stalled downward momentum.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177c-6f5c-7b33-832c-f91c8780ebc2"
+  },
+  "1795433400": {
+    "entryT": 1795433400,
+    "action": "SKIP",
+    "confidence": 80,
+    "reason": "The 11:28 bearish candle made a lower low, but 11:29 rebounded; alternating bodies and overlapping wicks show no clear edge.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177c-7181-79e3-8696-e2a147e91ed6"
+  },
+  "1795435200": {
+    "entryT": 1795435200,
+    "action": "SKIP",
+    "confidence": 83,
+    "reason": "Recent M1 candles show a bounce from 105.491 followed by a tiny body with two wicks, leaving no clear directional follow-through.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177c-73c5-7811-a5fb-976d90f070bc"
+  },
+  "1795437000": {
+    "entryT": 1795437000,
+    "action": "SKIP",
+    "confidence": 82,
+    "reason": "Two bullish M1 candles rebounded from 105.335, but the latest candle rejected 105.382 and closed lower, leaving mixed momentum.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177c-7584-7ae1-ab3b-c2186a84be64"
+  },
+  "1795438800": {
+    "entryT": 1795438800,
+    "action": "LONG",
+    "confidence": 61,
+    "reason": "Six consecutive bullish M1 candles form rising lows; the last three push above 105.255 and close near their highs.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177c-7749-72d9-a941-5792c91df357"
+  },
+  "1795440600": {
+    "entryT": 1795440600,
+    "action": "SKIP",
+    "confidence": 76,
+    "reason": "Five bearish M1 candles were followed by a rebound from 105.186 to 105.200, leaving the next minute's direction unclear.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177c-7b0f-7b82-a84c-e8414b24bfb9"
+  },
+  "1795442400": {
+    "entryT": 1795442400,
+    "action": "LONG",
+    "confidence": 60,
+    "reason": "Six bullish M1 candles show higher closes; the last two overcome the 13:57 upper wick and finish near fresh highs.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177c-7c7c-7388-9f51-5c1ee06957d6"
+  },
+  "1795444200": {
+    "entryT": 1795444200,
+    "action": "LONG",
+    "confidence": 59,
+    "reason": "Three bullish M1 candles form higher highs and lows, with the latest body extending the advance despite an upper wick.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177c-7da6-7de3-b1a9-9358f347464a"
+  },
+  "1795446000": {
+    "entryT": 1795446000,
+    "action": "SKIP",
+    "confidence": 78,
+    "reason": "The last three M1 candles made lower lows, but shrinking bearish bodies and the latest lower wick show fading downside follow-through.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177c-7f74-7e21-8b11-7f0b8c3091ba"
+  },
+  "1795447800": {
+    "entryT": 1795447800,
+    "action": "SKIP",
+    "confidence": 78,
+    "reason": "Two bullish candles rebound from 105.608, but remain below the 15:27 rejection high after a sharp bearish candle.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177c-823e-795b-a3d2-e4ca52bbc722"
+  },
+  "1795449600": {
+    "entryT": 1795449600,
+    "action": "SKIP",
+    "confidence": 80,
+    "reason": "Two bullish M1 closes follow repeated lows near 105.518, but overlap the recent bearish candles without a clear breakout.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177c-8522-774b-a4f3-229e39db499c"
+  },
+  "1795451400": {
+    "entryT": 1795451400,
+    "action": "SKIP",
+    "confidence": 79,
+    "reason": "The 16:27 drop was reversed by 16:28, while 16:29 closed with a small body and lower wick, leaving mixed momentum.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177c-8587-79b3-8fc5-8e8b20233eea"
+  },
+  "1795453200": {
+    "entryT": 1795453200,
+    "action": "LONG",
+    "confidence": 59,
+    "reason": "Seven consecutive bullish M1 candles show rising lows, with the latest three pushing above the prior 105.406 swing high.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177c-8588-7be1-87b7-2cfa1fc6f138"
+  },
+  "1795455000": {
+    "entryT": 1795455000,
+    "action": "SKIP",
+    "confidence": 84,
+    "reason": "The last bullish M1 candle remains inside overlapping recent ranges, with repeated upper wicks near 105.49.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177c-8953-7169-8a92-62dbe0664335"
+  },
+  "1795456800": {
+    "entryT": 1795456800,
+    "action": "SKIP",
+    "confidence": 76,
+    "reason": "Three bearish M1 candles are followed by a small bullish candle with a lower wick, leaving the next-minute direction unclear.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177c-8c8e-768e-a0a3-6c7ed117b41c"
+  },
+  "1795458600": {
+    "entryT": 1795458600,
+    "action": "SKIP",
+    "confidence": 78,
+    "reason": "Recent M1 candles overlap with alternating bodies; the last two rise but stall near repeated highs at 105.484–105.489.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177d-4b83-7142-aca6-0771478862ef"
+  },
+  "1795460400": {
+    "entryT": 1795460400,
+    "action": "SKIP",
+    "confidence": 86,
+    "reason": "Recent M1 candles overlap with alternating bodies and wicks on both sides, showing no clear directional follow-through.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177d-5194-7739-9832-d38a46913df1"
+  },
+  "1795462200": {
+    "entryT": 1795462200,
+    "action": "SKIP",
+    "confidence": 83,
+    "reason": "The last two M1 candles closed at 105.403 with small bodies and opposing wicks after repeated holds near 105.393.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177d-51ca-7264-b98f-ceee594c6be5"
+  },
+  "1795464000": {
+    "entryT": 1795464000,
+    "action": "SKIP",
+    "confidence": 78,
+    "reason": "Recent M1 candles alternate below repeated 105.331 highs, with overlapping bodies and wicks obscuring the rebound's direction.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177d-627e-7572-b52f-2c4c4d135cde"
+  },
+  "1795465800": {
+    "entryT": 1795465800,
+    "action": "SKIP",
+    "confidence": 78,
+    "reason": "Recent M1 candles overlap below 105.319, with small bodies and repeated upper wicks despite gradually higher closes.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177d-522b-708d-a2f3-b1a8e3f1f2df"
+  },
+  "1795467600": {
+    "entryT": 1795467600,
+    "action": "SKIP",
+    "confidence": 85,
+    "reason": "The rebound stalled near 105.284, while the last three M1 candles overlap with small bodies and mixed wicks.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177d-58cb-7178-af3a-f57cd3da9386"
+  },
+  "1795469400": {
+    "entryT": 1795469400,
+    "action": "SKIP",
+    "confidence": 76,
+    "reason": "Three bearish M1 candles reject 105.329, but overlap and lower wicks above 105.301 leave the next-minute direction unclear.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177d-5c8f-739a-a8bf-f7e5a51210e5"
+  },
+  "1795471200": {
+    "entryT": 1795471200,
+    "action": "SKIP",
+    "confidence": 87,
+    "reason": "The latest M1 candle has a tiny body and extreme lower wick, while its close matches the prior candle, leaving direction unclear.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177d-5e69-7ee5-ad19-d9b039b8ef87"
+  },
+  "1795473000": {
+    "entryT": 1795473000,
+    "action": "SKIP",
+    "confidence": 94,
+    "reason": "Recent M1 candles overlap with long wicks on both sides; the last bearish candle reverses a brief rise without clear follow-through.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177d-5fe5-7426-b5b9-74c9d6dc490d"
+  },
+  "1795474800": {
+    "entryT": 1795474800,
+    "action": "SKIP",
+    "confidence": 83,
+    "reason": "The last two candles closed higher but left long upper wicks, while overlapping ranges show no clear one-minute direction.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177d-6116-73a0-a9d5-71d1d8ae79cc"
+  },
+  "1795476600": {
+    "entryT": 1795476600,
+    "action": "SKIP",
+    "confidence": 83,
+    "reason": "The latest M1 candle closed flat after a bearish candle; overlapping bodies and two-sided wicks show no clear follow-through.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177d-6790-73c4-aef6-9c3ecec2c3fd"
+  },
+  "1795480200": {
+    "entryT": 1795480200,
+    "action": "SKIP",
+    "confidence": 78,
+    "reason": "Recent bullish candles meet a wide, near-doji final candle with wicks both ways, leaving the next-minute direction unclear.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177d-691e-7084-acda-6dbe61abdbb7"
+  },
+  "1795482000": {
+    "entryT": 1795482000,
+    "action": "SKIP",
+    "confidence": 78,
+    "reason": "The strong 00:56 rise stalled into upper wicks and overlapping candles at 00:57–00:59, leaving mixed momentum.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177d-699c-705c-959c-24941daa376e"
+  },
+  "1795483800": {
+    "entryT": 1795483800,
+    "action": "SKIP",
+    "confidence": 76,
+    "reason": "The latest bearish candle erased three rising closes, but repeated rebounds near 105.35 leave overlapping candles without a clear edge.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177d-6be5-77de-99e5-1c7271164286"
+  },
+  "1795485600": {
+    "entryT": 1795485600,
+    "action": "SHORT",
+    "confidence": 62,
+    "reason": "Six consecutive bearish M1 candles show falling closes; the last four print lower highs and lows despite brief upper wicks.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177d-6bfc-7361-be37-10f310426add"
+  },
+  "1795487400": {
+    "entryT": 1795487400,
+    "action": "SHORT",
+    "confidence": 60,
+    "reason": "Three bearish M1 candles show falling lows and larger bodies, with the latest closing near its low at 105.312.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177e-caac-77da-8ff4-bdc4f8b44490"
+  },
+  "1795489200": {
+    "entryT": 1795489200,
+    "action": "SHORT",
+    "confidence": 60,
+    "reason": "Four consecutive bearish M1 candles show falling closes, with the last two making lower highs and lows near their lows.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177e-d417-75c4-9f80-b907ccc3b343"
+  },
+  "1795491000": {
+    "entryT": 1795491000,
+    "action": "SKIP",
+    "confidence": 78,
+    "reason": "The last candle closed near its low after rejection at 105.302, but the preceding rebound leaves mixed one-minute direction.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177e-df94-7d61-9f85-d7a846796123"
+  },
+  "1795492800": {
+    "entryT": 1795492800,
+    "action": "SKIP",
+    "confidence": 85,
+    "reason": "Recent M1 candles overlap with small bodies and repeated upper wicks near 105.372, showing no clear directional follow-through.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177e-e8a0-7086-a121-bc786f41cf8f"
+  },
+  "1795494600": {
+    "entryT": 1795494600,
+    "action": "SHORT",
+    "confidence": 60,
+    "reason": "The latest M1 candle broke prior lows and closed near its low after two weak rebounds; recent M3 candles also closed lower.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177e-f15c-78d8-b65f-6c309fc64fcb"
+  },
+  "1795496400": {
+    "entryT": 1795496400,
+    "action": "SKIP",
+    "confidence": 79,
+    "reason": "The latest bullish candle rebounds sharply, but overlapping candles and repeated reversals around 105.345 leave no clear edge.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177e-fc9f-708d-98da-797ed30506fc"
+  },
+  "1795498200": {
+    "entryT": 1795498200,
+    "action": "SKIP",
+    "confidence": 79,
+    "reason": "The latest bullish candle rebounds from 105.432, but overlapping bodies and repeated upper wicks show mixed direction.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177f-050b-7c1e-bc63-887b76d34927"
+  },
+  "1795500000": {
+    "entryT": 1795500000,
+    "action": "LONG",
+    "confidence": 60,
+    "reason": "Three bullish M1 candles form higher lows and highs after the 105.470 rejection, with the latest closing near its high.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177f-6748-771e-9186-649a17fd694b"
+  },
+  "1795501800": {
+    "entryT": 1795501800,
+    "action": "SKIP",
+    "confidence": 78,
+    "reason": "Recent M1 candles show higher lows but repeated upper wicks near 105.634–105.643 and overlapping bodies weaken direction.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177f-79f5-7981-a303-764935875d32"
+  },
+  "1795503600": {
+    "entryT": 1795503600,
+    "action": "SKIP",
+    "confidence": 84,
+    "reason": "Recent bearish candles meet repeated lower-wick rejection near 105.680; the latest near-doji leaves direction unclear.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177f-888f-7bae-9ef6-eb8305515303"
+  },
+  "1795505400": {
+    "entryT": 1795505400,
+    "action": "SKIP",
+    "confidence": 78,
+    "reason": "The 07:28 bearish candle is followed by a small rebound with an upper wick and matching low, leaving mixed momentum.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177f-9609-7416-8047-f76e0c1f9be1"
+  },
+  "1795507200": {
+    "entryT": 1795507200,
+    "action": "SHORT",
+    "confidence": 61,
+    "reason": "Three consecutive bearish M1 candles show lower highs and lows after the 07:56 rebound failed.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177f-a488-756f-9455-0f530d58c9f8"
+  },
+  "1795509000": {
+    "entryT": 1795509000,
+    "action": "SHORT",
+    "confidence": 64,
+    "reason": "Four consecutive bearish M1 candles form lower highs and lows, with the latest bounce still closing below the prior low.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177f-b6fb-79df-9b54-ab1b52f4aeae"
+  },
+  "1795510800": {
+    "entryT": 1795510800,
+    "action": "SKIP",
+    "confidence": 88,
+    "reason": "Recent M1 candles have small overlapping bodies and opposing long wicks, showing rejection both ways without clear momentum.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177f-c613-7556-ab08-d1bd79d2591d"
+  },
+  "1795512600": {
+    "entryT": 1795512600,
+    "action": "SKIP",
+    "confidence": 66,
+    "reason": "The latest bullish candle barely clears repeated highs near 105.624 after several small-bodied, overlapping candles.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177f-d585-70dd-bc2e-2118a75ac51b"
+  },
+  "1795514400": {
+    "entryT": 1795514400,
+    "action": "SKIP",
+    "confidence": 76,
+    "reason": "09:59 closed at its low after four rising candles, but remains within the prior upswing, leaving mixed direction.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177f-ed4c-72c0-8e55-37423aa7cb63"
+  },
+  "1795516200": {
+    "entryT": 1795516200,
+    "action": "SKIP",
+    "confidence": 88,
+    "reason": "Recent M1 candles overlap with small bodies and wicks on both sides after the decline, showing no clear directional follow-through.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a2177f-fb51-7773-babd-1e358f624ec5"
+  },
+  "1795518000": {
+    "entryT": 1795518000,
+    "action": "SKIP",
+    "confidence": 87,
+    "reason": "The rebound was rejected at 105.543, but the last two M1 candles show lower-wick support and a flat close, leaving no clear edge.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21780-080f-737e-a3b5-2b8bbebfcdf0"
+  },
+  "1795519800": {
+    "entryT": 1795519800,
+    "action": "LONG",
+    "confidence": 61,
+    "reason": "The last two M1 candles close near their highs with rising highs and lows, extending three consecutive bullish M3 candles.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21780-14d6-7241-a26c-b24dd1355ef1"
+  },
+  "1795521600": {
+    "entryT": 1795521600,
+    "action": "SKIP",
+    "confidence": 78,
+    "reason": "Recent bearish candles descend into repeated lows at 105.707–105.711, leaving continuation versus rebound unclear.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21780-22b4-7342-8e7d-b81ce38de401"
+  },
+  "1795523400": {
+    "entryT": 1795523400,
+    "action": "SHORT",
+    "confidence": 60,
+    "reason": "The last two M1 candles form lower highs and lower lows, with the latest bearish body closing near its low.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21780-2f04-7598-b78b-d2f075a7af2d"
+  },
+  "1795525200": {
+    "entryT": 1795525200,
+    "action": "SKIP",
+    "confidence": 88,
+    "reason": "The last three M1 candles alternate down-up-down, with a deep lower wick and overlapping bodies showing no clear direction.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21780-3a9a-7950-9bab-c559db74f4fb"
+  },
+  "1795527000": {
+    "entryT": 1795527000,
+    "action": "SHORT",
+    "confidence": 60,
+    "reason": "Three bearish M1 candles follow the 105.754 peak, with descending lows and the latest close near its low.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21780-46f3-7da3-961e-ff31b353d7d6"
+  },
+  "1795528800": {
+    "entryT": 1795528800,
+    "action": "SKIP",
+    "confidence": 77,
+    "reason": "Falling closes favor sellers, but the last two candles have sizable lower wicks, weakening a clear next-minute edge.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21780-56e0-79b6-9a2b-e195cf0aba43"
+  },
+  "1795530600": {
+    "entryT": 1795530600,
+    "action": "LONG",
+    "confidence": 59,
+    "reason": "Two bullish M1 candles reverse the dip, break above 105.780 and close near their highs, showing upward momentum.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21780-64e5-75cd-917a-2ef7fc12ad26"
+  },
+  "1795532400": {
+    "entryT": 1795532400,
+    "action": "LONG",
+    "confidence": 60,
+    "reason": "Three bullish M1 candles formed rising lows; the latest closed near its high and above the prior 105.972 peak.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21780-7380-7624-b91d-f90d62ec66a9"
+  },
+  "1795534200": {
+    "entryT": 1795534200,
+    "action": "SKIP",
+    "confidence": 81,
+    "reason": "Two bullish M1 candles rebound after the sharp drop, but the latest small body and upper wick leave direction unclear.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21780-87ff-7cb9-af62-fe5701000f5d"
+  },
+  "1795536000": {
+    "entryT": 1795536000,
+    "action": "SKIP",
+    "confidence": 80,
+    "reason": "The 15:57 upper-wick rejection and 15:58 drop meet a small 15:59 rebound holding 105.570, leaving mixed direction.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21780-96f2-771f-b2da-4f4222c1262b"
+  },
+  "1795537800": {
+    "entryT": 1795537800,
+    "action": "SKIP",
+    "confidence": 76,
+    "reason": "Four bearish M1 candles follow the rise, but shrinking bodies and lower wicks show hesitant selling rather than a clear edge.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21780-a3f7-7dbe-808a-f770223b7769"
+  },
+  "1795539600": {
+    "entryT": 1795539600,
+    "action": "SKIP",
+    "confidence": 78,
+    "reason": "The sharp 16:56 drop met a two-candle rebound, while 16:59 retested the low with a lower wick, leaving mixed follow-through.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21780-b0fe-7e1d-ba19-bb98a4f8d37f"
+  },
+  "1795541400": {
+    "entryT": 1795541400,
+    "action": "SKIP",
+    "confidence": 78,
+    "reason": "The 17:27 surge is followed by two overlapping candles below 105.784, leaving no clear next-minute direction.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21780-c00d-76cb-a17c-0db62e8611ed"
+  },
+  "1795543200": {
+    "entryT": 1795543200,
+    "action": "SKIP",
+    "confidence": 85,
+    "reason": "The recent rise stalled with a bearish candle and a doji; overlapping wicks show no clear next-minute direction.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21780-d049-79b3-94db-77c56b3343f8"
+  },
+  "1795545000": {
+    "entryT": 1795545000,
+    "action": "SKIP",
+    "confidence": 74,
+    "reason": "Recent M1 candles edge higher but overlap beneath prior 105.839–105.844 highs, leaving no clear next-minute direction.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21780-dd07-7236-be32-aa24be469626"
+  },
+  "1795546800": {
+    "entryT": 1795546800,
+    "action": "SKIP",
+    "confidence": 84,
+    "reason": "The rebound from 105.776 stalled into a small bearish candle and a doji with wicks on both sides, leaving no clear direction.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21780-eb23-7c53-9c73-a25b81c91af3"
+  },
+  "1795548600": {
+    "entryT": 1795548600,
+    "action": "SKIP",
+    "confidence": 85,
+    "reason": "The latest candle rejected 105.811, but overlapping bodies and repeated rebounds above 105.772 show no clear direction.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21780-f8e2-7955-bbf0-f430bc84fcd7"
+  },
+  "1795550400": {
+    "entryT": 1795550400,
+    "action": "SHORT",
+    "confidence": 61,
+    "reason": "The last two M1 candles fell after a weak rebound, with the latest breaking 105.720 and closing near its low.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21781-076d-74ea-9aac-939d449ecce8"
+  },
+  "1795552200": {
+    "entryT": 1795552200,
+    "action": "SKIP",
+    "confidence": 77,
+    "reason": "Recent candles drift lower, but repeated lows at 105.702 and overlapping bodies leave no clear next-minute edge.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21781-17fd-74e2-9ceb-67e368da81a1"
+  },
+  "1795554000": {
+    "entryT": 1795554000,
+    "action": "SKIP",
+    "confidence": 88,
+    "reason": "The last three M1 candles have tiny bodies and overlapping wicks near 105.756, showing no clear directional follow-through.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21781-269c-7c05-9551-722fe48fdbf9"
+  },
+  "1795555800": {
+    "entryT": 1795555800,
+    "action": "SKIP",
+    "confidence": 88,
+    "reason": "The latest small bearish candle overlaps the prior bullish candle, with repeated wicks and no clear directional follow-through.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21781-33cb-738e-90db-b0683bd2dce4"
+  },
+  "1795557600": {
+    "entryT": 1795557600,
+    "action": "SKIP",
+    "confidence": 87,
+    "reason": "Recent candles drift lower, but the last candle's long lower wick rejects 105.702, leaving conflicting one-minute direction.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21781-432d-7651-93b6-0382c0cee29d"
+  },
+  "1795559400": {
+    "entryT": 1795559400,
+    "action": "SKIP",
+    "confidence": 89,
+    "reason": "The latest M1 candle has a tiny body and long opposing wicks after a bearish candle, leaving mixed short-term direction.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21781-50ed-7727-8fe8-e948c00b341c"
+  },
+  "1795561200": {
+    "entryT": 1795561200,
+    "action": "SKIP",
+    "confidence": 78,
+    "reason": "Recent candles make lower highs and lows, but the latest long lower wick shows rejection, clouding the next minute's direction.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21781-5ce5-7502-ada0-fcc76e66df17"
+  },
+  "1795563000": {
+    "entryT": 1795563000,
+    "action": "SKIP",
+    "confidence": 76,
+    "reason": "The 23:27 bullish surge stalled into two small bodies, with the latest upper wick showing rejection at 105.722.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21781-6c12-7ce7-96d9-4db1b4392aef"
+  },
+  "1795566600": {
+    "entryT": 1795566600,
+    "action": "SKIP",
+    "confidence": 86,
+    "reason": "The latest candle fell but rebounded sharply from 105.608, while repeated upper wicks leave conflicting one-minute direction.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21781-785c-78e8-bdea-d78acfb2aea1"
+  },
+  "1795568400": {
+    "entryT": 1795568400,
+    "action": "SKIP",
+    "confidence": 86,
+    "reason": "Recent M1 candles alternate direction with overlapping bodies and two-sided wicks, showing no clear momentum.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21781-86dd-7984-b03c-b8ea51074a74"
+  },
+  "1795570200": {
+    "entryT": 1795570200,
+    "action": "SHORT",
+    "confidence": 59,
+    "reason": "Two bearish M1 candles reject 105.845, with the latest strong body breaking below the prior four candles' lows.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21781-92e9-7847-94dd-7a1c16eebab4"
+  },
+  "1795572000": {
+    "entryT": 1795572000,
+    "action": "SKIP",
+    "confidence": 88,
+    "reason": "Recent M1 candles alternate direction with overlapping bodies and repeated wicks between 105.672 and 105.714.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21781-9f95-7a79-8170-eb3647b8ea00"
+  },
+  "1795573800": {
+    "entryT": 1795573800,
+    "action": "SKIP",
+    "confidence": 80,
+    "reason": "Three candles faded after the rise to 105.656, but small bodies and repeated lower wicks near 105.607 leave direction unclear.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21781-abff-7171-a655-9d4bfd56c058"
+  },
+  "1795575600": {
+    "entryT": 1795575600,
+    "action": "SHORT",
+    "confidence": 64,
+    "reason": "Four consecutive bearish M1 candles form lower lows and lower highs, with the latest closing near its low.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21781-b92f-7274-bce4-96378237b02b"
+  },
+  "1795577400": {
+    "entryT": 1795577400,
+    "action": "SHORT",
+    "confidence": 63,
+    "reason": "After the 03:26 bearish break, the weak bounce failed; the last two M1 candles made lower lows, with 03:29 closing at its low.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21781-c4c0-7ca0-8545-7ea8b87bf64c"
+  },
+  "1795579200": {
+    "entryT": 1795579200,
+    "action": "SKIP",
+    "confidence": 83,
+    "reason": "The latest M1 candle rejected 105.195 after a bearish candle, while overlapping bodies and wicks show mixed direction.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21781-d1be-76f0-8475-fe7c5f58ad2c"
+  },
+  "1795581000": {
+    "entryT": 1795581000,
+    "action": "SHORT",
+    "confidence": 60,
+    "reason": "The latest M1 candle closes at its low below prior lows after a failed rebound, with the latest M3 also closing at its low.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21781-dece-7446-9f03-f5171bb13e1f"
+  },
+  "1795582800": {
+    "entryT": 1795582800,
+    "action": "SKIP",
+    "confidence": 78,
+    "reason": "Two bullish M1 candles rebound into repeated highs at 105.098–105.104, leaving no clear edge beyond the recent range.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21781-ed6f-7345-9108-34a1f744c295"
+  },
+  "1795584600": {
+    "entryT": 1795584600,
+    "action": "SKIP",
+    "confidence": 79,
+    "reason": "The last two candles rebound from 105.071, but the latest upper wick and preceding sharp reversals leave direction unclear.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21781-fdbb-7e36-802b-846edcf5069f"
+  },
+  "1795586400": {
+    "entryT": 1795586400,
+    "action": "SHORT",
+    "confidence": 60,
+    "reason": "The last two M1 candles fell with lower highs; the latest broke prior lows and closed near its low at 105.043.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21782-0def-7331-888b-9492f22746cf"
+  },
+  "1795588200": {
+    "entryT": 1795588200,
+    "action": "SHORT",
+    "confidence": 62,
+    "reason": "Three consecutive bearish M1 candles show lower highs and lows, with the latest closing near its low below prior lows.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21782-19b6-73c8-b384-fdde0a4c6b7f"
+  },
+  "1795590000": {
+    "entryT": 1795590000,
+    "action": "SHORT",
+    "confidence": 62,
+    "reason": "The last two M1 candles fell after a failed rebound, with the latest closing near its low and breaking below 104.750.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21782-275c-79cd-b041-369c26c13c67"
+  },
+  "1795591800": {
+    "entryT": 1795591800,
+    "action": "SKIP",
+    "confidence": 81,
+    "reason": "The sharp decline stalled into two tiny-bodied M1 candles, with the latest rejecting 104.401 through a long lower wick.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21782-3388-7769-a606-98114d6faf7c"
+  },
+  "1795593600": {
+    "entryT": 1795593600,
+    "action": "SKIP",
+    "confidence": 86,
+    "reason": "Recent M1 candles alternate direction with overlapping bodies and two-sided wicks; the latest decline remains inside that range.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21782-47f7-77aa-a0e7-56cbf9236a14"
+  },
+  "1795595400": {
+    "entryT": 1795595400,
+    "action": "LONG",
+    "confidence": 61,
+    "reason": "Three consecutive bullish M1 candles make higher lows, with the latest breaking prior highs and closing almost at its high.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21782-55e8-738e-bb79-774400331382"
+  },
+  "1795597200": {
+    "entryT": 1795597200,
+    "action": "SKIP",
+    "confidence": 87,
+    "reason": "The last three M1 candles alternate direction with overlapping ranges, while the latest candle rejects 104.810.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21782-6396-7f3f-9c83-4bbe1e500d77"
+  },
+  "1795599000": {
+    "entryT": 1795599000,
+    "action": "SHORT",
+    "confidence": 61,
+    "reason": "The last M1 candle broke below 104.600 with a large bearish body, extending the prior candle's decline to a fresh low.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21782-700f-7eec-a369-65abff869612"
+  },
+  "1795600800": {
+    "entryT": 1795600800,
+    "action": "SKIP",
+    "confidence": 78,
+    "reason": "The last bullish candle reverses two bearish candles but remains below 104.697–104.702 highs, leaving mixed momentum.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21782-7c24-71c3-a0b1-81efc9079ffd"
+  },
+  "1795602600": {
+    "entryT": 1795602600,
+    "action": "SHORT",
+    "confidence": 60,
+    "reason": "Two bearish M1 candles follow the 104.728 rejection; the latest breaks prior lows and closes near its low at 104.658.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21782-888c-7ae7-a555-78fd0637928d"
+  },
+  "1795604400": {
+    "entryT": 1795604400,
+    "action": "LONG",
+    "confidence": 60,
+    "reason": "The latest M1 candle surged above recent highs and closed near its high, following a rebound with higher lows.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21782-9c74-73a0-8463-b2005b230cb3"
+  },
+  "1795606200": {
+    "entryT": 1795606200,
+    "action": "SKIP",
+    "confidence": 79,
+    "reason": "Recent bearish candles show lower-wick rejection near 104.632, followed by a near-doji at 11:29, weakening downside clarity.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21782-ae05-7344-bcbe-669895226227"
+  },
+  "1795608000": {
+    "entryT": 1795608000,
+    "action": "SKIP",
+    "confidence": 76,
+    "reason": "Recent M1 candles descend, but the last candle rebounds from 104.586 with a lower wick, leaving next-minute direction unclear.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21782-c5bc-7439-8a41-45fc4eec0fcf"
+  },
+  "1795609800": {
+    "entryT": 1795609800,
+    "action": "SHORT",
+    "confidence": 61,
+    "reason": "The latest bearish M1 candle erased the prior rebound and made a fresh low, extending the decline from 12:23.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21782-d1dc-7d6b-8ebf-6309051677d2"
+  },
+  "1795611600": {
+    "entryT": 1795611600,
+    "action": "LONG",
+    "confidence": 61,
+    "reason": "Four bullish M1 candles show rising highs and lows; the latest closes near its high after breaking above 104.669.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21782-e247-7a0e-9c08-027d0b040d80"
+  },
+  "1795613400": {
+    "entryT": 1795613400,
+    "action": "SKIP",
+    "confidence": 84,
+    "reason": "The latest M1 candle broke recent lows but recovered with a long lower wick, leaving direction unclear near repeated highs.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21782-f1e8-7952-9bba-12fe2d4b9fe7"
+  },
+  "1795615200": {
+    "entryT": 1795615200,
+    "action": "SKIP",
+    "confidence": 76,
+    "reason": "Three rising closes rebound from 104.691, but the latest upper wick and preceding sharp decline leave mixed direction.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21782-ff64-78c5-a58a-2caca82eb852"
+  },
+  "1795617000": {
+    "entryT": 1795617000,
+    "action": "SHORT",
+    "confidence": 60,
+    "reason": "Three bearish M1 candles form lower highs and lows, with closes below the earlier 104.884 low.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21783-0ce1-7c53-89cb-23e57567c3fe"
+  },
+  "1795618800": {
+    "entryT": 1795618800,
+    "action": "SKIP",
+    "confidence": 76,
+    "reason": "The latest M1 candle broke the bullish streak, repeated the 104.903 high and left a long lower wick, clouding direction.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21783-1c87-75f5-b59b-13f17360ac52"
+  },
+  "1795620600": {
+    "entryT": 1795620600,
+    "action": "SKIP",
+    "confidence": 80,
+    "reason": "The last three M1 candles show falling lows, but repeated lower wicks and the latest small bullish body weaken bearish follow-through.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21783-311b-7aa3-9501-eaee7e13e180"
+  },
+  "1795622400": {
+    "entryT": 1795622400,
+    "action": "SKIP",
+    "confidence": 88,
+    "reason": "Recent M1 candles alternate direction with overlapping wicks; the latest small body shows no clear one-minute momentum.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21783-3f6c-79b9-bc05-51ed25690b04"
+  },
+  "1795624200": {
+    "entryT": 1795624200,
+    "action": "SKIP",
+    "confidence": 79,
+    "reason": "The last M1 candle has a tiny body and long lower wick after two bearish candles, leaving the next-minute direction unclear.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21783-4cfa-7910-a80e-01020921a028"
+  },
+  "1795626000": {
+    "entryT": 1795626000,
+    "action": "SKIP",
+    "confidence": 88,
+    "reason": "The rebound stalled: the last three M1 candles have small bodies and two-sided wicks, showing no clear directional follow-through.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21783-5a3f-7336-9ff8-068ec35a9044"
+  },
+  "1795627800": {
+    "entryT": 1795627800,
+    "action": "SKIP",
+    "confidence": 76,
+    "reason": "Recent M1 candles show lower highs, but the bounce from 105.051 and overlapping bodies leave the next-minute direction unclear.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21783-68b7-785e-ac5b-3dab64bc366d"
+  },
+  "1795629600": {
+    "entryT": 1795629600,
+    "action": "SHORT",
+    "confidence": 61,
+    "reason": "Three consecutive bearish M1 candles show lower highs and lows, with closes near their lows after rejection at 105.278.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21783-74a5-7622-a662-864003a7422e"
+  },
+  "1795631400": {
+    "entryT": 1795631400,
+    "action": "SKIP",
+    "confidence": 85,
+    "reason": "The last three M1 candles overlap with small bearish bodies and lower wicks, showing no clear directional follow-through.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21783-8319-7406-bbf3-d3633463dbfe"
+  },
+  "1795633200": {
+    "entryT": 1795633200,
+    "action": "SHORT",
+    "confidence": 62,
+    "reason": "Three consecutive bearish M1 candles make lower highs and lows; the latest closes at its low below the prior 105.480 low.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21783-8fbf-7088-8b84-528a778897f5"
+  },
+  "1795635000": {
+    "entryT": 1795635000,
+    "action": "SKIP",
+    "confidence": 78,
+    "reason": "The latest bullish M1 candle reaches prior highs near 105.555, but preceding candles overlap without sustained direction.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21783-9d2d-7280-a383-4dcfaf42d6ba"
+  },
+  "1795636800": {
+    "entryT": 1795636800,
+    "action": "SKIP",
+    "confidence": 86,
+    "reason": "The sharp bearish candle was followed by a rebound and a tiny mixed-wick candle, leaving no clear one-minute direction.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21783-aaad-7722-b293-d7b034ae5b1c"
+  },
+  "1795638600": {
+    "entryT": 1795638600,
+    "action": "SKIP",
+    "confidence": 83,
+    "reason": "The latest bearish candle closes near repeated lows at 105.536–105.539, while overlapping candles show no clear follow-through.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21783-b6f1-77f5-8f41-ac10d0924766"
+  },
+  "1795640400": {
+    "entryT": 1795640400,
+    "action": "SKIP",
+    "confidence": 76,
+    "reason": "Recent candles descend, but the latest near-doji has wicks on both sides after shrinking bearish bodies, weakening continuation.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21783-c35c-7c7b-bf13-fbbd47924ea4"
+  },
+  "1795642200": {
+    "entryT": 1795642200,
+    "action": "SHORT",
+    "confidence": 61,
+    "reason": "The last three M1 candles have bearish bodies, lower highs and lower lows, breaking below the preceding candle cluster.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21783-d110-714b-8828-696f8c6e1694"
+  },
+  "1795644000": {
+    "entryT": 1795644000,
+    "action": "SHORT",
+    "confidence": 61,
+    "reason": "The last M1 candle closed at its low below the prior long lower wick, extending lower lows with a large bearish body.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21783-df4c-7d5b-a2a0-40fb9e6bb09b"
+  },
+  "1795645800": {
+    "entryT": 1795645800,
+    "action": "SKIP",
+    "confidence": 91,
+    "reason": "Recent M1 candles overlap with long wicks on both sides and closes near 105.40, showing no clear directional follow-through.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21783-ec2b-70d7-a264-450338365ac4"
+  },
+  "1795647600": {
+    "entryT": 1795647600,
+    "action": "SKIP",
+    "confidence": 91,
+    "reason": "Recent M1 candles alternate sharp drops and rebounds with overlapping ranges and long wicks, showing no clear directional follow-through.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21783-fc15-72a2-a7d8-de9854dd7196"
+  },
+  "1795649400": {
+    "entryT": 1795649400,
+    "action": "SKIP",
+    "confidence": 76,
+    "reason": "Recent bearish bodies suggest pressure, but repeated lower wicks near 105.448–105.454 leave the next candle unclear.",
+    "model": "openai/gpt-6-astra",
+    "runId": "01a21784-09d8-7240-9afe-a97107f09634"
+  }
+}

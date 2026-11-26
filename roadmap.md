@@ -1,5 +1,10 @@
 # Independent Crypto Signal Terminal
 
+## prompt-80 — AI Forex Simulator
+- [x] Replace the active historical Forex test with real causal AI decisions; preserve CPES history separately.
+- [x] Audit Nov19–25: 230 reviews/64 calls, 29 funded trades, 11 wins/18 losses, −$9.53 net, $0.47 remaining; 16 tests and desktop/mobile replay checks pass. Hook already imports React; build OK. AI SDK gateway workflow used; no live deployment.
+- [ ] Live AI Forex execution — blocked by a reliable free live price feed; do not claim live operation or deploy.
+
 ## prompt-77 — recheck entry-filter isolation and reported hook error
 - [x] Inspect the hook: React is explicitly imported; the reported UMD text does not occur in the file.
 - [x] Re-audit CSTF indicator → worker → account → engine API → SQL; genuine hosted records show 9 OPENED signals (2 LONG, 7 SHORT), no rejected decisions, despite disabled legacy entry switches.

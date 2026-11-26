@@ -4,17 +4,18 @@ import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
 import { ArrowDown, ArrowUp, Clock, Play, Square } from 'lucide-react';
 import { readForexBacktest, type FxTrade } from '@/lib/forex.functions';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 const FxChart = lazy(() => import('@/components/forex/FxChart'));
-const backtestQuery = queryOptions({ queryKey: ['forex-backtest-78'], queryFn: () => readForexBacktest(), staleTime: Infinity });
+const backtestQuery = queryOptions({ queryKey: ['forex-backtest-80-ai'], queryFn: () => readForexBacktest(), staleTime: Infinity });
 
 export const Route = createFileRoute('/forex')({
   head: () => ({
     meta: [
-      { title: 'Forex Simulator AUD/JPY — 1-Minute Binary Backtest' },
-      { name: 'description', content: 'Quotex-style AUD/JPY simulator: your Candle Pattern indicator on the 3-minute chart, $1 fixed trades, 1-minute expiry, 23% profit fee, 7-day historical results.' },
-      { property: 'og:title', content: 'Forex Simulator AUD/JPY — 1-Minute Binary Backtest' },
-      { property: 'og:description', content: 'AUD/JPY M3 indicator signals, $1 per trade, 1-minute expiry, daily and overall 7-day performance.' },
+      { title: 'AI Forex Simulator AUD/JPY — 7-Day Price-Action Results' },
+      { name: 'description', content: 'AUD/JPY AI price-action backtest without indicators: $1 trades, 1-minute expiry, 23% profit fee and seven-day results.' },
+      { property: 'og:title', content: 'AI Forex Simulator AUD/JPY — 7-Day Price-Action Results' },
+      { property: 'og:description', content: 'Real AI LONG, SHORT and SKIP decisions from historical raw candles, with daily results and trade reasons.' },
       { property: 'og:type', content: 'website' },
       { name: 'twitter:card', content: 'summary_large_image' },
     ],
@@ -83,11 +84,11 @@ function ExpiryReplay({ trade }: { trade: FxTrade }) {
       </div>
       <div className="mt-3 flex items-center justify-between gap-2">
         {left != null && left > 0
-          ? <button type="button" onClick={() => setLeft(0)} className="inline-flex items-center gap-1.5 rounded border border-border px-3 py-1.5 text-xs hover:bg-accent"><Square className="h-3 w-3" /> Skip to expiry</button>
-          : <button type="button" onClick={() => setLeft(60)} className="inline-flex items-center gap-1.5 rounded border border-active/40 bg-active/10 px-3 py-1.5 text-xs text-active hover:bg-active/20"><Play className="h-3 w-3" /> Replay 1-minute expiry</button>}
+          ? <Button variant="outline" size="sm" onClick={() => setLeft(0)}><Square className="h-3 w-3" /> Skip to expiry</Button>
+          : <Button variant="outline" size="sm" onClick={() => setLeft(60)}><Play className="h-3 w-3" /> Replay 1-minute expiry</Button>}
         {(done || left == null) && <div className="flex items-center gap-2"><ResultPill r={trade.result} /><span className={cn('font-mono text-sm', tone(trade.net))}>{signed(trade.net)}</span></div>}
       </div>
-      <p className="mt-2 text-[11px] text-muted-foreground">Pattern: {trade.patterns.join(', ')}{trade.result === 'SKIPPED' && trade.would_have ? ` · not traded (balance below $1); would have been ${trade.would_have}` : ''}</p>
+      <p className="mt-2 text-[11px] text-muted-foreground">AI confidence: {trade.confidence ?? 0}% · {trade.reason}{trade.result === 'SKIPPED' && trade.would_have ? ` · not traded (balance below $1); would have been ${trade.would_have}` : ''}</p>
     </div>
   );
 }
@@ -109,13 +110,18 @@ function ForexSimulator() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Forex Simulator · AUD/JPY</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Your Candle Pattern indicator on the 3-minute chart · every trade $1 · expires after 1 minute · no leverage, stop loss or take profit.</p>
+          <h1 className="text-2xl font-semibold">AI Forex Simulator · AUD/JPY</h1>
+          <p className="mt-1 text-sm text-muted-foreground">AI price-action decisions · no indicators · $1 per trade · 1-minute expiry.</p>
         </div>
         <div className="flex flex-wrap gap-2 text-[11px] font-mono">
           <span className="rounded border border-waiting/40 bg-waiting/10 px-2 py-1 text-waiting">HISTORICAL BACKTEST · {meta.window_utc[0].slice(0, 10)} → {days.at(-1)?.date}</span>
           <span className="rounded border border-border px-2 py-1 text-muted-foreground">LIVE TRADING: NOT STARTED</span>
         </div>
+      </div>
+
+      <div className="border-l-2 border-short pl-3 text-sm">
+        <p className="font-semibold text-short">Not profitable in this test: 37.9% wins · −$9.53 net · $10 → $0.47</p>
+        <p className="mt-1 text-muted-foreground">230 AI reviews every 30 minutes; 166 passes, 64 trade calls, 29 funded trades. Historical simulation only; live Forex requires a reliable free price feed. AI response time and usage costs are not included.</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
@@ -134,10 +140,10 @@ function ForexSimulator() {
           <div className="flex flex-wrap items-center gap-1 px-2 pb-2">
             <span className="mr-2 font-mono text-xs text-muted-foreground">AUD/JPY · M3</span>
             {['ALL', ...days.map((d) => d.date)].map((d) => (
-              <button key={d} type="button" onClick={() => { setDay(d); setSel(null); }}
+              <Button key={d} variant="ghost" size="sm" onClick={() => { setDay(d); setSel(null); }}
                 className={cn('rounded px-2 py-1 font-mono text-[11px] text-muted-foreground hover:bg-accent', day === d && 'bg-accent text-foreground')}>
                 {d === 'ALL' ? '7 days' : d.slice(5)}
-              </button>
+              </Button>
             ))}
           </div>
           <ClientOnly fallback={<div className="h-[340px] sm:h-[440px]" />}>
@@ -188,7 +194,7 @@ function ForexSimulator() {
           <Tile label="Best day" value={o.best_day ?? '—'} /><Tile label="Worst day" value={o.worst_day ?? '—'} />
         </div>
         <p className="text-xs text-muted-foreground">
-          {o.skipped} later signals could not be traded because the balance was below $1. For information only (no money): across all {info.signals} signals the indicator scored {info.wins} wins, {info.losses} losses and {info.draws} draw.
+          {o.skipped} later AI trade calls could not be funded because the balance was below $1. Hypothetically, all {info.signals} calls scored {info.wins} wins, {info.losses} losses and {info.draws} draws; these are not funded trades.
         </p>
       </section>
 
@@ -197,9 +203,9 @@ function ForexSimulator() {
           <h2 className="text-lg font-semibold">Trade history</h2>
           <div className="flex gap-1">
             {(['ALL', 'TRADED', 'SKIPPED'] as const).map((f) => (
-              <button key={f} type="button" onClick={() => setFilter(f)} className={cn('rounded px-2 py-1 text-xs text-muted-foreground hover:bg-accent', filter === f && 'bg-accent text-foreground')}>
-                {f === 'ALL' ? 'All signals' : f === 'TRADED' ? 'Traded' : 'Not traded'}
-              </button>
+              <Button key={f} variant="ghost" size="sm" onClick={() => setFilter(f)} className={cn('text-xs text-muted-foreground', filter === f && 'bg-accent text-foreground')}>
+                {f === 'ALL' ? 'All AI calls' : f === 'TRADED' ? 'Traded' : 'Not traded'}
+              </Button>
             ))}
           </div>
         </div>
@@ -227,7 +233,8 @@ function ForexSimulator() {
       <section className="space-y-1 rounded-lg border border-border bg-card p-4 text-xs text-muted-foreground">
         <div className="font-semibold text-foreground">How this test was run</div>
         <p>{meta.indicator}. {meta.method}</p>
-        <p>Price data: {meta.data_source}, downloaded {meta.downloaded_at.slice(0, 16).replace('T', ' ')} UTC. The indicator translation matched the original indicator code on every signal (102 of 102) on these same candles.</p>
+        <p>Price data: {meta.data_source}, downloaded {meta.downloaded_at.slice(0, 16).replace('T', ' ')} UTC. The earlier CPES indicator report remains archived separately and was not used for AI decisions.</p>
+        <p>This retrospective test provides only past candles, but cannot rule out prior model knowledge of historical prices. Immediate candle-close entry ignores AI response latency, and one week does not establish future performance. Sunday reopening and some final-minute quotes are missing.</p>
         <ul className="list-disc space-y-0.5 pl-4">{meta.disclosures.map((d) => <li key={d}>{d}</li>)}</ul>
       </section>
     </div>
