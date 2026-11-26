@@ -116,3 +116,11 @@ Paper Robot30-trade collection, SMC/sweep rollout, chart rollout and MTF-filter 
 - [x] Independent signal cross-check on fresh Binance data: TS live code = Python backtest port, 2306/2306 signals
 - [x] Simulator + Dashboard show Main balance, next trade margin, available margin
 - [ ] Railway redeploy of the margin fix happens after push — first live trade with dynamic margin not yet observed (waits on a genuine signal)
+
+## prompt-78/79 Forex Simulator (AUD/JPY, CPES M3, $1, 1-min expiry)
+- [x] Port CPES indicator exactly; PineTS parity on intact source 102/102 signals
+- [x] $1 binary rules + user's balance examples as tests
+- [x] 7-day historical backtest (Nov 19–25) + daily/overall report + /forex page
+- [ ] Decide fate of crypto Simulator (stop + keep history vs keep running) — waits on user
+- [ ] Live AUD/JPY trading — needs a reliable free live forex price feed and the crypto decision
+- [ ] Exact tick-level expiry prices — tick provider refused downloads; 1-minute closes used

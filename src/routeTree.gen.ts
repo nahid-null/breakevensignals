@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as BacktestRouteImport } from './routes/backtest'
+import { Route as ForexRouteImport } from './routes/forex'
 import { Route as HealthRouteImport } from './routes/health'
 import { Route as MarketsRouteImport } from './routes/markets'
 import { Route as ParityRouteImport } from './routes/parity'
@@ -31,6 +32,11 @@ const IndexRoute = IndexRouteImport.update({
 const BacktestRoute = BacktestRouteImport.update({
   id: '/backtest',
   path: '/backtest',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForexRoute = ForexRouteImport.update({
+  id: '/forex',
+  path: '/forex',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HealthRoute = HealthRouteImport.update({
@@ -93,6 +99,7 @@ const ApiPublicTradingviewWebhookRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/backtest': typeof BacktestRoute
+  '/forex': typeof ForexRoute
   '/health': typeof HealthRoute
   '/markets': typeof MarketsRoute
   '/parity': typeof ParityRoute
@@ -108,6 +115,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/backtest': typeof BacktestRoute
+  '/forex': typeof ForexRoute
   '/health': typeof HealthRoute
   '/markets': typeof MarketsRoute
   '/parity': typeof ParityRoute
@@ -124,6 +132,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/backtest': typeof BacktestRoute
+  '/forex': typeof ForexRoute
   '/health': typeof HealthRoute
   '/markets': typeof MarketsRoute
   '/parity': typeof ParityRoute
@@ -141,6 +150,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/backtest'
+    | '/forex'
     | '/health'
     | '/markets'
     | '/parity'
@@ -156,6 +166,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/backtest'
+    | '/forex'
     | '/health'
     | '/markets'
     | '/parity'
@@ -171,6 +182,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/backtest'
+    | '/forex'
     | '/health'
     | '/markets'
     | '/parity'
@@ -187,6 +199,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BacktestRoute: typeof BacktestRoute
+  ForexRoute: typeof ForexRoute
   HealthRoute: typeof HealthRoute
   MarketsRoute: typeof MarketsRoute
   ParityRoute: typeof ParityRoute
@@ -214,6 +227,13 @@ declare module '@tanstack/react-router' {
       path: '/backtest'
       fullPath: '/backtest'
       preLoaderRoute: typeof BacktestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forex': {
+      id: '/forex'
+      path: '/forex'
+      fullPath: '/forex'
+      preLoaderRoute: typeof ForexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/health': {
@@ -299,6 +319,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BacktestRoute: BacktestRoute,
+  ForexRoute: ForexRoute,
   HealthRoute: HealthRoute,
   MarketsRoute: MarketsRoute,
   ParityRoute: ParityRoute,

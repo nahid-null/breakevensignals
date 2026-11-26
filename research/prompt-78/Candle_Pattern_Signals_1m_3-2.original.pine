@@ -1,0 +1,299 @@
+//@version=5
+indicator("Candle Pattern Entry Signals (38 Patterns)", shorttitle="CPES", overlay=true, max_labels_count=500, max_lines_count=500)
+
+// =====================================================================
+//  38 candlestick pattern -> LONG / SHORT entry signal (1 min chart er jonno)
+//  Signal sobshomoy candle CLOSE howar por ashe (repaint hoy na).
+//  Entry = signal candle er close / porer candle er open.
+// =====================================================================
+
+// ---------------------------- INPUTS ---------------------------------
+G1 = "General"
+useTrend   = input.bool(true, "Trend filter use koro", group=G1, tooltip="ON: reversal pattern er age trend thaka lagbe (Bullish pattern er age downtrend, Bearish er age uptrend). Continuation pattern er jonno same direction trend lagbe.")
+trendLen   = input.int(20, "Trend EMA length", minval=2, group=G1)
+avgLen     = input.int(14, "Avg body / ATR length", minval=2, group=G1)
+longMult   = input.float(1.0, "LONG candle = body > avg body x", minval=0.1, step=0.1, group=G1)
+smallMult  = input.float(0.6, "SMALL candle = body < avg body x", minval=0.05, step=0.05, group=G1)
+minRngMult = input.float(0.6, "Single-candle pattern: min range (ATR x)", minval=0.0, step=0.1, group=G1, tooltip="Hammer, Inverted Hammer, Dragonfly, Hanging Man, Shooting Star er jonno. Choto noise candle bad dite.")
+tolMult    = input.float(0.10, "Tweezer / Meeting / Separating tolerance (ATR x)", minval=0.0, step=0.05, group=G1)
+strictGap  = input.bool(false, "Strict gap (real gap lagbe)", group=G1, tooltip="OFF (recommended 1m): gap condition relaxed - open ≈ previous close hole-o cholbe. ON: real price gap lagbe (crypto/forex e onek kom pattern ashbe).")
+cooldown   = input.int(2, "Same direction signal er majhe minimum bar", minval=0, group=G1)
+
+G2 = "Pattern groups"
+enBullRev  = input.bool(true, "Bullish REVERSAL  (Long)", group=G2)
+enBullCon  = input.bool(true, "Bullish CONTINUATION  (Long)", group=G2)
+enBearRev  = input.bool(true, "Bearish REVERSAL  (Short)", group=G2)
+enBearCon  = input.bool(true, "Bearish CONTINUATION  (Short)", group=G2)
+disabledStr = input.string("", "Bondho korte chaile pattern number (comma diye, e.g. 7,20,31)", group=G2)
+strongOnly = input.bool(true, "SHUDHU STRONG pattern (recommended)", group=G2, tooltip="ON: shudhu 14 ta strong pattern: Engulfing, Morning/Evening Star, Piercing, Dark Cloud, Abandoned Baby, Three Inside, Three Outside, Kicker.")
+rsiFilter  = input.bool(true, "RSI filter (Long: RSI niche, Short: RSI upore)", group=G2)
+rsiLen     = input.int(14, "RSI length", minval=2, group=G2)
+rsiBand    = input.int(45, "Long jonno RSI <= ...  (Short jonno RSI >= 100 - ...)", minval=30, maxval=50, group=G2)
+
+locFilter  = input.bool(true, "Swing LOW/HIGH filter (pattern ta recent low/high e hote hobe)", group=G2, tooltip="Long: pattern er low last N bar er sabcheye niche hote hobe. Short: high sabcheye upore hote hobe. Trend er majh khane ashle skip.")
+locLen     = input.int(10, "Swing filter: N bar", minval=3, group=G2)
+adxFilter  = input.bool(true, "ADX filter (joruri strong trend e reversal skip)", group=G2)
+adxMax     = input.int(30, "ADX er upore hole reversal signal bondho", minval=10, maxval=60, group=G2)
+
+G3 = "Display / Risk"
+payout     = input.float(85.0, "Quotex payout % (break-even hisab er jonno)", minval=50.0, maxval=100.0, group=G3)
+showLabels = input.bool(true, "Label dekhao (pattern name)", group=G3)
+longCol    = input.color(color.new(#089981, 0), "Long colour", group=G3)
+shortCol   = input.color(color.new(#f23645, 0), "Short colour", group=G3)
+
+// ------------------------- BASIC SERIES -------------------------------
+body   = math.abs(close - open)
+rng    = high - low
+atrV   = ta.atr(avgLen)
+avgB   = ta.sma(body, avgLen)
+isBull = close > open
+isBear = close < open
+isLong = body > avgB * longMult
+isSmall = body < avgB * smallMult
+isDoji = rng > 0 and body <= rng * 0.1
+upSh   = high - math.max(open, close)
+loSh   = math.min(open, close) - low
+bTop   = math.max(open, close)
+bBot   = math.min(open, close)
+midB   = (open + close) / 2
+tol    = atrV * tolMult
+bigEnough = rng >= atrV * minRngMult
+
+emaT = ta.ema(close, trendLen)
+upT  = close > emaT and emaT > emaT[3]
+dnT  = close < emaT and emaT < emaT[3]
+upOK = not useTrend or upT
+dnOK = not useTrend or dnT
+
+pbHi = ta.highest(high, 3)
+pbLo = ta.lowest(low, 3)
+
+// gap helpers (relaxed vs strict)
+kickUp = strictGap ? low > high[1] : open > open[1]
+kickDn = strictGap ? high < low[1] : open < open[1]
+
+hammerShape = bigEnough and not isDoji and body <= rng * 0.35 and loSh >= 2 * body and loSh >= rng * 0.55 and upSh <= rng * 0.15
+invShape    = bigEnough and not isDoji and body <= rng * 0.35 and upSh >= 2 * body and upSh >= rng * 0.55 and loSh <= rng * 0.15
+
+// ============================ BULLISH (LONG) ==========================
+// ---- Reversal
+p1  = isBear[1] and isBull and open <= close[1] and close >= open[1] and body > body[1] and dnOK[2]                       // Bullish Engulfing
+p2  = hammerShape and dnOK[1]                                                                                              // Hammer
+p3  = isBear[2] and isLong[2] and isSmall[1] and (not strictGap or bTop[1] < close[2]) and isBull and isLong and close > midB[2] and dnOK[3]   // Morning Star
+p4  = isBear[1] and isLong[1] and isBull and open <= close[1] and close > midB[1] and close < open[1] and dnOK[2]         // Piercing Line
+p5  = isBear[1] and isLong[1] and isBull and open >= close[1] and close <= open[1] and body < body[1] and dnOK[2]         // Bullish Harami
+p6  = isBull and isBull[1] and isBull[2] and isLong and isLong[1] and isLong[2] and upSh <= body * 0.3 and upSh[1] <= body[1] * 0.3 and upSh[2] <= body[2] * 0.3 and open > open[1] and open <= close[1] and open[1] > open[2] and open[1] <= close[2] and close > close[1] and close[1] > close[2] and dnOK[3]  // Three White Soldiers
+p7  = invShape and dnOK[1]                                                                                                 // Inverted Hammer
+p8  = bigEnough and isDoji and loSh >= rng * 0.6 and upSh <= rng * 0.1 and dnOK[1]                                         // Dragonfly Doji
+gapDnBaby = strictGap ? (high[1] < low[2] and high[1] < low) : (bTop[1] <= close[2] and bTop[1] <= open)
+p9  = isBear[2] and isLong[2] and isDoji[1] and gapDnBaby and isBull and isLong and close > midB[2] and dnOK[3]            // Bullish Abandoned Baby
+p10 = isBear[2] and isLong[2] and isBull[1] and open[1] >= close[2] and close[1] < open[2] and close[1] > midB[2] and isBull and close > open[2] and dnOK[3]  // Three Inside Up
+p11 = isBear[2] and isBull[1] and open[1] <= close[2] and close[1] >= open[2] and body[1] > body[2] and isBull and close > close[1] and dnOK[3]  // Three Outside Up
+p12 = isBear[1] and isBull and isLong and kickUp and body > body[1] and dnOK[2]                                            // Bullish Kicker
+p13 = isBear[1] and isBull and math.abs(low - low[1]) <= tol and dnOK[2]                                                   // Tweezer Bottom
+gapDnCBS = strictGap ? high[1] < low[2] : bTop[1] <= close[2]
+p15 = isBear[3] and isBear[2] and isLong[3] and isLong[2] and isSmall[1] and gapDnCBS and isBear and isLong and open >= bTop[1] and close <= bBot[1] and dnOK[4]  // Concealing Baby Swallow
+p18 = isBull and isLong and loSh <= rng * 0.05 and upSh <= rng * 0.15 and open <= close[1] and dnOK[1]                     // Bullish Belt Hold
+p20 = isBear[4] and isBear[3] and isBear[2] and isLong[4] and isLong[3] and isLong[2] and close[4] > close[3] and close[3] > close[2] and isSmall[1] and isBull and isLong and close > high[1] and dnOK[5]  // Ladder Bottom
+p21 = isBear[1] and isLong[1] and isBull and isLong and open < close[1] and math.abs(close - close[1]) <= tol and dnOK[2]  // Meeting Lines (bullish)
+
+// ---- Continuation
+p14 = isBull[4] and isLong[4] and isBear[3] and isBear[2] and isBear[1] and pbHi[1] < high[4] and pbLo[1] > low[4] and body[1] < body[4] and body[2] < body[4] and body[3] < body[4] and isBull and isLong and close > high[4] and upOK[5]  // Rising Three Methods
+p16 = p14 and pbLo[1] > midB[4] and close[3] > close[2] and close[2] > close[1]                                            // Mat Hold (bullish)
+p17 = isBear[1] and isBull and isLong and math.abs(open - open[1]) <= tol and upOK[2]                                      // Bullish Separating Lines
+p19 = isBull[3] and isBull[2] and isBull[1] and close[3] < close[2] and close[2] < close[1] and isBear and isLong and open >= close[1] and close < open[3] and upOK[4]  // Three-Line Strike (bullish)
+
+// ============================ BEARISH (SHORT) =========================
+// ---- Reversal
+p22 = isBull[1] and isBear and open >= close[1] and close <= open[1] and body > body[1] and upOK[2]                        // Bearish Engulfing
+p23 = isBear and isLong and upSh <= rng * 0.05 and loSh <= rng * 0.15 and open >= close[1] and upOK[1]                     // Bearish Belt Hold
+p26 = hammerShape and upOK[1]                                                                                              // Hanging Man
+gapUpCrow = strictGap ? low[1] > high[2] : bBot[1] >= close[2]
+p27 = isBull[2] and isLong[2] and isBear[1] and gapUpCrow and body[1] < body[2] and isBear and body < body[2] and open >= open[1] and close < close[1] and close > close[2] and upOK[3]  // Upside Gap Two Crows
+p28 = isBull[2] and isLong[2] and isSmall[1] and (not strictGap or bBot[1] > close[2]) and isBear and isLong and close < midB[2] and upOK[3]  // Evening Star
+p29 = invShape and upOK[1]                                                                                                 // Shooting Star
+p30 = isBull[1] and isLong[1] and isBear and open <= close[1] and close >= open[1] and body < body[1] and upOK[2]         // Bearish Harami
+gapUpDoji = strictGap ? low[1] > high[2] : bBot[1] >= close[2]
+p31 = isBull[2] and isLong[2] and isDoji[1] and gapUpDoji and isBear and close < bBot[1] and upOK[3]                       // Bearish Doji Star (confirmed)
+gapUpBaby = strictGap ? (low[1] > high[2] and high < low[1]) : (bBot[1] >= close[2] and open <= bBot[1])
+p32 = isBull[2] and isLong[2] and isDoji[1] and gapUpBaby and isBear and isLong and close < midB[2] and upOK[3]            // Bearish Abandoned Baby
+p33 = isBull[1] and isBear and math.abs(high - high[1]) <= tol and upOK[2]                                                 // Bearish Tweezer Top
+p34 = isBull[1] and isBear and isLong and kickDn and body > body[1] and upOK[2]                                            // Bearish Kicker
+p35 = isBull[2] and isLong[2] and isBear[1] and open[1] <= close[2] and close[1] > open[2] and close[1] < midB[2] and isBear and close < close[1] and close < open[2] and upOK[3]  // Three Inside Down
+p36 = isBull[2] and isBear[1] and open[1] >= close[2] and close[1] <= open[2] and body[1] > body[2] and isBear and close < close[1] and upOK[3]  // Three Outside Down
+p38 = isBull[1] and isLong[1] and isBear and (strictGap ? open > high[1] : open >= close[1]) and close < midB[1] and close > open[1] and upOK[2]  // Dark Cloud Cover
+
+// ---- Continuation
+p24 = isBear and isBear[1] and isBear[2] and isLong and isLong[1] and isLong[2] and loSh <= body * 0.3 and loSh[1] <= body[1] * 0.3 and loSh[2] <= body[2] * 0.3 and open < open[1] and open >= close[1] and open[1] < open[2] and open[1] >= close[2] and close < close[1] and close[1] < close[2]  // Three Black Crows
+p25 = isBear[3] and isBear[2] and isBear[1] and close[3] > close[2] and close[2] > close[1] and isBull and isLong and open <= close[1] and close > open[3] and dnOK[4]  // Three-Line Strike (bearish)
+p37 = isBear[4] and isLong[4] and isBull[3] and isBull[2] and isBull[1] and pbHi[1] < high[4] and pbLo[1] > low[4] and pbHi[1] < midB[4] and close[3] < close[2] and close[2] < close[1] and body[1] < body[4] and body[2] < body[4] and body[3] < body[4] and isBear and isLong and close < low[4] and dnOK[5]  // Bearish Mat Hold
+
+// ---------------------- ENABLE / NAME BUILDER -------------------------
+// (naam string shudhu signal ashle banano hoy -> script fast)
+var en = array.new_bool(40, true)
+var strongIds = array.from(1, 3, 4, 9, 10, 11, 12, 22, 28, 32, 34, 35, 36, 38)
+if barstate.isfirst
+    if strongOnly
+        for k = 1 to 39
+            if not array.includes(strongIds, k)
+                en.set(k, false)
+    for tk in str.split(str.replace_all(disabledStr, " ", ""), ",")
+        int nn = int(str.tonumber(tk))
+        if not na(nn) and nn >= 1 and nn <= 39
+            en.set(nn, false)
+
+nm(bool c, int n, string s) => c and en.get(n) ? s + ", " : ""
+
+bullRevAny = enBullRev and ((p1 and en.get(1)) or (p2 and en.get(2)) or (p3 and en.get(3)) or (p4 and en.get(4)) or (p5 and en.get(5)) or (p6 and en.get(6)) or (p7 and en.get(7)) or (p8 and en.get(8)) or (p9 and en.get(9)) or (p10 and en.get(10)) or (p11 and en.get(11)) or (p12 and en.get(12)) or (p13 and en.get(13)) or (p15 and en.get(15)) or (p18 and en.get(18)) or (p20 and en.get(20)) or (p21 and en.get(21)))
+bullConAny = enBullCon and ((p14 and en.get(14)) or (p16 and en.get(16)) or (p17 and en.get(17)) or (p19 and en.get(19)))
+bearRevAny = enBearRev and ((p22 and en.get(22)) or (p23 and en.get(23)) or (p26 and en.get(26)) or (p27 and en.get(27)) or (p28 and en.get(28)) or (p29 and en.get(29)) or (p30 and en.get(30)) or (p31 and en.get(31)) or (p32 and en.get(32)) or (p33 and en.get(33)) or (p34 and en.get(34)) or (p35 and en.get(35)) or (p36 and en.get(36)) or (p38 and en.get(38)))
+bearConAny = enBearCon and ((p24 and en.get(24)) or (p25 and en.get(25)) or (p37 and en.get(37)))
+
+rawLong  = bullRevAny or bullConAny
+rawShort = bearRevAny or bearConAny
+
+f_longNames() =>
+    string t = ""
+    if enBullRev
+        t += nm(p1, 1, "Bullish Engulfing")
+        t += nm(p2, 2, "Hammer")
+        t += nm(p3, 3, "Morning Star")
+        t += nm(p4, 4, "Piercing Line")
+        t += nm(p5, 5, "Bullish Harami")
+        t += nm(p6, 6, "Three White Soldiers")
+        t += nm(p7, 7, "Inverted Hammer")
+        t += nm(p8, 8, "Dragonfly Doji")
+        t += nm(p9, 9, "Bullish Abandoned Baby")
+        t += nm(p10, 10, "Three Inside Up")
+        t += nm(p11, 11, "Three Outside Up")
+        t += nm(p12, 12, "Bullish Kicker")
+        t += nm(p13, 13, "Tweezer Bottom")
+        t += nm(p15, 15, "Concealing Baby Swallow")
+        t += nm(p18, 18, "Bullish Belt Hold")
+        t += nm(p20, 20, "Ladder Bottom")
+        t += nm(p21, 21, "Meeting Lines")
+    if enBullCon
+        t += nm(p14, 14, "Rising Three Methods")
+        t += nm(p16, 16, "Mat Hold")
+        t += nm(p17, 17, "Bullish Separating Lines")
+        t += nm(p19, 19, "Three-Line Strike")
+    t
+
+f_shortNames() =>
+    string t = ""
+    if enBearRev
+        t += nm(p22, 22, "Bearish Engulfing")
+        t += nm(p23, 23, "Bearish Belt Hold")
+        t += nm(p26, 26, "Hanging Man")
+        t += nm(p27, 27, "Upside Gap Two Crows")
+        t += nm(p28, 28, "Evening Star")
+        t += nm(p29, 29, "Shooting Star")
+        t += nm(p30, 30, "Bearish Harami")
+        t += nm(p31, 31, "Bearish Doji Star")
+        t += nm(p32, 32, "Bearish Abandoned Baby")
+        t += nm(p33, 33, "Tweezer Top")
+        t += nm(p34, 34, "Bearish Kicker")
+        t += nm(p35, 35, "Three Inside Down")
+        t += nm(p36, 36, "Three Outside Down")
+        t += nm(p38, 38, "Dark Cloud Cover")
+    if enBearCon
+        t += nm(p24, 24, "Three Black Crows")
+        t += nm(p25, 25, "Bearish Three-Line Strike")
+        t += nm(p37, 37, "Bearish Mat Hold")
+    t
+
+// ----------------------------- SIGNALS --------------------------------
+rsiV    = ta.rsi(close, rsiLen)
+[diP, diN, adxV] = ta.dmi(14, 14)
+atLow   = ta.lowest(low, 3)   <= ta.lowest(low, locLen)
+atHigh  = ta.highest(high, 3) >= ta.highest(high, locLen)
+adxOK   = not adxFilter or adxV <= adxMax
+longOK  = (not rsiFilter or rsiV <= rsiBand)       and (not locFilter or atLow)  and adxOK
+shortOK = (not rsiFilter or rsiV >= 100 - rsiBand) and (not locFilter or atHigh) and adxOK
+
+longSig  = rawLong and not rawShort and longOK and barstate.isconfirmed
+shortSig = rawShort and not rawLong and shortOK and barstate.isconfirmed
+
+var int lastL = -100000
+var int lastS = -100000
+longEntry  = longSig  and (bar_index - lastL > cooldown)
+shortEntry = shortSig and (bar_index - lastS > cooldown)
+if longEntry
+    lastL := bar_index
+if shortEntry
+    lastS := bar_index
+
+f_trim(string s) => str.length(s) > 2 ? str.substring(s, 0, str.length(s) - 2) : s
+
+// ------------------------------ DRAWING -------------------------------
+plotshape(longEntry,  title="LONG",  style=shape.triangleup,   location=location.belowbar, color=longCol,  size=size.small)
+plotshape(shortEntry, title="SHORT", style=shape.triangledown, location=location.abovebar, color=shortCol, size=size.small)
+
+if longEntry
+    longNames = f_longNames()
+    if showLabels
+        label.new(bar_index, na, "LONG ▲ (UP)\n" + f_trim(longNames), yloc=yloc.belowbar, style=label.style_label_up, color=longCol, textcolor=color.white, size=size.small)
+    alert("LONG (UP) 1m | " + syminfo.ticker + " | " + f_trim(longNames) + " | Entry now, expiry 1 min", alert.freq_once_per_bar_close)
+
+if shortEntry
+    shortNames = f_shortNames()
+    if showLabels
+        label.new(bar_index, na, "SHORT ▼ (DOWN)\n" + f_trim(shortNames), yloc=yloc.abovebar, style=label.style_label_down, color=shortCol, textcolor=color.white, size=size.small)
+    alert("SHORT (DOWN) 1m | " + syminfo.ticker + " | " + f_trim(shortNames) + " | Entry now, expiry 1 min", alert.freq_once_per_bar_close)
+
+// ------------------- 1-MIN RESULT TRACKER (win / loss) -----------------
+// Entry price = signal candle er close. Porer 1 ta candle er close e result.
+var bool pendL = false
+var bool pendS = false
+var int wins = 0
+var int losses = 0
+var int ties = 0
+bool resWin = false
+bool resLoss = false
+if barstate.isconfirmed
+    if pendL
+        if close > close[1]
+            wins += 1
+            resWin := true
+        else if close < close[1]
+            losses += 1
+            resLoss := true
+        else
+            ties += 1
+    if pendS
+        if close < close[1]
+            wins += 1
+            resWin := true
+        else if close > close[1]
+            losses += 1
+            resLoss := true
+        else
+            ties += 1
+    pendL := longEntry
+    pendS := shortEntry
+
+plotchar(resWin,  title="WIN",  char="✓", location=location.top,    color=color.new(longCol, 0),  size=size.tiny)
+plotchar(resLoss, title="LOSS", char="✗", location=location.bottom, color=color.new(shortCol, 0), size=size.tiny)
+
+var table tb = table.new(position.top_right, 2, 6, bgcolor=color.new(color.black, 25), border_width=1, border_color=color.new(color.gray, 60))
+if barstate.islast
+    int total = wins + losses
+    float wr = total > 0 ? wins * 100.0 / total : na
+    float be = 100.0 / (1.0 + payout / 100.0)
+    table.cell(tb, 0, 0, "Signals (loaded bars)", text_color=color.white, text_size=size.small)
+    table.cell(tb, 1, 0, str.tostring(total), text_color=color.white, text_size=size.small)
+    table.cell(tb, 0, 1, "Win", text_color=color.white, text_size=size.small)
+    table.cell(tb, 1, 1, str.tostring(wins), text_color=longCol, text_size=size.small)
+    table.cell(tb, 0, 2, "Loss", text_color=color.white, text_size=size.small)
+    table.cell(tb, 1, 2, str.tostring(losses), text_color=shortCol, text_size=size.small)
+    table.cell(tb, 0, 3, "Draw", text_color=color.white, text_size=size.small)
+    table.cell(tb, 1, 3, str.tostring(ties), text_color=color.white, text_size=size.small)
+    table.cell(tb, 0, 4, "Win rate", text_color=color.white, text_size=size.small)
+    table.cell(tb, 1, 4, na(wr) ? "-" : str.tostring(wr, "#.0") + "%", text_color=(not na(wr) and wr >= be) ? longCol : shortCol, text_size=size.small)
+    table.cell(tb, 0, 5, "Break-even", text_color=color.white, text_size=size.small)
+    table.cell(tb, 1, 5, str.tostring(be, "#.0") + "%", text_color=color.white, text_size=size.small)
+
+plot(useTrend ? emaT : na, "Trend EMA", color=color.new(color.gray, 60), linewidth=1)
+
+alertcondition(longEntry,  "LONG (UP) Entry",    "CPES: LONG (UP) {{ticker}} {{interval}} - 1 min trade")
+alertcondition(shortEntry, "SHORT (DOWN) Entry", "CPES: SHORT (DOWN) {{ticker}} {{interval}} - 1 min trade")
