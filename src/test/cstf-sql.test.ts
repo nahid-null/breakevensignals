@@ -129,3 +129,23 @@ describe('prompt-74 CSTF Simulator database commit', () => {
     await expect(commit([frame(T0)])).rejects.toThrow(/lease/);
   });
 });
+
+describe('prompt-79 crypto Simulator stopped by the user', () => {
+  it('opens no trade, queues no Telegram message and keeps the balance once stopped', async () => {
+    await db.exec('update cstf_account set stopped_at=now(), status=\'STOPPED\'');
+    const before = await account();
+    const { result } = await commit([frame(T0, undefined, [sig('LONG')])]);
+    expect(result).toEqual({ conflict: false, stopped: true, revision: Number(before.revision) });
+    expect(await trades()).toEqual([]);
+    expect((await db.query("select count(*)::int n from telegram_logs where event_id like '%-cstf-result'")).rows[0]).toEqual({ n: 0 });
+    const after = await account();
+    expect(after.status).toBe('STOPPED');
+    expect(after.wallet).toBe(before.wallet);
+    expect(after.revision).toBe(before.revision);
+  });
+  it('ignores scanner status reports once stopped', async () => {
+    await db.exec('update cstf_account set stopped_at=now(), status=\'STOPPED\'');
+    await db.query('select cstf_report_status($1::jsonb)', [JSON.stringify({ instance_id: instance, status: 'ERROR', error: 'x' })]);
+    expect((await account()).status).toBe('STOPPED');
+  });
+});

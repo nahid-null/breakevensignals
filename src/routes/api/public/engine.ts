@@ -36,9 +36,10 @@ export const Route = createFileRoute("/api/public/engine")({
       }
       // prompt-74: CSTF 30m Simulator — one shared cross account, committed atomically under the worker lease.
       if (base.data.action === 'cstf-state') {
-        const { data, error } = await supabaseAdmin.from('cstf_account').select('revision, state').eq('id', 1).single();
+        const { data, error } = await supabaseAdmin.from('cstf_account').select('revision, state, stopped_at').eq('id', 1).single();
         if (error) throw error;
-        return Response.json({ revision: Number(data.revision), state: data.state });
+        // prompt-79: the user stopped the crypto Simulator; history is kept, nothing new is processed.
+        return Response.json({ revision: Number(data.revision), state: data.state, stopped: data.stopped_at !== null });
       }
       if (base.data.action === 'cstf-commit') {
         const { cstfCommitSchema } = await import('@/lib/engine/cstf-live');

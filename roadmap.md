@@ -121,6 +121,7 @@ Paper Robot30-trade collection, SMC/sweep rollout, chart rollout and MTF-filter 
 - [x] Port CPES indicator exactly; PineTS parity on intact source 102/102 signals
 - [x] $1 binary rules + user's balance examples as tests
 - [x] 7-day historical backtest (Nov 19–25) + daily/overall report + /forex page
-- [ ] Decide fate of crypto Simulator (stop + keep history vs keep running) — waits on user
-- [ ] Live AUD/JPY trading — needs a reliable free live forex price feed and the crypto decision
+- [x] Crypto Simulator stopped (user choice), history kept; database refuses new crypto trades/Telegram
+- [ ] Redeploy Railway scanner so it also stops polling crypto Simulator prices (already harmless: database refuses its updates) — user action on Railway
+- [ ] Live AUD/JPY trading — needs a reliable free live forex price feed
 - [ ] Exact tick-level expiry prices — tick provider refused downloads; 1-minute closes used

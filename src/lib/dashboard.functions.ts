@@ -89,7 +89,7 @@ export const readFilterBacktest = get.handler(async () => {
 /** prompt-74 CSTF 30m Simulator (shared $10 cross account): account snapshot, trades and recent signal decisions. */
 export const readCstfSimulator = get.handler(async () => {
   const c = await db();
-  const account = must(await c.from('cstf_account').select('wallet,equity,maintenance,open_count,status,error,started_at,checked_at,last_minute,updated_at').eq('id', 1).maybeSingle());
+  const account = must(await c.from('cstf_account').select('wallet,equity,maintenance,open_count,status,error,started_at,checked_at,last_minute,updated_at,stopped_at').eq('id', 1).maybeSingle());
   const trades = must(await c.from('cstf_trades').select('signal_id,symbol,side,pattern,signal_time,entry_time,entry_price,quantity,margin,leverage,entry_fee,target,liquidation_price,funding,mark_price,unrealized,status,exit_reason,exit_time,exit_price,exit_fee,net,wallet_after,closed_mode').order('entry_time', { ascending: false }).limit(500)) ?? [];
   const signals = must(await c.from('cstf_signals').select('signal_id,symbol,side,pattern,signal_time,decision,reason,mode').order('signal_time', { ascending: false }).limit(100)) ?? [];
   return { account: account ? { ...account, last_minute: account.last_minute === null ? null : Number(account.last_minute) } : null, trades, signals };

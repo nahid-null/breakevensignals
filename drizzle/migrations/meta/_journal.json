@@ -337,6 +337,13 @@
       "when": 1795272311338,
       "tag": "0047_cstf_simulator_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1795689566772,
+      "tag": "0048_stop_crypto_simulator",
+      "breakpoints": true
     }
   ]
 }

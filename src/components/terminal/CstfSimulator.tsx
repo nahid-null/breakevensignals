@@ -12,6 +12,7 @@ const STATUS: Record<string, { label: string; tone: string }> = {
   RUNNING: { label: 'Running live', tone: 'text-long' }, CATCHING_UP: { label: 'Catching up', tone: 'text-waiting' },
   WAITING: { label: 'Waiting for market data', tone: 'text-waiting' }, ERROR: { label: 'Problem', tone: 'text-short' },
   WAITING_FOR_WORKER: { label: 'Waiting for the scanner to start', tone: 'text-waiting' },
+  STOPPED: { label: 'Stopped — no new trades', tone: 'text-muted-foreground' },
 };
 
 function Tile({ label, value, tone: t, hint }: { label: string; value: string; tone?: string | undefined; hint?: string | undefined }) {
@@ -29,7 +30,8 @@ export function CstfSimulator({ tz }: { tz: string }) {
   const open = trades.filter((t) => t.status === 'OPEN'); const closed = trades.filter((t) => t.status === 'CLOSED');
   const tps = closed.filter((t) => t.exit_reason === 'TAKE_PROFIT').length; const liqs = closed.length - tps;
   const realized = closed.reduce((s, t) => s + Number(t.net ?? 0), 0);
-  const stale = a?.checked_at ? Date.now() - Date.parse(a.checked_at) > 5 * 60_000 : true;
+  const stopped = !!a?.stopped_at;
+  const stale = !stopped && a?.checked_at ? Date.now() - Date.parse(a.checked_at) > 5 * 60_000 : true;
   const st = STATUS[a?.status ?? ''] ?? { label: a?.status ?? '—', tone: 'text-muted-foreground' };
   const usedMargin = open.reduce((s, t) => s + Number(t.margin), 0);
   // Main Balance = $10 + closed results: wallet with open trades' already-paid entry fees and funding added back.
@@ -41,7 +43,7 @@ export function CstfSimulator({ tz }: { tz: string }) {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="mb-2 flex items-center gap-2 font-mono text-[10px] text-primary"><Wallet className="size-3" /> PRACTICE MONEY · NO REAL ORDERS</div>
-          <h1 className="text-2xl font-semibold">Simulator trading</h1>
+          <h1 className="text-2xl font-semibold">Crypto Simulator{stopped ? ' · stopped' : ''}</h1>
           <p className="mt-1 text-sm text-muted-foreground">Candle Signals – Trend Filter v4 Strong Trend · 30-minute Binance Futures signals · shared cross margin</p>
         </div>
         <div className="text-right text-sm">
@@ -51,6 +53,9 @@ export function CstfSimulator({ tz }: { tz: string }) {
         </div>
       </div>
 
+      {stopped && <div className="border border-border bg-card/40 px-4 py-3 text-sm text-muted-foreground">
+        You stopped the crypto Simulator on {fmtTime(a!.stopped_at!, tz)}. It opens no new trades and sends no Telegram messages. All past trades below are kept as they were.
+      </div>}
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         <Tile label="Main balance" value={fmtUsd(mainBalance)} hint={`Started with ${fmtUsd(CSTF_RULES.startingBalance)}; changes when trades close`} />
         <Tile label="Next trade margin" value={nextMargin === null ? '—' : `$${nextMargin.toFixed(4)}`} hint={`5% of main balance · TP ${nextMargin === null ? '—' : `$${(nextMargin * CSTF_RULES.targetRate).toFixed(4)}`} net`} />

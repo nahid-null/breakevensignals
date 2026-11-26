@@ -150,6 +150,7 @@ export type Database = {
           started_at: string | null
           state: Json | null
           status: string
+          stopped_at: string | null
           updated_at: string
           wallet: number
         }
@@ -165,6 +166,7 @@ export type Database = {
           started_at?: string | null
           state?: Json | null
           status?: string
+          stopped_at?: string | null
           updated_at?: string
           wallet?: number
         }
@@ -180,6 +182,7 @@ export type Database = {
           started_at?: string | null
           state?: Json | null
           status?: string
+          stopped_at?: string | null
           updated_at?: string
           wallet?: number
         }

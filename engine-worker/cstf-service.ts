@@ -32,6 +32,8 @@ export class CstfService {
   start() { if (this.running) return; this.running = true; this.schedule(1000); }
   stop() { this.running = false; this.abort.abort(); if (this.timer) clearTimeout(this.timer); }
   get account() { return this.state; }
+  /** prompt-79: the user stopped the crypto Simulator. Stop polling for good; saved history is untouched. */
+  private halt() { if (!this.running) return; this.log(JSON.stringify({ event: 'cstf_stopped_by_user' })); this.stop(); }
   private schedule(ms: number) { if (this.running) this.timer = setTimeout(() => { void this.tick().finally(() => this.schedule(5000)); }, ms); }
 
   private async kl(path: '/fapi/v1/klines' | '/fapi/v1/markPriceKlines', symbol: string, interval: '1m' | '30m', start: number, end: number): Promise<Candle[]> {
@@ -52,7 +54,8 @@ export class CstfService {
     await this.host.app('cstf-status', { instance_id: this.host.instance, status, error }).then(() => { this.lastStatus = key; }).catch(() => undefined);
   }
   private async load() {
-    const r = await this.host.app<{ revision: number; state: unknown }>('cstf-state', {});
+    const r = await this.host.app<{ revision: number; state: unknown; stopped?: boolean }>('cstf-state', {});
+    if (r.stopped) { this.halt(); return; }
     this.state = r.state === null ? initialCstfAccount() : cstfStateSchema.parse(r.state) as AccountState; this.revision = r.revision;
     this.indicators.clear();
   }
@@ -88,6 +91,7 @@ export class CstfService {
     this.busy = true; let restore: Map<CstfSymbol, CstfState> | null = null;
     try {
       if (!this.state) await this.load();
+      if (!this.running) return;
       const state0 = this.state; if (!state0) return;
       const latest = Math.floor((Date.now() - 3000) / MINUTE) * MINUTE - MINUTE;
       const first = state0.lastMinute === null ? latest : state0.lastMinute + MINUTE;
@@ -135,7 +139,8 @@ export class CstfService {
         batch.add(result, frame.mode, Object.fromEntries(CSTF_SYMBOLS.map((s) => [s, frame.mark[s].close])) as Record<CstfSymbol, number>);
       }
       if (!batch.frames) { if (stopReason && Date.now() - (first + MINUTE) > 3 * MINUTE) await this.status('WAITING', stopReason); restore = null; return; }
-      const r = await this.host.app<{ conflict: boolean; revision: number }>('cstf-commit', batch.payload(this.host.instance, this.revision, state));
+      const r = await this.host.app<{ conflict: boolean; revision: number; stopped?: boolean }>('cstf-commit', batch.payload(this.host.instance, this.revision, state));
+      if (r.stopped) { restore = null; this.halt(); return; }
       if (r.conflict) throw new Error('Simulator account revision conflict');
       this.state = state; this.revision = r.revision; restore = null; this.lastCommitAt = Date.now(); this.lastError = null; this.lastStatus = 'RUNNING|null';
       if (batch.opened.length || batch.closed.length || batch.mode === 'recovery') this.log(JSON.stringify({ event: 'cstf_commit', mode: batch.mode, frames: batch.frames,

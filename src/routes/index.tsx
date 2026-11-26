@@ -87,11 +87,11 @@ function Dashboard() {
 
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground"><Wallet className="size-3.5" /> Simulator</h2>
+          <h2 className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground"><Wallet className="size-3.5" /> Crypto Simulator{acc?.stopped_at ? ' · stopped, no new trades' : ''}</h2>
           <Link to="/simulator" className="flex items-center gap-1 text-xs text-primary hover:underline">Open simulator <ArrowRight className="size-3" /></Link>
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-          <Tile label="Main balance" value={simReady && mainBalance !== null ? fmtUsd(mainBalance) : '—'} hint={simReady && mainBalance !== null ? `Next trade margin $${cstfMarginFor(mainBalance).toFixed(2)} (5%)` : `Started with ${fmtUsd(CSTF_RULES.startingBalance)}`} />
+          <Tile label="Main balance" value={simReady && mainBalance !== null ? fmtUsd(mainBalance) : '—'} hint={acc?.stopped_at ? 'Stopped by you · history kept' : simReady && mainBalance !== null ? `Next trade margin $${cstfMarginFor(mainBalance).toFixed(2)} (5%)` : `Started with ${fmtUsd(CSTF_RULES.startingBalance)}`} />
           <Tile label="Equity" value={simReady ? fmtUsd(acc?.equity) : '—'} />
           <Tile label="Realized P&L" value={simReady ? fmtSignedUsd(realized) : '—'} tone={realized > 0 ? 'text-long' : realized < 0 ? 'text-short' : undefined} />
           <Tile label="Take profits" value={simReady ? tps : '—'} hint={simReady ? `${cstfClosed.length - tps} liquidated` : undefined} />
