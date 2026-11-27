@@ -14,7 +14,7 @@ export const Route = createFileRoute("/api/public/engine")({
     let input: unknown;
     try { const text = await request.text(); if (text.length > 150_000) return new Response('Too large', { status: 413 }); input = JSON.parse(text); }
     catch { return Response.json({ error: "Invalid JSON" }, { status: 400 }); }
-    const base = z.object({ action: z.enum(["heartbeat", "state", "commit", "market", "deliveries", 'stop', 'market-state', 'robot-state', 'robot-commit', 'cstf-state', 'cstf-commit', 'cstf-status']), data: z.unknown() }).safeParse(input);
+    const base = z.object({ action: z.enum(["heartbeat", "state", "commit", "market", "deliveries", 'stop', 'market-state', 'robot-state', 'robot-commit', 'cstf-state', 'cstf-commit', 'cstf-status', 'st-state', 'st-commit', 'st-status']), data: z.unknown() }).safeParse(input);
     if (!base.success) return Response.json({ error: "Invalid request" }, { status: 422 });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     try {
@@ -51,6 +51,25 @@ export const Route = createFileRoute("/api/public/engine")({
       if (base.data.action === 'cstf-status') {
         const data = z.object({ instance_id: z.string().uuid(), status: z.enum(['WAITING', 'ERROR']), error: z.string().max(400).nullable() }).parse(base.data.data);
         const { data: ok, error } = await supabaseAdmin.rpc('cstf_report_status', { p: data as unknown as Json });
+        if (error) throw error;
+        return Response.json({ ok });
+      }
+      // prompt-81: SuperTrend 30m reversal Simulator — five coin slots in one shared cross account, committed atomically under the worker lease.
+      if (base.data.action === 'st-state') {
+        const { data, error } = await supabaseAdmin.from('st_account').select('revision, state, stopped_at').eq('id', 1).single();
+        if (error) throw error;
+        return Response.json({ revision: Number(data.revision), state: data.state, stopped: data.stopped_at !== null });
+      }
+      if (base.data.action === 'st-commit') {
+        const { stCommitSchema } = await import('@/lib/engine/st-live');
+        const data = stCommitSchema.parse(base.data.data);
+        const { data: result, error } = await supabaseAdmin.rpc('st_commit', { p: data as unknown as Json });
+        if (error) throw error;
+        return Response.json(result);
+      }
+      if (base.data.action === 'st-status') {
+        const data = z.object({ instance_id: z.string().uuid(), status: z.enum(['WAITING', 'ERROR']), error: z.string().max(400).nullable() }).parse(base.data.data);
+        const { data: ok, error } = await supabaseAdmin.rpc('st_report_status', { p: data as unknown as Json });
         if (error) throw error;
         return Response.json({ ok });
       }

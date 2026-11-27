@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { readCstfSimulator, readSimAccount, readSimTrades } from './dashboard.functions';
+import { readCstfSimulator, readSimAccount, readSimTrades, readStBacktest, readStSimulator } from './dashboard.functions';
 import type { Database } from '@/integrations/supabase/types';
 
 export type SimAccount = Database['public']['Tables']['sim_account']['Row'];
@@ -10,6 +10,9 @@ export const SIM_RULES = { marginShare: 0.05, leverage: 75, defaultBalance: 10, 
 
 export const useSimAccount = () => useQuery({ queryKey: ['sim_account'], refetchInterval: 15000, queryFn: () => readSimAccount() as Promise<SimAccount | null> });
 /** prompt-74: the active CSTF 30m Simulator account, trades and signal decisions. */
+/** prompt-81: the active SuperTrend reversal Simulator and its frozen 7-day backtest. */
+export const useStSimulator = () => useQuery({ queryKey: ['st_simulator'], refetchInterval: 15000, queryFn: () => readStSimulator() });
+export const useStBacktest = () => useQuery({ queryKey: ['st_backtest'], staleTime: Infinity, queryFn: () => readStBacktest() });
 export const useCstfSimulator = () => useQuery({ queryKey: ['cstf_simulator'], refetchInterval: 15000, queryFn: () => readCstfSimulator() });
 export const useSimTrades = () => useQuery({ queryKey: ['sim_trades'], refetchInterval: 15000, queryFn: () => readSimTrades() as Promise<SimTrade[]> });
 

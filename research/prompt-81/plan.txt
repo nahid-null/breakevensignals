@@ -1,0 +1,294 @@
+I want you to restore my previous Simulator interface and trading functionality, but this time completely replace the previous trading indicator with the **SuperTrend indicator shown in my attached TradingView screenshot**.
+
+Follow every requirement below carefully. Do not mix the new strategy with any old trading strategy, indicator, entry filter, or exit logic.
+
+## 1. Restore the Previous Simulator
+
+- Bring back my previous Simulator interface and functionality.
+- Preserve the previous simulator's balance management, trade history, dashboard, slot management, and reporting features.
+- Remove or disable the previous entry indicators and trading strategies.
+- The SuperTrend indicator must be the ONLY indicator controlling entries and exits.
+- Do not interfere with unrelated website functionality.
+
+## 2. SuperTrend Indicator Configuration
+
+Use the exact SuperTrend indicator shown in my attached TradingView screenshot.
+
+Indicator settings visible in the screenshot:
+
+- Indicator: SuperTrend
+- ATR Length: 5
+- Source: HL2
+- Multiplier / Factor: 1.6
+- Timeframe: 30 minutes (30M)
+
+Important:
+- Reproduce the indicator's calculation and signal behavior as closely as possible to TradingView.
+- Use the same Buy and Sell signal logic.
+- Do not substitute another SuperTrend implementation with different settings.
+- Do not add RSI, MACD, EMA, trend filters, confirmation indicators, or any additional entry conditions.
+- Signals must be generated from the 30-minute chart.
+- Use confirmed 30-minute candle signals to prevent repainting.
+- Entry prices must use the actual available market price when the confirmed signal is generated, not future candle prices.
+
+## 3. Trading Coins and Slot Configuration
+
+Use ONLY these five Binance USDT Futures trading pairs:
+
+1. NEARUSDT
+2. SUIUSDT
+3. TAOUSDT
+4. LINKUSDT
+5. WLDUSDT
+
+Simulator configuration:
+
+- Main starting balance: $10
+- Total slots: 5
+- Each coin gets its own dedicated slot.
+- Slot 1: NEARUSDT
+- Slot 2: SUIUSDT
+- Slot 3: TAOUSDT
+- Slot 4: LINKUSDT
+- Slot 5: WLDUSDT
+- Margin per trade: 5% of the current main balance.
+- Leverage: 75x.
+- Margin mode: Cross Margin.
+- Stop Loss: Completely disabled.
+- No forced time-based trade closing.
+- No fixed take-profit.
+- No other automatic exit conditions.
+
+IMPORTANT: Calculate the 5% margin dynamically from the current main balance. Never permanently fix the balance at $10. If the balance increases through profitable trades or decreases through losing trades, the next trade's margin must automatically adjust.
+
+Each coin must have its own independent slot and trading state.
+
+All five coins must be monitored continuously and independently.
+
+## 4. MOST IMPORTANT: Buy/Sell Signal-Based Trading Logic
+
+This is the most important requirement. Understand this logic before implementing it.
+
+I want a continuous reversal-based trading system.
+
+A trade must remain OPEN until the opposite SuperTrend signal appears on that same coin.
+
+There must be NO stop loss, NO take profit, and NO time-based exit.
+
+### Example 1: Buy Signal
+
+Suppose NEARUSDT generates a confirmed BUY signal.
+
+- Open a LONG trade in the NEARUSDT slot.
+- Use 5% of the current main balance as margin.
+- Apply 75x leverage.
+- Keep the trade open continuously.
+
+Even if the trade goes into a significant loss, DO NOT close it.
+
+Even if the trade reaches a large profit, DO NOT close it.
+
+Keep the position open until a confirmed SELL signal appears on NEARUSDT.
+
+### Example 2: Opposite Sell Signal
+
+Suppose NEARUSDT currently has an open LONG position.
+
+Later, its SuperTrend indicator generates a confirmed SELL signal.
+
+Immediately:
+
+1. Close the existing LONG position at the available market price.
+2. Calculate and record its actual realized profit or loss.
+3. Update the main balance accordingly, accounting for applicable trading fees and funding.
+4. Immediately open a new SHORT position in the SAME NEARUSDT slot.
+5. Use 5% of the updated main balance as margin.
+6. Apply 75x leverage.
+
+Do not leave the slot empty between the reversal trades unless execution is genuinely unavailable.
+
+### Example 3: Short-to-Long Reversal
+
+Suppose NEARUSDT currently has an open SHORT position.
+
+When a confirmed BUY signal appears:
+
+1. Automatically close the existing SHORT position.
+2. Record its actual profit or loss.
+3. Update the main balance.
+4. Immediately open a new LONG position in the same slot.
+
+This process must continue indefinitely.
+
+### Important Trading Rules
+
+- BUY signal = Open LONG.
+- SELL signal = Open SHORT.
+- BUY while LONG is already open = Do nothing.
+- SELL while SHORT is already open = Do nothing.
+- SELL while LONG is open = Close LONG and open SHORT.
+- BUY while SHORT is open = Close SHORT and open LONG.
+- Never close a trade simply because it is losing.
+- Never close a trade simply because it is profitable.
+- Only an opposite confirmed SuperTrend signal can trigger a normal trade closure.
+
+The above logic must work independently for all five coins.
+
+## 5. Five Independent Slots Must Always Be Monitored
+
+Each slot must monitor only its assigned coin.
+
+For example:
+
+- NEARUSDT receives a SELL signal: only the NEARUSDT position reverses.
+- SUIUSDT receives a BUY signal: only the SUIUSDT position reverses.
+- TAOUSDT receives no new signal: its existing position remains unchanged.
+- LINKUSDT and WLDUSDT continue operating independently.
+
+A signal on one coin must NEVER close, modify, or reverse another coin's position.
+
+There must be a maximum of one active position per coin.
+
+Do not block one coin's trading because another coin is already trading.
+
+If a coin has no signal yet, keep its slot waiting until its first confirmed signal. Never manufacture an entry just to fill a slot.
+
+## 6. Seven-Day Historical Backtest
+
+Before considering the implementation complete, run a full historical backtest covering the previous seven days.
+
+Use:
+
+- All five specified coins.
+- SuperTrend 5 / HL2 / 1.6.
+- 30-minute timeframe.
+- $10 initial main balance.
+- Five dedicated slots.
+- 5% dynamic margin per slot.
+- 75x leverage.
+- Cross margin.
+- No stop loss.
+- No take profit.
+- No time-based exit.
+- Opposite-signal-only closing and reversal.
+
+Use real historical Binance Futures market data and reproduce the actual SuperTrend signals.
+
+The backtest must simulate trades chronologically, including simultaneous positions, balance changes, trading fees, funding payments, and realistic execution prices.
+
+Do not use future candle information, look-ahead bias, or fabricated historical prices.
+
+### Backtest Report
+
+Provide a detailed report containing:
+
+1. Total BUY signals per coin.
+2. Total SELL signals per coin.
+3. Total LONG trades opened.
+4. Total SHORT trades opened.
+5. Total completed trades.
+6. Winning trades.
+7. Losing trades.
+8. Win rate.
+9. Total realized profit.
+10. Total realized loss.
+11. Net profit or loss after fees and funding.
+12. Starting balance.
+13. Final main balance.
+14. Maximum drawdown.
+15. Average trade duration.
+16. Longest trade duration.
+17. Shortest completed trade duration.
+18. Number of currently open trades.
+19. Unrealized profit or loss of open trades.
+20. Liquidation count.
+21. Coin-by-coin performance.
+22. Complete chronological trade history, including entry price, exit price, direction, margin, leverage, duration, and realized PnL.
+
+IMPORTANT: Since there is no stop loss and positions remain open until an opposite signal, some trades may remain open at the end of the seven-day test. Do not artificially close them just to produce a completed-trade result.
+
+Report open positions separately from completed positions.
+
+If the historical data is unavailable or incomplete, clearly report the missing data. Never invent backtest results.
+
+## 7. Telegram Trade Notifications
+
+Connect this strategy to my existing Telegram notification system.
+
+Send an automatic Telegram notification whenever:
+
+- A new LONG trade opens.
+- A new SHORT trade opens.
+- An existing LONG closes and reverses into SHORT.
+- An existing SHORT closes and reverses into LONG.
+- A trade closes with profit.
+- A trade closes with loss.
+- A liquidation occurs.
+- A backtest report is completed.
+
+Each trade notification should include:
+
+- Coin name.
+- Trading direction.
+- Entry price.
+- Exit price when closed.
+- Margin used.
+- Leverage.
+- Realized profit or loss.
+- Current main balance.
+- Trade duration.
+- Reason for closing (opposite SuperTrend signal).
+
+For reversals, send the closing trade result and the newly opened position details.
+
+Also send a complete seven-day backtest summary to Telegram.
+
+Use my existing Telegram bot and chat configuration. Do not create duplicate bots or expose Telegram credentials.
+
+## 8. Simulator Dashboard
+
+Update the Simulator dashboard to clearly display:
+
+- Current main balance.
+- Total used margin.
+- Available balance.
+- Total active positions.
+- Five dedicated coin slots.
+- Current direction of each coin (LONG / SHORT / WAITING).
+- Current entry price.
+- Current market price.
+- Unrealized PnL.
+- Realized PnL.
+- Current SuperTrend direction.
+- Last confirmed Buy/Sell signal.
+- Last signal time.
+- Trade duration.
+- Total completed trades.
+- Win rate.
+- Liquidation status.
+
+Each coin must have its own independent trade history.
+
+## 9. Critical Verification Before Completion
+
+Before declaring the work complete, verify all of the following:
+
+1. The exact SuperTrend settings are implemented.
+2. The indicator operates on 30-minute candles.
+3. Buy signals open LONG positions.
+4. Sell signals open SHORT positions.
+5. Opposite signals close and reverse positions automatically.
+6. Profitable trades remain open until an opposite signal.
+7. Losing trades remain open until an opposite signal.
+8. No stop loss or take profit is accidentally active.
+9. Each of the five coins has an independent slot.
+10. Each slot uses 5% of the dynamically updated main balance.
+11. Leverage is exactly 75x.
+12. Cross Margin is correctly simulated.
+13. One coin's signal never affects another coin's position.
+14. Telegram notifications work correctly.
+15. The seven-day backtest results match the implemented strategy.
+
+Do not claim that something works without actually testing it.
+
+**FINAL REQUIREMENT:** Restore my previous Simulator, implement this exact SuperTrend-based continuous reversal strategy, run the seven-day historical backtest, and provide the complete report. Do not silently change any of my trading rules or introduce additional indicators or filters.

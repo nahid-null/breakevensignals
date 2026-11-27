@@ -3,8 +3,8 @@ import { Activity, ArrowRight, Wallet } from "lucide-react";
 import { fmtTime, useEvents, useSettings, useStatuses, useTelegramLogs } from "@/lib/data";
 import { StatusBadge } from "@/components/terminal/StatusBadge";
 import { sentResultSummary, sentSignalSummary } from "@/lib/signal-summary";
-import { fmtSignedUsd, fmtUsd, useCstfSimulator, useSimTrades } from "@/lib/simulator";
-import { CSTF_RULES, cstfMarginFor } from "@/lib/engine/cstf-account";
+import { fmtSignedUsd, fmtUsd, useCstfSimulator, useSimTrades, useStSimulator } from "@/lib/simulator";
+import { ST_RULES, stMarginFor } from "@/lib/engine/st-account";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
@@ -38,24 +38,27 @@ function Dashboard() {
   const settings = useSettings();
   const trades = useSimTrades();
   const cstf = useCstfSimulator();
+  const stq = useStSimulator();
   const tz = settings.data?.display_timezone ?? "UTC";
   const sig = sentSignalSummary(logs.data ?? [], events.data ?? []);
   const signalsReady = logs.isSuccess && events.isSuccess;
-  // prompt-74: results from the old account and the active CSTF account both count.
-  const results = sentResultSummary(logs.data ?? [], [...(trades.data ?? []), ...(cstf.data?.trades ?? []).map((t) => ({ trade_id: t.signal_id, exit_reason: t.exit_reason }))]);
-  const resultsReady = logs.isSuccess && trades.isSuccess && cstf.isSuccess;
-  const acc = cstf.data?.account; const simReady = cstf.isSuccess && !!acc;
-  const cstfClosed = (cstf.data?.trades ?? []).filter((t) => t.status === 'CLOSED');
-  const realized = cstfClosed.reduce((a, t) => a + Number(t.net ?? 0), 0);
-  const tps = cstfClosed.filter((t) => t.exit_reason === 'TAKE_PROFIT').length;
-  const openList = (cstf.data?.trades ?? []).filter((t) => t.status === 'OPEN');
-  const mainBalance = acc ? Number(acc.wallet) + openList.reduce((v, t) => v + Number(t.entry_fee) + Number(t.funding), 0) : null;
+  // Results from the old accounts (kept history) and the active SuperTrend account all count.
+  const results = sentResultSummary(logs.data ?? [], [...(trades.data ?? []), ...(cstf.data?.trades ?? []).map((t) => ({ trade_id: t.signal_id, exit_reason: t.exit_reason })),
+    ...(stq.data?.trades ?? []).filter((t) => t.status === 'CLOSED').map((t) => ({ trade_id: t.trade_id, exit_reason: t.exit_reason, won: Number(t.net) > 0 }))]);
+  const resultsReady = logs.isSuccess && trades.isSuccess && cstf.isSuccess && stq.isSuccess;
+  // prompt-81: the dashboard Simulator card shows the active SuperTrend Simulator.
+  const acc = stq.data?.account; const simReady = stq.isSuccess && !!acc;
+  const stClosed = (stq.data?.trades ?? []).filter((t) => t.status === 'CLOSED');
+  const realized = stClosed.reduce((a, t) => a + Number(t.net ?? 0), 0);
+  const wins = stClosed.filter((t) => Number(t.net) > 0).length;
+  const openList = (stq.data?.trades ?? []).filter((t) => t.status === 'OPEN');
+  const mainBalance = acc ? Number(acc.main_balance) : null;
   const statuses: [string, string][] = [["System", s.system], ["Cloud", s.cloud], ["Scanner", s.scanner], ["Binance", s.binance], ["WebSocket", s.websocket], ["Telegram", s.telegram]];
 
   return (
     <div className="space-y-8">
       <div>
-        <div className="mb-2 flex items-center gap-2 font-mono text-[10px] text-primary"><Activity className="size-3" /> BINANCE USD-M FUTURES · CSTF 30-MINUTE SIMULATOR</div>
+        <div className="mb-2 flex items-center gap-2 font-mono text-[10px] text-primary"><Activity className="size-3" /> BINANCE FUTURES · SUPERTREND 30-MINUTE SIMULATOR</div>
         <h1 className="text-2xl font-semibold">Dashboard</h1>
       </div>
 
@@ -79,23 +82,23 @@ function Dashboard() {
         <h2 className="text-xs uppercase tracking-widest text-muted-foreground">Trade results sent to Telegram</h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <Tile label="Results sent" value={resultsReady ? results.sent : '—'} hint={signalsReady ? `Earlier breakeven alerts: ${sig.sent}` : undefined} />
-          <Tile label="Take profit hit" value={resultsReady ? results.takeProfit : '—'} tone="text-long" />
-          <Tile label="Stop loss / liquidated" value={resultsReady ? results.stopLoss : '—'} tone="text-short" />
-          <Tile label="Success rate" value={!resultsReady || results.successRate === null ? '—' : `${results.successRate.toFixed(1)}%`} tone="text-long" hint="Take profit hits ÷ results sent" />
+          <Tile label="Profitable / take profit" value={resultsReady ? results.takeProfit : '—'} tone="text-long" />
+          <Tile label="Loss / liquidated" value={resultsReady ? results.stopLoss : '—'} tone="text-short" />
+          <Tile label="Success rate" value={!resultsReady || results.successRate === null ? '—' : `${results.successRate.toFixed(1)}%`} tone="text-long" hint="Profitable results ÷ results sent" />
         </div>
       </section>
 
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground"><Wallet className="size-3.5" /> Crypto Simulator{acc?.stopped_at ? ' · stopped, no new trades' : ''}</h2>
+          <h2 className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground"><Wallet className="size-3.5" /> SuperTrend Simulator</h2>
           <Link to="/simulator" className="flex items-center gap-1 text-xs text-primary hover:underline">Open simulator <ArrowRight className="size-3" /></Link>
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-          <Tile label="Main balance" value={simReady && mainBalance !== null ? fmtUsd(mainBalance) : '—'} hint={acc?.stopped_at ? 'Stopped by you · history kept' : simReady && mainBalance !== null ? `Next trade margin $${cstfMarginFor(mainBalance).toFixed(2)} (5%)` : `Started with ${fmtUsd(CSTF_RULES.startingBalance)}`} />
+          <Tile label="Main balance" value={simReady && mainBalance !== null ? fmtUsd(mainBalance) : '—'} hint={simReady && mainBalance !== null ? `Next trade margin $${stMarginFor(mainBalance).toFixed(4)} (5%)` : `Started with ${fmtUsd(ST_RULES.startingBalance)}`} />
           <Tile label="Equity" value={simReady ? fmtUsd(acc?.equity) : '—'} />
           <Tile label="Realized P&L" value={simReady ? fmtSignedUsd(realized) : '—'} tone={realized > 0 ? 'text-long' : realized < 0 ? 'text-short' : undefined} />
-          <Tile label="Take profits" value={simReady ? tps : '—'} hint={simReady ? `${cstfClosed.length - tps} liquidated` : undefined} />
-          <Tile label={`Open trades (${openList.length}/${CSTF_RULES.slots})`} value={!simReady ? '—' : openList.length ? openList.map((t) => `${t.symbol.replace('USDT', '')} ${t.side}`).join(' · ') : 'None'} tone={openList.length ? undefined : 'text-muted-foreground'} hint="CSTF v4 Strong Trend 30m · 75x cross" />
+          <Tile label="Completed trades" value={simReady ? stClosed.length : '—'} hint={simReady && stClosed.length ? `Win rate ${(wins / stClosed.length * 100).toFixed(1)}%` : undefined} />
+          <Tile label={`Open trades (${openList.length}/${ST_RULES.slots})`} value={!simReady ? '—' : openList.length ? openList.map((t) => `${t.symbol.replace('USDT', '')} ${t.side}`).join(' · ') : 'None yet'} tone={openList.length ? undefined : 'text-muted-foreground'} hint="SuperTrend 5 · hl2 · 1.6 · 30m · 75x cross" />
         </div>
       </section>
     </div>

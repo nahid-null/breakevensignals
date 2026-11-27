@@ -75,7 +75,7 @@ function SettingsPage() {
         {(['long', 'short'] as const).map((side) => <section key={side} className="border-b border-border py-4 lg:pr-8">
           <h2 className={`mb-2 font-mono text-sm ${side === 'long' ? 'text-long' : 'text-short'}`}>{side.toUpperCase()} NOTIFICATIONS</h2>
           {toggle(`${side.toUpperCase()} notifications`, `${side}_notifications_enabled`)}
-          <p className="mt-2 text-xs text-muted-foreground">Sends only Simulator trade results: Take profit hit or Stop loss hit.</p>
+          <p className="mt-2 text-xs text-muted-foreground">Sends Simulator trade messages: every new trade, reversal, profit or loss close and liquidation.</p>
         </section>)}
         <section className="space-y-4 py-4">
           <h2 className="text-xs uppercase tracking-widest text-muted-foreground">Display</h2>

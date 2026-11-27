@@ -7,10 +7,10 @@ import { StatusBadge } from "./StatusBadge";
 
 const NAV = [
   { to: "/", label: "Dashboard", icon: Activity },
+  { to: "/simulator", label: "Simulator", icon: Wallet },
   { to: "/forex", label: "Forex Simulator", icon: CandlestickChart },
 ] as const;
 const MORE = [
-  { to: "/simulator", label: "Crypto Simulator (stopped)", icon: Wallet },
   { to: "/backtest", label: "Filter Backtest", icon: FlaskConical },
   { to: "/parity", label: "Parity Report", icon: GitCompare },
   { to: "/markets", label: "Coin Monitor", icon: LineChart },

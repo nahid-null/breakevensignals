@@ -344,6 +344,13 @@
       "when": 1795689566772,
       "tag": "0048_stop_crypto_simulator",
       "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1795760536505,
+      "tag": "0049_supertrend_simulator",
+      "breakpoints": true
     }
   ]
 }

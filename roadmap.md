@@ -130,3 +130,11 @@ Paper Robot30-trade collection, SMC/sweep rollout, chart rollout and MTF-filter 
 - [ ] Redeploy Railway scanner so it also stops polling crypto Simulator prices (already harmless: database refuses its updates) — user action on Railway
 - [ ] Live AUD/JPY trading — needs a reliable free live forex price feed
 - [ ] Exact tick-level expiry prices — tick provider refused downloads; 1-minute closes used
+
+## prompt-81 SuperTrend reversal Simulator (NEAR SUI TAO LINK WLD)
+- [x] Exact SuperTrend 5/hl2/1.6 port; independent Pine check matches every Buy/Sell on all 5 coins
+- [x] Signals from Binance Spot 30m candles (user's choice), trades on Futures prices
+- [x] 5 slots, 5% dynamic margin, 75x cross, opposite-signal reversal only; rule tests + isolated database tests
+- [x] Live scanner service + database + Telegram messages for open/reversal/close/liquidation
+- [x] 7-day backtest report + Telegram summary; Simulator page and Dashboard show the new Simulator
+- [ ] Railway redeploy so the live scanner starts the SuperTrend Simulator — user action on Railway after the code is saved

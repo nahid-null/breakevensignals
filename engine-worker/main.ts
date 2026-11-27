@@ -1,5 +1,6 @@
 import { SignalService } from './service';
 import { CstfService } from './cstf-service';
+import { StService } from './st-service';
 import { localHealthResponse } from './local-health';
 import { cloudHealthResponse, keepAwakeUrl, KEEP_AWAKE_INTERVAL_MS } from './cloud-health';
 
@@ -14,6 +15,8 @@ const runtimeMode = observe || process.env['ENGINE_RUNTIME_MODE'] === 'temporary
 const service = new SignalService((url ?? '').replace(/\/$/, ''), secret ?? '', observe, runtimeMode, hostKind);
 // prompt-74: CSTF 30m paper Simulator (22 coins, one shared cross account) runs beside the scanner under the same lease.
 const cstf = observe ? null : new CstfService(service);
+// prompt-81: SuperTrend 30m continuous-reversal Simulator (5 coin slots, one shared cross account) under the same lease.
+const st = observe ? null : new StService(service);
 const healthSecret = process.env['LOCAL_HEALTH_SECRET'] ?? '';
 // Worker scripts run on Bun, outside SSR. Cloud web services bind their assigned PORT.
 const cloudPort = hostKind === 'hosted' ? Number(process.env['PORT'] ?? 0) : 0;
@@ -31,6 +34,7 @@ async function shutdown(code: number) {
   stopping = true;
   local?.stop(true);
   cstf?.stop();
+  st?.stop();
   await service.stop();
   process.exit(code);
 }
@@ -47,5 +51,6 @@ if (parentId) setInterval(() => { void (async () => {
   if (Date.now() - parentLastSeen > 45_000) await shutdown(1);
 })(); }, 15_000);
 cstf?.start();
+st?.start();
 try { await service.start(); }
 catch (error) { console.error(error instanceof Error ? error.message : 'Worker startup failed'); await shutdown(1); }

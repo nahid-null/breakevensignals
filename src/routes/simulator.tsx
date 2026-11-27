@@ -10,6 +10,7 @@ import { readSimControlAccess, closeSimTrade } from "@/lib/simulator.functions";
 import { StatusBadge } from "@/components/terminal/StatusBadge";
 import { TrendWatch } from '@/components/terminal/TrendWatch';
 import { CstfSimulator } from '@/components/terminal/CstfSimulator';
+import { StSimulator } from '@/components/terminal/StSimulator';
 import { SavedMarketNotice } from '@/components/terminal/SavedMarketNotice';
 import { contractFeedStatus } from '@/lib/engine/market-policy';
 import { Button } from "@/components/ui/button";
@@ -19,10 +20,10 @@ import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescript
 export const Route = createFileRoute("/simulator")({
   head: () => ({
     meta: [
-      { title: "Simulator Trading — Crypto Signal Terminal" },
-      { name: "description", content: "Paper-trading Simulator following the Candle Signals Trend Filter v4 Strong Trend 30-minute signals on 22 Binance Futures coins: $10 starting cross margin, 7 slots sized at 5% of the current balance, 75x, take profit 20% of margin net." },
-      { property: "og:title", content: "Simulator Trading — Crypto Signal Terminal" },
-      { property: "og:description", content: "CSTF v4 Strong Trend 30m signals, 22 coins, 7 slots at 5% of the current balance, 75x cross, 20% net target after fees, no stop loss." },
+      { title: "SuperTrend Simulator — Crypto Signal Terminal" },
+      { name: "description", content: "Paper-trading Simulator on SuperTrend 5 / hl2 / 1.6 30-minute signals for NEAR, SUI, TAO, LINK and WLD: five dedicated slots, 5% of the current balance per trade, 75x cross, reversal on the opposite signal only." },
+      { property: "og:title", content: "SuperTrend Simulator — Crypto Signal Terminal" },
+      { property: "og:description", content: "SuperTrend 30m continuous-reversal paper trading: 5 coins, 5 slots, 5% dynamic margin, 75x cross, no stop loss or take profit." },
       { property: 'og:type', content: 'website' },
       { name: 'twitter:card', content: 'summary_large_image' },
     ],
@@ -81,7 +82,12 @@ function Simulator() {
 
   return (
     <div className="space-y-10">
-      <CstfSimulator tz={tz} />
+      <StSimulator tz={tz} />
+
+      <details className="border border-border bg-card/20 p-4">
+        <summary className="cursor-pointer text-xs uppercase tracking-widest text-muted-foreground">Previous crypto Simulator (CSTF, stopped) · history kept</summary>
+        <div className="mt-4"><CstfSimulator tz={tz} /></div>
+      </details>
 
       <section className="space-y-3 border border-border bg-card/20 p-4">
         <h2 className="text-xs uppercase tracking-widest text-muted-foreground">Previous Simulator account · retired OB STRONG strategy (no new trades)</h2>

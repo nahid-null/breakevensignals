@@ -1624,6 +1624,192 @@ export type Database = {
         }
         Relationships: []
       }
+      st_account: {
+        Row: {
+          checked_at: string | null
+          coins: Json
+          equity: number
+          error: string | null
+          id: number
+          last_minute: number | null
+          liquidations: number
+          main_balance: number
+          maintenance: number
+          open_count: number
+          revision: number
+          started_at: string | null
+          state: Json | null
+          status: string
+          stopped_at: string | null
+          updated_at: string
+          wallet: number
+        }
+        Insert: {
+          checked_at?: string | null
+          coins?: Json
+          equity?: number
+          error?: string | null
+          id: number
+          last_minute?: number | null
+          liquidations?: number
+          main_balance?: number
+          maintenance?: number
+          open_count?: number
+          revision?: number
+          started_at?: string | null
+          state?: Json | null
+          status?: string
+          stopped_at?: string | null
+          updated_at?: string
+          wallet?: number
+        }
+        Update: {
+          checked_at?: string | null
+          coins?: Json
+          equity?: number
+          error?: string | null
+          id?: number
+          last_minute?: number | null
+          liquidations?: number
+          main_balance?: number
+          maintenance?: number
+          open_count?: number
+          revision?: number
+          started_at?: string | null
+          state?: Json | null
+          status?: string
+          stopped_at?: string | null
+          updated_at?: string
+          wallet?: number
+        }
+        Relationships: []
+      }
+      st_signals: {
+        Row: {
+          created_at: string
+          decision: string
+          mode: string
+          reason: string | null
+          side: string
+          signal_id: string
+          signal_time: string
+          symbol: string
+        }
+        Insert: {
+          created_at?: string
+          decision: string
+          mode: string
+          reason?: string | null
+          side: string
+          signal_id: string
+          signal_time: string
+          symbol: string
+        }
+        Update: {
+          created_at?: string
+          decision?: string
+          mode?: string
+          reason?: string | null
+          side?: string
+          signal_id?: string
+          signal_time?: string
+          symbol?: string
+        }
+        Relationships: []
+      }
+      st_trades: {
+        Row: {
+          closed_mode: string | null
+          created_at: string
+          entry_fee: number
+          entry_price: number
+          entry_time: string
+          exit_fee: number | null
+          exit_price: number | null
+          exit_reason: string | null
+          exit_time: string | null
+          funding: number
+          gross: number | null
+          leverage: number
+          liquidation_price: number
+          main_after: number | null
+          margin: number
+          mark_price: number | null
+          net: number | null
+          quantity: number
+          reversed_from: string | null
+          reversed_to: string | null
+          side: string
+          signal_time: string
+          status: string
+          symbol: string
+          trade_id: string
+          unrealized: number | null
+          updated_at: string
+          wallet_after: number | null
+        }
+        Insert: {
+          closed_mode?: string | null
+          created_at?: string
+          entry_fee: number
+          entry_price: number
+          entry_time: string
+          exit_fee?: number | null
+          exit_price?: number | null
+          exit_reason?: string | null
+          exit_time?: string | null
+          funding?: number
+          gross?: number | null
+          leverage?: number
+          liquidation_price: number
+          main_after?: number | null
+          margin: number
+          mark_price?: number | null
+          net?: number | null
+          quantity: number
+          reversed_from?: string | null
+          reversed_to?: string | null
+          side: string
+          signal_time: string
+          status?: string
+          symbol: string
+          trade_id: string
+          unrealized?: number | null
+          updated_at?: string
+          wallet_after?: number | null
+        }
+        Update: {
+          closed_mode?: string | null
+          created_at?: string
+          entry_fee?: number
+          entry_price?: number
+          entry_time?: string
+          exit_fee?: number | null
+          exit_price?: number | null
+          exit_reason?: string | null
+          exit_time?: string | null
+          funding?: number
+          gross?: number | null
+          leverage?: number
+          liquidation_price?: number
+          main_after?: number | null
+          margin?: number
+          mark_price?: number | null
+          net?: number | null
+          quantity?: number
+          reversed_from?: string | null
+          reversed_to?: string | null
+          side?: string
+          signal_time?: string
+          status?: string
+          symbol?: string
+          trade_id?: string
+          unrealized?: number | null
+          updated_at?: string
+          wallet_after?: number | null
+        }
+        Relationships: []
+      }
       telegram_logs: {
         Row: {
           claimed_at: string | null
@@ -1791,6 +1977,8 @@ export type Database = {
       sim_manual_close: { Args: { trade_uuid: string }; Returns: Json }
       sim_set_enabled: { Args: { on_off: boolean }; Returns: undefined }
       simulate_engine_candle: { Args: { p: Json }; Returns: undefined }
+      st_commit: { Args: { p: Json }; Returns: Json }
+      st_report_status: { Args: { p: Json }; Returns: boolean }
       stop_engine: { Args: { p_instance: string }; Returns: boolean }
       terminal_statistics: { Args: never; Returns: Json }
     }

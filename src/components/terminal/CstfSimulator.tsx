@@ -43,7 +43,7 @@ export function CstfSimulator({ tz }: { tz: string }) {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="mb-2 flex items-center gap-2 font-mono text-[10px] text-primary"><Wallet className="size-3" /> PRACTICE MONEY · NO REAL ORDERS</div>
-          <h1 className="text-2xl font-semibold">Crypto Simulator{stopped ? ' · stopped' : ''}</h1>
+          <h2 className="text-2xl font-semibold">Crypto Simulator{stopped ? ' · stopped' : ''}</h2>
           <p className="mt-1 text-sm text-muted-foreground">Candle Signals – Trend Filter v4 Strong Trend · 30-minute Binance Futures signals · shared cross margin</p>
         </div>
         <div className="text-right text-sm">
