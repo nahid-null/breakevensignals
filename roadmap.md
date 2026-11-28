@@ -1,5 +1,11 @@
 # Independent Crypto Signal Terminal
 
+## prompt-83 — Q-Trend Binance Spot 30-day cross-margin research (offline only)
+- [x] Preserve the newly attached plan and the byte-identical Q-Trend Pine source in a separate research run; use Binance Spot data only.
+- [x] Freeze and validate complete 30m signal and 1m execution candles for all 10 requested pairs over the latest 30 days through 2026-11-28 12:03 UTC.
+- [x] Replay confirmed alerts with six slots, 5% dynamic sizing, 75x synthetic leverage, full shared account collateral, 200% gross-margin targets, fees, and explicit maintenance/liquidation assumptions.
+- [x] Deliver reproducible trade history and a detailed report; verify no live site, Simulator, balances, Telegram, worker, or deployment changed.
+
 ## prompt-82 — Q-Trend 30-day Futures backtest (research only)
 - [x] Preserve the attached Pine source and default confirmed Big Swings settings; execute only when the alert becomes knowable, never on its backdated label bar.
 - [x] Freeze complete Binance USD-M Futures 30m, 1m, mark-price and funding data for the latest 30 full days across the 10 requested pairs; validate gaps and hashes.

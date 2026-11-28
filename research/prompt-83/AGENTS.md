@@ -1,0 +1,1 @@
+- Keep this Q-Trend run offline: use Binance Spot prices only and a separately documented synthetic cross-margin account; never connect these artifacts to live trading, persistence, Telegram, or the website.
