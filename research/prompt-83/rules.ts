@@ -109,6 +109,22 @@ export function normalizeAggregateTimestamp(timestamp: number): number {
   return timestamp >= 100_000_000_000_000 ? Math.floor(timestamp / 1000) : timestamp;
 }
 
+export function displayedSignalSide(labelText: string): Side {
+  const name = labelText.trim().split(/\r?\n/)[0]?.toUpperCase() ?? '';
+  if (name.includes('BUY')) return 'LONG';
+  if (name.includes('SELL')) return 'SHORT';
+  throw new Error(`Unrecognized Q-Trend label: ${labelText}`);
+}
+
+export function displayedSignalPrice(labelText: string): number {
+  const priceText = labelText.trim().split(/\r?\n/).at(-1)?.trim();
+  const price = Number(priceText);
+  if (!priceText || !Number.isFinite(price) || price <= 0) {
+    throw new Error(`Q-Trend label does not contain a positive displayed price: ${labelText}`);
+  }
+  return price;
+}
+
 export function parseBuyerMakerFlag(value: string): boolean {
   const normalized = value.trim().toLowerCase();
   if (normalized !== 'true' && normalized !== 'false') throw new Error(`Invalid buyer-maker flag: ${value}`);

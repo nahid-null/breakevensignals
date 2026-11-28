@@ -6,6 +6,11 @@
 - [x] Replay confirmed alerts with six slots, 5% dynamic sizing, 75x synthetic leverage, full shared account collateral, 200% gross-margin targets, fees, and explicit maintenance/liquidation assumptions.
 - [x] Deliver reproducible trade history and a detailed report; verify no live site, Simulator, balances, Telegram, worker, or deployment changed.
 
+## prompt-83 follow-up — verify TradingView label and entry parity
+- [x] Reconcile the intact Pine source against the five visible LINK/NEAR screenshot labels; 14,472 warmup bars reproduce all five exact sides and displayed prices, and the shorter prior history caused a false NEAR LONG and missed SELL.
+- [x] Record label candle/price separately from confirmed alert and 1m entry; rerun the full 30-day study (38 signals, 35 opened, 17 targets, 14 liquidated positions) and verify consecutive output files are byte-identical.
+- [x] Preserve research-only scope; document history-start sensitivity and lack of an exported TradingView alert list. No app surfaces, Simulator, persistence, Telegram, worker, or deployment changes.
+
 ## prompt-82 — Q-Trend 30-day Futures backtest (research only)
 - [x] Preserve the attached Pine source and default confirmed Big Swings settings; execute only when the alert becomes knowable, never on its backdated label bar.
 - [x] Freeze complete Binance USD-M Futures 30m, 1m, mark-price and funding data for the latest 30 full days across the 10 requested pairs; validate gaps and hashes.

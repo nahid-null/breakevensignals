@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import {
+  displayedSignalPrice,
+  displayedSignalSide,
   fee,
   grossPnl,
   hasFreeSlot,
@@ -74,5 +76,13 @@ describe('prompt-83 Spot research account rules', () => {
     expect(normalizeAggregateTimestamp(1_793_232_000_119)).toBe(1_793_232_000_119);
     expect(parseBuyerMakerFlag('False')).toBe(false);
     expect(parseBuyerMakerFlag('TRUE')).toBe(true);
+  });
+
+  it('preserves the visible label direction and price as separate indicator evidence', () => {
+    expect(displayedSignalSide('STRONG BUY\n10.811')).toBe('LONG');
+    expect(displayedSignalPrice('STRONG BUY\n10.811')).toBe(10.811);
+    expect(displayedSignalSide('SELL\n4.441')).toBe('SHORT');
+    expect(displayedSignalPrice('SELL\n4.441')).toBe(4.441);
+    expect(() => displayedSignalPrice('SELL')).toThrow('does not contain a positive displayed price');
   });
 });

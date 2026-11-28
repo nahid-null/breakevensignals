@@ -8,6 +8,8 @@ import { fileURLToPath } from 'node:url';
 import { gunzipSync, gzipSync } from 'node:zlib';
 import { Indicator, PineTS, type ISymbolInfo } from 'pinets';
 import {
+  displayedSignalPrice,
+  displayedSignalSide,
   fee,
   grossPnl,
   hasFreeSlot,
@@ -32,7 +34,9 @@ const TF = 30 * MINUTE;
 const DAY = 24 * 60 * MINUTE;
 const AS_OF = Date.UTC(2026, 10, 28, 12, 3, 0);
 const WINDOW_START = AS_OF - 30 * DAY;
-const WARMUP_BARS = 1_500;
+// The supplied TradingView screenshots match this frozen history boundary; Q-Trend's persistent ZigZag state depends on it.
+const WARMUP_START = Date.UTC(2026, 0, 1, 0, 0, 0);
+const WARMUP_BAR_COUNT = (Math.floor(WINDOW_START / TF) * TF - WARMUP_START) / TF;
 const SPOT_API = 'https://api.binance.com';
 const ROOT = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = join(ROOT, 'data');
@@ -48,12 +52,27 @@ interface SpotExchangeInfo { serverTime: number; symbols: SpotSymbol[] }
 interface Candle { time: number; open: number; high: number; low: number; close: number; volume: number }
 interface FrozenSymbol { symbol: Pair; bars30: RawKline[]; bars1: RawKline[] }
 interface SpotContract { symbol: Pair; tickSize: number; stepSize: number; minQty: number; minNotional: number }
-interface Signal { id: string; symbol: Pair; side: Side; title: string; confirmedAt: number; alertBarOpen: number; pineBarIndex: number }
+interface Signal {
+  id: string;
+  symbol: Pair;
+  side: Side;
+  title: string;
+  labelBarOpen: number;
+  labelPrice: number;
+  labelText: string;
+  alertBarOpen: number;
+  alertConfirmedAt: number;
+  pineBarIndex: number;
+}
 interface Position extends PositionRisk {
   id: string;
   signalId: string;
-  signalTime: number;
+  alertConfirmedAt: number;
   signalTitle: string;
+  labelBarOpen: number;
+  labelPrice: number;
+  labelText: string;
+  alertBarOpen: number;
   entryTime: number;
   entryFee: number;
   target: number;
@@ -64,7 +83,11 @@ interface ClosedTrade {
   signalId: string;
   symbol: Pair;
   side: Side;
-  signalTime: number;
+  alertConfirmedAt: number;
+  labelBarOpen: number;
+  labelPrice: number;
+  labelText: string;
+  alertBarOpen: number;
   entryTime: number;
   entry: number;
   margin: number;
@@ -86,8 +109,12 @@ interface OpenTrade {
   signalId: string;
   symbol: Pair;
   side: Side;
-  signalTime: number;
-  entryTime: number;
+  alertConfirmedAt: string;
+  labelBarOpen: string;
+  labelPrice: number;
+  labelText: string;
+  alertBarOpen: string;
+  entryTime: string;
   entry: number;
   margin: number;
   notional: number;
@@ -177,7 +204,7 @@ async function fetchKlines(symbol: Pair, interval: '1m' | '30m', start: number, 
 }
 
 async function fetchSymbol(symbol: Pair): Promise<FrozenSymbol> {
-  const warmStart = Math.floor(WINDOW_START / TF) * TF - WARMUP_BARS * TF;
+  const warmStart = WARMUP_START;
   const oneMinuteStart = Math.floor(WINDOW_START / MINUTE) * MINUTE;
   const [bars30, bars1] = await Promise.all([
     fetchKlines(symbol, '30m', warmStart, Math.floor(AS_OF / TF) * TF),
@@ -237,7 +264,7 @@ function asCandle(row: RawKline): Candle {
 
 function validateData(data: Map<Pair, FrozenSymbol>, exchange: SpotExchangeInfo): string[] {
   const problems: string[] = [];
-  const warmStart = Math.floor(WINDOW_START / TF) * TF - WARMUP_BARS * TF;
+  const warmStart = WARMUP_START;
   const end30 = Math.floor(AS_OF / TF) * TF;
   const expected30 = (end30 - warmStart) / TF;
   const start1 = Math.floor(WINDOW_START / MINUTE) * MINUTE;
@@ -315,26 +342,58 @@ async function pineSignals(pair: Pair, frozen: FrozenSymbol, contract: SpotContr
   const runtime = new PineTS(provider, pair, '30', bars.length, bars[0]?.openTime, bars.at(-1)?.closeTime);
   runtime.setAlertMode('all');
   const context = await runtime.run(new Indicator(source));
-  const signals: Signal[] = [];
-  for (const [ordinal, alert] of context.alerts.entries()) {
+  interface RuntimeLabel { id: number; x: number; text: string }
+  const labelPlot = (context.plots as unknown as { __labels__?: { data?: { value: unknown }[] } }).__labels__;
+  const labels = (labelPlot?.data ?? []).flatMap((bucket): RuntimeLabel[] => {
+    if (!Array.isArray(bucket.value)) return [];
+    return bucket.value.flatMap((value): RuntimeLabel[] => {
+      if (typeof value !== 'object' || value === null) return [];
+      const record = value as Record<string, unknown>;
+      const id = record['id'];
+      const x = record['x'];
+      const text = record['text'];
+      if (typeof id !== 'number' || typeof x !== 'number' || typeof text !== 'string') {
+        throw new Error(`${pair}: PineTS returned an unreadable Q-Trend label object`);
+      }
+      return [{ id, x, text }];
+    });
+  }).sort((left, right) => left.id - right.id);
+  const alerts = context.alerts.flatMap((alert) => {
     const title = String(alert.title ?? alert.id ?? alert.message ?? '');
     const upperTitle = title.toUpperCase();
     const side: Side | null = upperTitle.includes('BUY') ? 'LONG' : upperTitle.includes('SELL') ? 'SHORT' : null;
     const index = Number(alert.bar_index);
     const bar = bars[index];
-    if (!side || !bar) continue;
-    const confirmedAt = bar.openTime + TF;
-    if (confirmedAt < WINDOW_START || confirmedAt >= AS_OF) continue;
-    signals.push({
-      id: `${pair}-${confirmedAt}-${side}-${ordinal}`,
-      symbol: pair,
-      side,
-      title,
-      confirmedAt,
-      alertBarOpen: bar.openTime,
-      pineBarIndex: index,
-    });
+    if (!side) return [];
+    if (!bar) throw new Error(`${pair}: confirmed alert points to invalid Pine bar ${index}`);
+    return [{ title, side, index, bar }];
+  });
+  if (labels.length !== alerts.length) {
+    throw new Error(`${pair}: PineTS returned ${labels.length} plotted labels for ${alerts.length} confirmed alerts`);
   }
+  const signals = alerts.flatMap((alert, ordinal): Signal[] => {
+    const label = labels[ordinal];
+    if (!label) throw new Error(`${pair}: missing plotted label for confirmed alert ${ordinal}`);
+    const labelBar = bars[label.x];
+    if (!labelBar) throw new Error(`${pair}: Q-Trend label points to invalid Pine bar ${label.x}`);
+    const labelSide = displayedSignalSide(label.text);
+    if (labelSide !== alert.side) throw new Error(`${pair}: plotted label direction disagrees with its confirmed alert`);
+    const labelPrice = displayedSignalPrice(label.text);
+    const alertConfirmedAt = alert.bar.openTime + TF;
+    if (alertConfirmedAt < WINDOW_START || alertConfirmedAt >= AS_OF) return [];
+    return [{
+      id: `${pair}-${alertConfirmedAt}-${alert.side}-${ordinal}`,
+      symbol: pair,
+      side: alert.side,
+      title: alert.title,
+      labelBarOpen: labelBar.openTime,
+      labelPrice,
+      labelText: label.text,
+      alertBarOpen: alert.bar.openTime,
+      alertConfirmedAt,
+      pineBarIndex: alert.index,
+    }];
+  });
   return { signals, warnings: context.warnings.map((warning) => `${pair} bar ${warning.bar}: ${warning.message}`) };
 }
 
@@ -496,11 +555,11 @@ async function main(): Promise<void> {
     console.log(`${pair}: ${result.signals.length} confirmed Q-Trend alerts; ${result.warnings.length} Pine interpreter warnings`);
   }
   const pairOrder = new Map(PAIRS.map((pair, index) => [pair, index] as const));
-  signals.sort((left, right) => left.confirmedAt - right.confirmedAt
+  signals.sort((left, right) => left.alertConfirmedAt - right.alertConfirmedAt
     || (pairOrder.get(left.symbol) ?? 0) - (pairOrder.get(right.symbol) ?? 0)
     || left.pineBarIndex - right.pineBarIndex);
   const signalsAt = new Map<number, Signal[]>();
-  for (const signal of signals) signalsAt.set(signal.confirmedAt, [...(signalsAt.get(signal.confirmedAt) ?? []), signal]);
+  for (const signal of signals) signalsAt.set(signal.alertConfirmedAt, [...(signalsAt.get(signal.alertConfirmedAt) ?? []), signal]);
 
   let mainBalance = RULES.startingBalance;
   const positions: Position[] = [];
@@ -529,7 +588,11 @@ async function main(): Promise<void> {
       signalId: position.signalId,
       symbol: position.symbol as Pair,
       side: position.side,
-      signalTime: position.signalTime,
+      alertConfirmedAt: position.alertConfirmedAt,
+      labelBarOpen: position.labelBarOpen,
+      labelPrice: position.labelPrice,
+      labelText: position.labelText,
+      alertBarOpen: position.alertBarOpen,
       entryTime: position.entryTime,
       entry: position.entry,
       margin: position.margin,
@@ -588,7 +651,11 @@ async function main(): Promise<void> {
         signalId: position.signalId,
         symbol: position.symbol as Pair,
         side: position.side,
-        signalTime: position.signalTime,
+        alertConfirmedAt: position.alertConfirmedAt,
+        labelBarOpen: position.labelBarOpen,
+        labelPrice: position.labelPrice,
+        labelText: position.labelText,
+        alertBarOpen: position.alertBarOpen,
         entryTime: position.entryTime,
         entry: position.entry,
         margin: position.margin,
@@ -651,8 +718,12 @@ async function main(): Promise<void> {
         signalId: signal.id,
         symbol: signal.symbol,
         side: signal.side,
-        signalTime: signal.confirmedAt,
+        alertConfirmedAt: signal.alertConfirmedAt,
         signalTitle: signal.title,
+        labelBarOpen: signal.labelBarOpen,
+        labelPrice: signal.labelPrice,
+        labelText: signal.labelText,
+        alertBarOpen: signal.alertBarOpen,
         entryTime: time,
         entry: market.open,
         margin,
@@ -789,7 +860,11 @@ async function main(): Promise<void> {
       signalId: position.signalId,
       symbol: position.symbol,
       side: position.side,
-      signalTime: iso(position.signalTime),
+      alertConfirmedAt: iso(position.alertConfirmedAt),
+      labelBarOpen: iso(position.labelBarOpen),
+      labelPrice: position.labelPrice,
+      labelText: position.labelText,
+      alertBarOpen: iso(position.alertBarOpen),
       entryTime: iso(position.entryTime),
       entry: position.entry,
       margin: round(position.margin),
@@ -860,13 +935,48 @@ async function main(): Promise<void> {
   if (Math.abs(expectedBalance - mainBalance) > 1e-7) throw new Error(`Wallet ledger does not reconcile: ${expectedBalance} != ${mainBalance}`);
   if (positions.length > RULES.maxSlots) throw new Error(`Slot limit exceeded: ${positions.length}`);
 
+  const screenshotReferenceLabels: { symbol: Pair; side: Side; price: number }[] = [
+    { symbol: 'LINKUSDT', side: 'LONG', price: 10.811 },
+    { symbol: 'LINKUSDT', side: 'SHORT', price: 11.695 },
+    { symbol: 'NEARUSDT', side: 'SHORT', price: 4.486 },
+    { symbol: 'NEARUSDT', side: 'SHORT', price: 4.441 },
+    { symbol: 'NEARUSDT', side: 'LONG', price: 3.886 },
+  ];
+  const screenshotParity = screenshotReferenceLabels.map((reference) => {
+    const matches = signals.filter((signal) => signal.symbol === reference.symbol
+      && signal.side === reference.side && signal.labelPrice === reference.price);
+    if (matches.length !== 1) {
+      throw new Error(`${reference.symbol}: expected exactly one screenshot label ${reference.side} ${reference.price}, found ${matches.length}`);
+    }
+    const signal = matches[0];
+    if (!signal) throw new Error(`${reference.symbol}: screenshot label lookup failed`);
+    const closedTrade = closed.find((trade) => trade.signalId === signal.id);
+    const openTrade = openTrades.find((trade) => trade.signalId === signal.id);
+    return {
+      symbol: signal.symbol,
+      side: signal.side,
+      labelText: signal.labelText,
+      labelBarOpen: iso(signal.labelBarOpen),
+      labelPrice: signal.labelPrice,
+      alertBarOpen: iso(signal.alertBarOpen),
+      alertConfirmedAt: iso(signal.alertConfirmedAt),
+      entryTime: closedTrade ? iso(closedTrade.entryTime) : openTrade?.entryTime ?? null,
+      entryPrice: closedTrade?.entry ?? openTrade?.entry ?? null,
+      entryStatus: signalRecords.get(signal.id)?.status ?? 'SKIPPED',
+    };
+  });
+
   const hashes: Record<string, string> = {};
+  const sortedInputArchives = [...inputArchives].sort();
   const inputPaths = [
     'Q-Trend_zigzag_v8.original.pine',
     'plan.txt',
+    'evidence/user-link-chart.png',
+    'evidence/user-near-chart.png',
+    'evidence/user-original.pine',
     'data/spot-exchange-info.json.gz',
     ...PAIRS.map((pair) => `data/${pair}.spot.json.gz`),
-    ...inputArchives,
+    ...sortedInputArchives,
   ];
   for (const path of inputPaths) hashes[path] = createHash('sha256').update(await readFile(join(ROOT, path))).digest('hex');
 
@@ -921,7 +1031,8 @@ async function main(): Promise<void> {
     rules: {
       indicator: 'The attached Q-Trend ZigZag Big Swings v8 Pine v5 file, unchanged; exact source hash is listed in inputHashes.',
       inputs: 'Pine defaults unchanged: close, trend period 300, ATR 20, multiplier 2.2, Type A, no EMA smoothing, Big swings (confirmed), normal and strong Buy/Sell accepted, 10% swing, 20-bar signal tolerance, 7% minimum run.',
-      signalTiming: 'The indicator can backdate labels; signals are admitted only when PineTS emits the confirmed alert. Entry is at the Binance Spot 1m candle open at that confirmation time, never at the older label bar.',
+      signalTiming: 'The label timestamp and tick-formatted close price are recorded separately from the later confirmed-alert candle and executable entry. A trade enters at the first Binance Spot 1m open at alert confirmation; it is never backdated to the label.',
+      historyBoundary: `Indicator state is history-start-sensitive. The study uses ${WARMUP_BAR_COUNT} complete 30m warmup candles from ${iso(WARMUP_START)} because that frozen history reproduces the visible labels in the supplied LINK and NEAR screenshots.`,
       symbols: PAIRS,
       startingBalance: RULES.startingBalance,
       maxSlots: RULES.maxSlots,
@@ -941,13 +1052,15 @@ async function main(): Promise<void> {
     data: {
       source: 'Official Binance Spot public API: 30m klines for confirmed signal calculation and 1m klines for entries, range screening, and cutoff marks; official Binance Spot aggregate-trade archives/API for candidate-minute event order and target volume.',
       fetchedAt: iso(exchange.serverTime),
-      expected30mBarsPerPair: (Math.floor(AS_OF / TF) * TF - (Math.floor(WINDOW_START / TF) * TF - WARMUP_BARS * TF)) / TF,
+      warmupStart: iso(WARMUP_START),
+      warmupBars: WARMUP_BAR_COUNT,
+      expected30mBarsPerPair: (Math.floor(AS_OF / TF) * TF - WARMUP_START) / TF,
       expected1mBarsPerPair: (AS_OF - Math.floor(WINDOW_START / MINUTE) * MINUTE) / MINUTE,
       missingData: [],
-      pineInterpreter: 'Local PineTS 0.13.1 on the intact Pine v5 source; this is not independently certified against TradingView exported alerts.',
+      pineInterpreter: 'Local PineTS 0.13.1 on the intact Pine v5 source, including its actual backdated label drawings; visible LINK/NEAR screenshot labels are checked by exact side and displayed price. This is not independent certification against a TradingView alert export.',
       warnings: pineWarnings,
       inputHashes: hashes,
-      detailedTradeInputs: [...inputArchives],
+      detailedTradeInputs: sortedInputArchives,
     },
     summary,
     fastestTarget: fastest,
@@ -955,10 +1068,23 @@ async function main(): Promise<void> {
     perCoin,
     coinRankingByNetIncludingOpenMark: rankedCoins.map((coin, index) => ({ rank: index + 1, ...coin })),
     liquidationEvents: liquidationEvents.map((event) => ({ ...event, time: iso(event.time) })),
-    signals: signalsWithRecords.map((signal) => ({ ...signal, confirmedAt: iso(signal.confirmedAt), alertBarOpen: iso(signal.alertBarOpen) })),
+    screenshotParity,
+    signals: signalsWithRecords.map((signal) => ({
+      ...signal,
+      labelBarOpen: iso(signal.labelBarOpen),
+      alertBarOpen: iso(signal.alertBarOpen),
+      alertConfirmedAt: iso(signal.alertConfirmedAt),
+    })),
     skipped,
     trades: [
-      ...closed.map((trade) => ({ ...trade, signalTime: iso(trade.signalTime), entryTime: iso(trade.entryTime), exitTime: iso(trade.exitTime) })),
+      ...closed.map((trade) => ({
+        ...trade,
+        labelBarOpen: iso(trade.labelBarOpen),
+        alertBarOpen: iso(trade.alertBarOpen),
+        alertConfirmedAt: iso(trade.alertConfirmedAt),
+        entryTime: iso(trade.entryTime),
+        exitTime: iso(trade.exitTime),
+      })),
       ...openTrades.map((trade) => ({ ...trade, status: 'STILL OPEN' as const })),
     ],
     accountEquitySeries: equityHistory,
@@ -967,24 +1093,27 @@ async function main(): Promise<void> {
 
   const tradeRows = [
     ...closed.map((trade) => [
-      trade.id, trade.symbol, trade.side, iso(trade.signalTime), iso(trade.entryTime), trade.entry,
+      trade.id, trade.symbol, trade.side, iso(trade.labelBarOpen), trade.labelPrice, trade.labelText,
+      iso(trade.alertBarOpen), iso(trade.alertConfirmedAt), iso(trade.entryTime), trade.entry,
       trade.margin, trade.notional, RULES.leverage, trade.target, iso(trade.exitTime), trade.exitPrice,
       trade.gross, trade.entryFee, trade.exitFee, trade.net, trade.durationMs, trade.status, trade.liquidationEventId,
     ]),
     ...openTrades.map((trade) => [
-      trade.id, trade.symbol, trade.side, trade.signalTime, trade.entryTime, trade.entry,
+      trade.id, trade.symbol, trade.side, trade.labelBarOpen, trade.labelPrice, trade.labelText,
+      trade.alertBarOpen, trade.alertConfirmedAt, trade.entryTime, trade.entry,
       trade.margin, trade.notional, RULES.leverage, trade.target, '', trade.lastMark,
       trade.unrealizedGross, trade.entryFee, 0, trade.unrealizedGross - trade.entryFee, '', trade.status, '',
     ]),
   ];
   await writeFile(join(ROOT, 'trades.csv'), toCsv([
-    'trade_id', 'coin', 'side', 'signal_time_utc', 'entry_time_utc', 'entry_price', 'allocated_margin_usdt',
+    'trade_id', 'coin', 'side', 'label_bar_open_utc', 'label_display_price', 'label_text', 'alert_bar_open_utc',
+    'alert_confirmed_at_utc', 'entry_time_utc', 'entry_price', 'allocated_margin_usdt',
     'position_notional_usdt', 'leverage', 'target_price', 'exit_time_utc', 'exit_price', 'gross_pnl_usdt',
     'entry_fee_usdt', 'exit_fee_usdt', 'net_pnl_usdt', 'duration_ms', 'status', 'liquidation_event_id',
   ], tradeRows));
   await writeFile(join(ROOT, 'signals.csv'), toCsv(
-    ['signal_id', 'coin', 'side', 'signal_title', 'confirmation_time_utc', 'label_bar_open_utc', 'entry_status', 'skip_reason'],
-    signalsWithRecords.map((signal) => [signal.id, signal.symbol, signal.side, signal.title, iso(signal.confirmedAt), iso(signal.alertBarOpen), signal.status, signal.reason]),
+    ['signal_id', 'coin', 'side', 'signal_title', 'label_bar_open_utc', 'label_display_price', 'label_text', 'alert_bar_open_utc', 'alert_confirmed_at_utc', 'entry_status', 'skip_reason'],
+    signalsWithRecords.map((signal) => [signal.id, signal.symbol, signal.side, signal.title, iso(signal.labelBarOpen), signal.labelPrice, signal.labelText, iso(signal.alertBarOpen), iso(signal.alertConfirmedAt), signal.status, signal.reason]),
   ));
 
   const money = (value: number) => `${value < 0 ? '-$' : '$'}${Math.abs(value).toFixed(4)}`;
@@ -1011,6 +1140,17 @@ async function main(): Promise<void> {
     trade.id, trade.symbol, trade.side, iso(trade.entryTime), trade.entry.toPrecision(10), iso(trade.exitTime),
     trade.exitPrice.toPrecision(10), duration(trade.durationMs), money(trade.gross), money(trade.entryFee + trade.exitFee), money(trade.net),
   ]);
+  const screenshotParityRows = screenshotParity.map((row) => [
+    row.symbol,
+    row.side,
+    row.labelText.replaceAll('\n', ' '),
+    row.labelBarOpen,
+    row.labelPrice,
+    row.alertBarOpen,
+    row.alertConfirmedAt,
+    row.entryTime ?? 'Not opened',
+    row.entryPrice === null ? 'Not opened' : row.entryPrice,
+  ]);
 
   const report = `# Q-Trend ZigZag Big Swings v8 — 30-day Binance Spot price research
 
@@ -1027,6 +1167,14 @@ async function main(): Promise<void> {
 - **Open unrealized gross PnL:** ${money(summary.openUnrealizedGross)}; **marked account equity:** ${money(summary.markedEquity)} (${percent(summary.markedReturnPct)} return including open positions).
 - **Maximum marked-equity drawdown:** ${summary.maxDrawdownPct.toFixed(2)}%; **lowest minute-close equity:** ${money(summary.lowestAccountEquity)}; **maximum slots used:** ${summary.maxSlotsUsed}/6.
 - **At cutoff:** shared available collateral ${money(summary.endingSharedAvailableCollateral)}; maintenance requirement ${money(summary.endingMaintenanceMargin)}; maintenance headroom ${money(summary.endingMaintenanceHeadroom)}.
+
+## Original screenshot labels and executable entries
+
+The label timestamp and tick-formatted close price are recorded separately from the later confirmed alert and the 1m entry. The five visible LINK/NEAR labels in the supplied screenshots match the original Pine label text, direction, and displayed prices. The report enters only at alert confirmation; entering at an older label would use information that was not yet known.
+
+${markdownTable(['Coin', 'Side', 'Displayed label', 'Label candle UTC', 'Label price', 'Alert bar open UTC', 'Alert confirmed UTC', 'Entry UTC', 'Entry price'], screenshotParityRows)}
+
+**History boundary:** the replay uses ${WARMUP_BAR_COUNT.toLocaleString()} warmup 30m candles beginning ${iso(WARMUP_START)}. This frozen boundary matches the supplied screenshot labels. The prior 1,500-bar run produced a NEAR LONG at 2026-10-31 16:00 UTC / 4.479 and omitted the screenshot's SELL 4.441; that LONG is absent from this corrected ledger. Q-Trend's state depends on the start of its loaded chart history, so exact TradingView alerts beyond the screenshot-visible labels cannot be certified without an exported TradingView alert list.
 
 ## Target completion times
 
@@ -1053,13 +1201,13 @@ ${liquidationRows.length ? markdownTable(['Event', 'UTC', 'Trigger symbol(s)', '
 
 ## Method and limitations
 
-- The attached Pine v5 source was preserved unchanged. PineTS ran its confirmed Big Swings alerts on Binance Spot 30m candles, including 1,500 warm-up bars. The prior label bar is not used as an entry time.
+- The attached Pine v5 source was preserved unchanged. PineTS ran its confirmed Big Swings alerts on Binance Spot 30m candles with ${WARMUP_BAR_COUNT.toLocaleString()} warmup bars from ${iso(WARMUP_START)}. The actual backdated label bar and displayed close price are recorded, but never used as the executable entry.
 - Entry occurs at the first 1m Spot candle open at the alert confirmation time. Quantity is continuous synthetic exposure: 5% of then-current main balance × 75 ÷ entry price. No actual Spot order, Futures price, exchange leverage tier, or minimum-order filter is used.
 - A target is fixed at gross profit equal to 200% of the initial entry margin, before fees. Target executions are checked against Spot aggregate-trade prices and correctly directed trade volume. Actual queue priority and personal account fills cannot be reconstructed.
 - Baseline Spot fees are 0.10% per side; personal discounts are unknown. No borrowing interest is charged because the 75x position is synthetic, not a Binance Margin loan. No spread/slippage is invented.
 - 1m candles screen for possible exits. Every candidate minute is resolved by time-ordered official Spot aggregate trades for all open symbols; missing detail stops the run instead of granting a favorable exit. At the same millisecond, a cross-maintenance breach is checked before target fills.
 - Cross margin is modeled portfolio-wide: equity is wallet balance plus all unrealized PnL; maintenance is the stated synthetic rate over combined marked notional. When breached, every open position is closed at the latest observed Spot prices. The chosen maintenance rate and lack of an actual 75x Spot product mean this is a reproducible scenario, not an exchange-certified liquidation model.
-- PineTS parity is local only and is not independent TradingView-exported verification. The supplied plan's specified source pairs were all confirmed active on Binance Spot; candle coverage and input hashes are retained with the result.
+- The screenshot labels are checked against the exact text, direction, and price produced by the intact Pine source and frozen Binance Spot candles. This local PineTS comparison is not independent TradingView-exported verification; Q-Trend's persistent state is history-start-sensitive, so the same 30-day candles can produce different results with a different loaded-history boundary. Candle coverage and all input hashes are retained with the result.
 
 ## Reproducibility
 
