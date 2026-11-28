@@ -1,5 +1,11 @@
 # Independent Crypto Signal Terminal
 
+## prompt-82 — Q-Trend 30-day Futures backtest (research only)
+- [x] Preserve the attached Pine source and default confirmed Big Swings settings; execute only when the alert becomes knowable, never on its backdated label bar.
+- [x] Freeze complete Binance USD-M Futures 30m, 1m, mark-price and funding data for the latest 30 full days across the 10 requested pairs; validate gaps and hashes.
+- [x] Simulate six slots, 5% of updated main balance per trade, 75x, 200% gross-margin target, costs and exchange liquidations separately from indicator exits.
+- [x] Deliver the full report and trade ledger; verify the live site, Simulator, balances and deployment remain unchanged.
+
 ## prompt-80 — AI Forex Simulator
 - [x] Replace the active historical Forex test with real causal AI decisions; preserve CPES history separately.
 - [x] Audit Nov19–25: 230 reviews/64 calls, 29 funded trades, 11 wins/18 losses, −$9.53 net, $0.47 remaining; 16 tests and desktop/mobile replay checks pass. Hook already imports React; build OK. AI SDK gateway workflow used; no live deployment.
