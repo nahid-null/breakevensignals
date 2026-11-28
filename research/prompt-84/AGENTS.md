@@ -1,0 +1,2 @@
+- Keep prompt-84 calculations and outputs isolated under research/prompt-84; never connect these reports to the active worker, database, Telegram, or website, because the user requested research-only testing.
+- Resolve exits from timestamped Spot aggregate trades; a target is hit on a trade at or beyond its price, while a same-millisecond cross-margin breach stays conservative, because OHLC alone cannot establish event order.

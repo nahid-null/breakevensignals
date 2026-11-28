@@ -1,0 +1,303 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © tarasenko_  (modified: show only the Q-Trend signals that sit at MAJOR zigzag peaks (SELL) / troughs (BUY))
+
+//@version=5
+indicator("Q-Trend ZigZag Big Swings v9", overlay = true, max_labels_count = 500, max_lines_count = 500, max_bars_back = 1000)
+
+// ---------------- Inputs ----------------
+src = input(close, "Source", group = "Main settings")
+p = input.int(300, "Trend period", group = "Main settings", tooltip = "Changes STRONG signals' sensitivity.", minval = 1)
+atr_p = input.int(20, "ATR Period", group = "Main settings", minval = 1)
+mult = input.float(2.2, "ATR Multiplier", step = 0.1, group = "Main settings", tooltip = "Changes sensitivity: higher period = higher sensitivty.")
+mode = input.string("Type A", "Signal mode", options = ["Type A", "Type B"], group = "Mode")
+use_ema_smoother = input.string("No", "Smooth source with EMA?", options = ["Yes", "No"], group = "Source")
+src_ema_period = input(6, "EMA Smoother period", group = "Source")
+color_bars = input(true, "Color bars?", group = "Addons")
+show_tl = input(true, "Show trend line?", group = "Addons")
+show_price = input(true, "Show entry price in label?", group = "Signal's Addon")
+buy_col = input(color.green, "Buy colour", group = "Signal's Addon", inline = "BS")
+sell_col = input(color.red, "Sell colour", group = "Signal's Addon", inline = "BS")
+sbuy_col = input(color.new(#006400, 0), "Strong Buy colour", group = "Signal's Addon", inline = "SBS")
+ssell_col = input(color.new(#8B0000, 0), "Strong Sell colour", group = "Signal's Addon", inline = "SBS")
+
+sig_mode = input.string("Big swings (confirmed)", "Signal mode", options = ["Big swings (confirmed)", "Live (earlier, riskier)"], group = "ZigZag", tooltip = "Big swings: only signals at MAJOR peaks/troughs. A swing is known only after price has moved big_swing % away, so the label is drawn afterwards ON the original signal bar (price/time of the original signal). Live: signals appear at the moment they happen inside the first part of a new leg (earlier, but more false ones).")
+buy_mode = input.string("Buy + Strong Buy", "Buy signals accepted", options = ["Strong Buy only", "Buy + Strong Buy"], group = "ZigZag", tooltip = "If a STRONG signal is near the pivot it is always preferred over a normal one.")
+sell_mode = input.string("Sell + Strong Sell", "Sell signals accepted", options = ["Strong Sell only", "Sell + Strong Sell"], group = "ZigZag")
+show_zz = input.bool(true, "Show zigzag lines", group = "ZigZag")
+zz_line_col = input.color(color.white, "Zigzag line colour", group = "ZigZag")
+zz_line_w = input.int(2, "Zigzag line width", minval = 1, maxval = 5, group = "ZigZag")
+
+big_dev = input.float(10.0, "Big swing % (min size of a swing)", minval = 1.0, step = 0.5, group = "Big swings mode", tooltip = "A peak/trough counts only if price moves at least this % away from it. 10 = only the large swings. Lower = more signals, higher = fewer.")
+big_tol = input.int(20, "Max bars between pivot and signal", minval = 0, group = "Big swings mode", tooltip = "The signal must be within this many bars of the peak/trough (closest one wins, STRONG preferred).")
+min_run = input.float(7.0, "Min profit move after the signal %", minval = 0.0, step = 0.5, group = "Big swings mode", tooltip = "A big-swing signal is kept ONLY if, after the signal, price really moved at least this % in the signal direction (down for SELL, up for BUY) measured from the signal price. Weak signals that gave only a small move are never drawn. The label is drawn on the original signal bar once price has proven this move. 0 = off.")
+max_dd = input.float(3.0, "Max drawdown after the signal %", minval = 0.0, step = 0.5, group = "Big swings mode", tooltip = "A signal is dropped if, BEFORE it reaches its profit move, price first goes against it by more than this % from the signal price (up for SELL, down for BUY). Removes signals that would have been stopped out / liquidated first. 0 = off.")
+
+live_rev = input.float(4.0, "Reversal % (confirms peak/trough)", minval = 0.5, step = 0.5, group = "Live mode", tooltip = "Smaller = earlier signals but more false ones.")
+leg_min = input.float(5.0, "Min size of the first leg %", minval = 0.5, step = 0.5, group = "Live mode")
+sell_zone_pct = input.float(7.0, "SELL zone width % (below the peak)", minval = 0.5, step = 0.5, group = "Live mode")
+buy_zone_pct = input.float(8.0, "BUY zone width % (above the trough)", minval = 0.5, step = 0.5, group = "Live mode")
+first_only = input.bool(false, "Only the first signal in each zone", group = "Live mode")
+
+big_mode = sig_mode == "Big swings (confirmed)"
+
+// ---------------- Q-Trend calculations ----------------
+src := use_ema_smoother == "Yes" ? ta.ema(src, src_ema_period) : src
+
+h = ta.highest(src, p)
+l = ta.lowest(src, p)
+d = h - l
+
+ls = ""
+
+m = (h + l) / 2
+m := bar_index > p ? m[1] : m
+
+atr = ta.atr(atr_p)[1]
+epsilon = mult * atr
+
+change_up = (mode == "Type B" ? ta.cross(src, m + epsilon) : ta.crossover(src, m + epsilon)) or src > m + epsilon
+change_down = (mode == "Type B" ? ta.cross(src, m - epsilon) : ta.crossunder(src, m - epsilon)) or src < m - epsilon
+sb = open < l + d / 8 and open >= l
+ss = open > h - d / 8 and open <= h
+strong_buy = sb or sb[1] or sb[2] or sb[3] or sb[4]
+strong_sell = ss or ss[1] or ss[2] or ss[3] or ss[4]
+
+m := (change_up or change_down) and m != m[1] ? m : change_up ? m + epsilon : change_down ? m - epsilon : nz(m[1], m)
+
+ls := change_up ? "B" : change_down ? "S" : ls[1]
+colour = ls == "B" ? buy_col : sell_col
+
+plot(show_tl ? m : na, "trend line", colour, 3)
+barcolor(color_bars ? colour : na)
+
+buy_sig         = change_up and ls[1] != "B" and not strong_buy
+sell_sig        = change_down and ls[1] != "S" and not strong_sell
+strong_buy_sig  = change_up and ls[1] != "B" and strong_buy
+strong_sell_sig = change_down and ls[1] != "S" and strong_sell
+
+buy_cand  = buy_mode == "Strong Buy only" ? strong_buy_sig : (buy_sig or strong_buy_sig)
+sell_cand = sell_mode == "Strong Sell only" ? strong_sell_sig : (sell_sig or strong_sell_sig)
+
+// signal type: 2 strong buy, 1 buy, -1 sell, -2 strong sell (only candidates allowed by the accept settings)
+sig_type = (strong_buy_sig and buy_cand) ? 2 : (buy_sig and buy_cand) ? 1 : (strong_sell_sig and sell_cand) ? -2 : (sell_sig and sell_cand) ? -1 : 0
+
+// ---------------- Signal memory (used by Big swings mode) ----------------
+var array<int>   sBars  = array.new<int>()
+var array<int>   sTypes = array.new<int>()
+var array<float> sPx    = array.new<float>()
+var array<float> sCl    = array.new<float>()
+
+if sig_type != 0
+    array.push(sBars, bar_index)
+    array.push(sTypes, sig_type)
+    array.push(sPx, sig_type > 0 ? low : high)
+    array.push(sCl, close)
+    if array.size(sBars) > 300
+        array.shift(sBars)
+        array.shift(sTypes)
+        array.shift(sPx)
+        array.shift(sCl)
+
+// best stored signal near a pivot bar: STRONG preferred, then closest
+find_sig(int pb, bool wantBuy, int tolerance, array<int> bars, array<int> types) =>
+    int bestStrong = -1
+    int bestNormal = -1
+    int dS = 1000000
+    int dN = 1000000
+    int n = array.size(bars)
+    if n > 0
+        for i = 0 to n - 1
+            int t = array.get(types, i)
+            int dist = math.abs(array.get(bars, i) - pb)
+            bool dirOk = wantBuy ? t > 0 : t < 0
+            if dist <= tolerance and dirOk
+                if math.abs(t) == 2
+                    if dist < dS
+                        dS := dist
+                        bestStrong := i
+                else
+                    if dist < dN
+                        dN := dist
+                        bestNormal := i
+    bestStrong >= 0 ? bestStrong : bestNormal
+
+draw_sig(int b, int t, float px, float cl) =>
+    string name = t == 2 ? "STRONG BUY" : t == 1 ? "BUY" : t == -1 ? "SELL" : "STRONG SELL"
+    string txt = name + (show_price ? "\n" + str.tostring(cl, format.mintick) : "")
+    color c = t == 2 ? sbuy_col : t == 1 ? buy_col : t == -1 ? sell_col : ssell_col
+    label.new(b, px, txt, xloc = xloc.bar_index, yloc = yloc.price, style = t > 0 ? label.style_label_up : label.style_label_down, color = c, textcolor = color.white, size = math.abs(t) == 2 ? size.large : size.normal)
+
+// ---------------- ZigZag (percent swing, running state) ----------------
+// dir =  1 : UP leg   (last confirmed pivot is a LOW,  extB/extP = highest point so far)
+// dir = -1 : DOWN leg (last confirmed pivot is a HIGH, extB/extP = lowest point so far)
+dev = (big_mode ? big_dev : live_rev) / 100
+leg = leg_min / 100
+
+var int   dir    = 0
+var float extP   = na
+var int   extB   = na
+var float hiP    = high
+var int   hiB    = bar_index
+var float loP    = low
+var int   loB    = bar_index
+var int   lastPB = na
+var float lastPP = na
+var float prevPP = na
+var int   pivCnt = 0
+
+bool  newPiv    = false
+bool  pivIsHigh = false
+int   pivB      = na
+float pivP      = na
+
+if dir == 0
+    if high > hiP
+        hiP := high
+        hiB := bar_index
+    if low < loP
+        loP := low
+        loB := bar_index
+    if hiP >= loP * (1 + dev) and loB < hiB
+        newPiv := true
+        pivIsHigh := false
+        pivB := loB
+        pivP := loP
+        dir := 1
+        extP := hiP
+        extB := hiB
+    else if loP <= hiP * (1 - dev) and hiB < loB
+        newPiv := true
+        pivIsHigh := true
+        pivB := hiB
+        pivP := hiP
+        dir := -1
+        extP := loP
+        extB := loB
+else if dir == 1
+    if high > extP
+        extP := high
+        extB := bar_index
+    else if low <= extP * (1 - dev)
+        newPiv := true
+        pivIsHigh := true
+        pivB := extB
+        pivP := extP
+        dir := -1
+        extP := low
+        extB := bar_index
+else
+    if low < extP
+        extP := low
+        extB := bar_index
+    else if high >= extP * (1 + dev)
+        newPiv := true
+        pivIsHigh := false
+        pivB := extB
+        pivP := extP
+        dir := 1
+        extP := high
+        extB := bar_index
+
+bool drawnSell = false
+bool drawnBuy  = false
+
+// pending big-swing signal waiting to prove its profit move
+var int   pendBar  = na
+var int   pendType = 0
+var float pendPx   = na
+var float pendCl   = na
+
+// 1) bar by bar: did the pending signal first go too far AGAINST us (dropped), or already make its profit move (drawn)?
+if big_mode and pendType != 0 and bar_index > pendBar
+    float advNow = pendType < 0 ? (high - pendCl) / pendCl : (pendCl - low) / pendCl
+    float favNow = pendType < 0 ? (pendCl - low) / pendCl : (high - pendCl) / pendCl
+    if max_dd > 0 and advNow > max_dd / 100
+        pendType := 0
+    else if favNow >= min_run / 100
+        draw_sig(pendBar, pendType, pendPx, pendCl)
+        drawnSell := pendType < 0
+        drawnBuy  := pendType > 0
+        pendType := 0
+
+// 2) a new big pivot is confirmed
+if newPiv
+    if show_zz and not na(lastPB)
+        line.new(lastPB, lastPP, pivB, pivP, xloc = xloc.bar_index, color = zz_line_col, width = zz_line_w)
+    if big_mode
+        pendType := 0   // the previous leg is over; a signal that never proved itself is dropped
+        int idx = find_sig(pivB, not pivIsHigh, big_tol, sBars, sTypes)
+        if idx >= 0
+            pendBar  := array.get(sBars, idx)
+            pendType := array.get(sTypes, idx)
+            pendPx   := array.get(sPx, idx)
+            pendCl   := array.get(sCl, idx)
+            // replay the bars after the signal bar, oldest first: dropped (too much drawdown) or validated (profit move reached)?
+            int state = min_run <= 0 ? 1 : 0
+            int span = bar_index - pendBar
+            if state == 0 and span >= 1
+                for k = span - 1 to 0
+                    if state == 0
+                        float adv = pendType < 0 ? (high[k] - pendCl) / pendCl : (pendCl - low[k]) / pendCl
+                        float fav = pendType < 0 ? (pendCl - low[k]) / pendCl : (high[k] - pendCl) / pendCl
+                        if max_dd > 0 and adv > max_dd / 100
+                            state := -1
+                        else if fav >= min_run / 100
+                            state := 1
+            if state == 1
+                draw_sig(pendBar, pendType, pendPx, pendCl)
+                drawnSell := pendType < 0
+                drawnBuy  := pendType > 0
+                pendType := 0
+            else if state == -1
+                pendType := 0
+    lastPB := pivB
+    prevPP := lastPP
+    lastPP := pivP
+    pivCnt += 1
+
+// live (still developing) leg as a dashed line
+var line devLine = na
+if barstate.islast
+    if not na(devLine)
+        line.delete(devLine)
+    if show_zz and dir != 0 and not na(lastPB)
+        devLine := line.new(lastPB, lastPP, extB, extP, xloc = xloc.bar_index, color = zz_line_col, width = zz_line_w, style = line.style_dashed)
+
+// ---------------- Live mode zones ----------------
+// SELL: shape ^ - rise (>= leg_min %) -> confirmed peak -> price within sell_zone_pct % below it
+// BUY : shape V - fall (>= leg_min %) -> confirmed trough -> price within buy_zone_pct % above it
+bool peak_ok   = dir == -1 and pivCnt >= 2 and not na(prevPP) and lastPP >= prevPP * (1 + leg)
+bool trough_ok = dir == 1  and pivCnt >= 2 and not na(prevPP) and prevPP >= lastPP * (1 + leg)
+
+bool sell_zone = peak_ok   and close <= lastPP and close >= lastPP * (1 - sell_zone_pct / 100)
+bool buy_zone  = trough_ok and close >= lastPP and close <= lastPP * (1 + buy_zone_pct / 100)
+
+int sellKey = dir == -1 ? nz(lastPB, -1) : -1
+int buyKey  = dir == 1  ? nz(lastPB, -1) : -1
+
+var int lastSellKey = -1
+var int lastBuyKey  = -1
+
+bool sell_show = not big_mode and barstate.isconfirmed and sell_cand and sell_zone and (not first_only or sellKey != lastSellKey)
+bool buy_show  = not big_mode and barstate.isconfirmed and buy_cand  and buy_zone  and (not first_only or buyKey  != lastBuyKey)
+
+entry_txt = show_price ? "\n" + str.tostring(close, format.mintick) : ""
+
+if sell_show
+    lastSellKey := sellKey
+    if strong_sell_sig
+        label.new(bar_index, na, "STRONG SELL" + entry_txt, yloc = yloc.abovebar, style = label.style_label_down, color = ssell_col, textcolor = color.white, size = size.large)
+    else
+        label.new(bar_index, na, "SELL" + entry_txt, yloc = yloc.abovebar, style = label.style_label_down, color = sell_col, textcolor = color.white, size = size.normal)
+
+if buy_show
+    lastBuyKey := buyKey
+    if strong_buy_sig
+        label.new(bar_index, na, "STRONG BUY" + entry_txt, yloc = yloc.belowbar, style = label.style_label_up, color = sbuy_col, textcolor = color.white, size = size.large)
+    else
+        label.new(bar_index, na, "BUY" + entry_txt, yloc = yloc.belowbar, style = label.style_label_up, color = buy_col, textcolor = color.white, size = size.normal)
+
+// ---------------- Alerts (use "Once per bar close") ----------------
+// Big swings mode alerts fire when the signal has proven its profit move (the label itself is placed on the earlier signal bar).
+alertcondition(sell_show or drawnSell, "ZigZag SELL", "Q-Trend: SELL at a zigzag peak.")
+alertcondition(buy_show or drawnBuy, "ZigZag BUY", "Q-Trend: BUY at a zigzag trough.")

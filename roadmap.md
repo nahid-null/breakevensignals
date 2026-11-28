@@ -1,5 +1,11 @@
 # Independent Crypto Signal Terminal
 
+## prompt-84 — new-indicator 30-day Binance Spot cross-margin research (offline only)
+- [x] Preserve the newly attached Q-Trend ZigZag Big Swings v9 source and screenshot as immutable research evidence; use only this indicator's confirmed 30m Spot signals.
+- [x] Re-run 2026-10-29 13:33–2026-11-28 13:33 UTC on the same 10 Binance Spot pairs, with $10 start, six slots, 5% current-balance margin, 75x, 200% of each trade's initial margin target, fees, no early exits, and full shared-account Cross Margin.
+- [x] Audit every target and liquidation at timestamped Spot aggregate-trade resolution; test target-price math and event ordering so a liquidation cannot precede a target already reached.
+- [x] Deliver deterministic signals, full trade ledger, target/liquidation reconciliation, and report; leave the live website, Simulator, balances, Telegram, worker, database, and deployment untouched.
+
 ## prompt-83 — Q-Trend Binance Spot 30-day cross-margin research (offline only)
 - [x] Preserve the newly attached plan and the byte-identical Q-Trend Pine source in a separate research run; use Binance Spot data only.
 - [x] Freeze and validate complete 30m signal and 1m execution candles for all 10 requested pairs over the latest 30 days through 2026-11-28 12:03 UTC.
